@@ -1,0 +1,46 @@
+﻿[% PROCESS _header %]
+
+<h1>Služby pro nakladatele</h1>
+<!--			<div class="descr">Jun 13, 2006 by Vulputate</div>-->
+
+
+<p>
+Přispívání do naší databáze knih má řadu výhod. Spolupracujícím nakladatelům či knihkupcům nabízíme zejména službu odkázání čtenáře na stránku knihkupce pro prodej knížky. Tyto odkazy jsou na stránce knížky na serveru obalkyknih.cz, řada knihoven je však zobrazuje i pod službou Koupit knížku přímo ve svém webovém katalogu.
+
+<p>
+Poskytnutím obálek svých knih nabídnete svoje zboží atraktivnější formou, přičemž je čtenáři umožněno prokliknout se na vaše stránky, kde může zakoupit knížku, kterou aktuálně poptává.
+
+<p>
+Technické řešení zapojení je řešeno stejně jako u agregačních serverů zboží.cz či heuréka.cz, pro které řada nakladatelů už teď generuje tzv. XML feedy obsahující seznam všech jejich knih, včetně URL s obrázkem obálky knihy, cenou, a dalšími údaji. Více informací o této technologii lze nalézt kupříkladu na http://www.zbozi.cz/
+
+<p>
+Pokud tuto technologii podporujete, stačí se <a href="/signup">zaregistrovat</a> s vyplněním následujících údajů:
+
+<ul>
+<li>Název nakladatelství
+<li>Webová adresa nakladatelství
+<li>Logo nakladatele
+<li>Webová adresa XML feedu
+</ul>
+
+<p>
+V případě dotazů nás kontaktujte.
+</p>
+
+<p>
+Do databáze obálek zatím přispívají:
+
+<table border="0" cellpadding="4" cellspacing="2"> 
+[% FOREACH eshop IN eshops %]
+<tr height="40">
+<td valign="top" align="left"><div align="right">
+<a href="[% eshop.web_url %]" target="_blank">
+<img class="nob" src="[% eshop.logo_url %]" 
+	alt="[% eshop.fullname %]"></a></div></td> 
+<td valign="middle" align="left"><a href="[% eshop.web_url %]"
+		>[% eshop.fullname %]</a></td> 
+</tr>
+[% END %]
+</table> 
+
+[% PROCESS _footer %]

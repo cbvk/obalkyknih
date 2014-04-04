@@ -1,0 +1,34 @@
+
+		<div id="blue"><div class="in">
+			<div class="left">
+				<form action="/view"><label for="search">Zadejte ISBN…</label><input type="text" id="search" name="isbn" value="" /><input type="submit" class="button big" value="Vyhledat" /></form>
+			   <p>Správcem projektu je <a href="http://www.mzk.cz">Moravská zemská knihovna</a>.</p>
+			</div>
+			<div class="center">
+				<p>Projekt ObalkyKnih.cz sdružuje různé zdroje informací
+				o knížkách do jedné, snadno použitelné webové služby. Naše databáze v tuto chvíli obsahuje <strong>[% covers %] obálek</strong>
+				a <strong>[% tocs %] obsahů</strong> českých a zahraničních publikací. Našeho API využívá <strong>přes [% libraries_at_least %] knihoven</strong>.</p>
+			</div>
+			<div class="right">
+				[% IF user %]
+				<h4>Přihlášený uživatel</h4>
+				<p>
+				[% user %]
+				</p><br>
+				<p class="small">
+					<!-- <a href="/">Nastavení»</a> 
+					&nbsp;&nbsp; --> 
+					<a href="/logout">Odhlásit</a> </p>
+			
+				[% ELSE %]
+				<form action="/login" method="post">
+					<p><label for="login_mail">E-mailová adresa</label><input type="text" value="" id="login_mail" name="email"/></p>
+					<p><label for="login_pass">Heslo</label><input type="password" value="" id="login_pass" name="password"/>
+					<input type="submit" class="button" value="Přihlásit »" /></p>
+				</form>
+				<p class="small"><a href="/signup">Registrovat »</a> &nbsp;&nbsp; <a href="/lostpassword">Zapomenuté heslo?</a> </p>
+				[% END %]
+			</div>
+			<div class="cl"></div>
+		</div></div>
+		

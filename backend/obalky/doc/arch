@@ -1,0 +1,81 @@
+
+ROADMAP TO 2.0
+
+ -- preklopit na DBIC::Schema?
+ -- vyhlidnout si par poskytovatelu, stahnout zaklad
+ -- 
+
+----------------------------------------------
+
+Obálky 2.0
+Požadavky:
+
+    * rozšíření o další typy identifikátorů (OCLC number, LCCN, NBN, případně další)
+    * rozšíření o obsahy z TOC
+    * rozšíření o stahování recenzí, anotací
+    * rozšíření o hodnocení, tagy a komentáře čtenářů
+    * rozšíření o rozhraní pro komunikaci s vydavatelstvími (např. standard ONIX) - API, fakticky zajisti SCKN
+    * zlepšení výkonu: Implementace podpory cache serverů pro obrázky a obálky, optimalizace rychlosti služby (memcache apod.), failover a load balancing - kecy
+    * implementace podpory pro decentralizovanou redakci/správu databáze - role pro potvrzovani anonymnich hodnoceni
+    * integrace pravidel SKIP http://skip.nkp.cz/akcObalky.htm - ?
+
+----------------------------------------------
+
+1) web (./script/obalky_(fastcgi|server).pl)
+	- jednoducha webova prezentace
+	- api s logikou urceni obalky, hodne zatizene
+	- api pro upload (write), autorizovane?
+	- primarni cache - staticky obsah
+
+2) harvester (./bin/harvest.pl)
+    - skusi stahnout chtene obalky z #queue
+	- kazdy den v 2:00, pri zmene datumu skonci
+	- konci i pri vypadku obalkyknih.cz
+	- vypisuje statistiku davkek (100 dotazu)
+
+3) olizavatko (./bin/crawler.pl)
+	- olize zdroje poskytujici seznam novych
+	- vola api/upload?url=...
+
+4) synchronizace (./bin/heartbeat.pl)
+	- jednou za den by mely vsechny cache volat neco jako:
+		0 4 * * * rsync -av --delete \
+			rsync@cache.obalkyknih.cz:/opt/obalky/www/file /var/www/obalky
+	- synch.pl daemon kontroluje log, zda byly volany
+	- a stahuje spacer.gif
+	- pri vypadku posle mail a cache zablokuje
+
+-----------------------------------------------
+
+bugy:
+
+1. po prihlaeni je [Vstoupit do systemu], presmeruje
+   na 'login' a pak na stare 'browse'
+
+2. na obalky-dev aleph.muni.cz vraci "rozbity obrazek"
+   http://aleph.muni.cz/F/JUNYI49VLXT7T1GGXBVPUX1SEE2271NG1BTM1MPX8DJLBGLPQT-01368?func=full-set-set&set_number=009532&set_entry=000006&format=999
+   pritom odkaz presmeruje na spacer.gif spravne
+
+3. Amazon->harvest(978(Kroužko): Error in EAN12 <978(Kroužko>???
+
+4. request.patron_id, upload?ean12=&url=&queue=, 
+   backup do queue_dir/, url_list
+   bye a timezone v ./harvest.pl
+   catalyst errors posilat na email, zobrazit omluvu
+   heartbeat daemon, kontrola posledni obalky
+
+-------------------------------------------
+
+Task::Catalyst
+Cache::FastMmap
+Catalyst::Plugin::Session::Store::FastMmap
+Template
+Template::Timer
+DBD::mysql
+Class::DBI::mysql
+Class::DBI::Loader::mysql
+Catalyst::Model::CDBI
+MD5
+Business::ISBN
+FCGI
+

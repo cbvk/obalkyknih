@@ -1,0 +1,85 @@
+﻿[% PROCESS _header %]
+
+<h1>Služba zobrazování obálek knih pro dodavatele knihovních systémů</h1>
+<!--			<div class="descr">Jun 13, 2006 by Vulputate</div>-->
+
+<p>
+Projekt <a href="http://www.obalkyknih.cz">obalkyknih.cz</a> agreguje
+různé zdroje informací o knížkách do jedné, snadno použitelné webové
+služby. 
+
+Tato služba slouží k obohacení bibliografických údajů o další prvky, zejména náhledové obrázky titulních stran knih, naskenované stránky s obsahem knížky, anotace, recenze, či hodnocení knih. Tyto prvky umožnuje registrovaným knihovnám snadno integrovat do jejich webových katalogů.
+
+<h1>Jak služba funguje?</h1>
+<p>Jednoduše. Po nutné registraci knihovny (ve které zadá adresu katalogu, 
+odkud bude službu <a href="http://www.obalkyknih.cz">obálkyknih.cz</a> 
+využívat), vložte do katalogu na místo, kde chcete vložit obrázek knihy, 
+krátký HTML kód, který do stránky vloží obrázek obálky z našeho serveru. 
+Jako identifikátor knihy slouží (ve většině případů) ISBN kód. Příklad:</p>
+
+<pre>&lt;script type="text/javascript" src="http://www.obalkyknih.cz/api/functions.js"&gt;&lt;/script&gt;
+&lt;script type="text/javascript" src="http://www.obalkyknih.cz/api/custom.js"&gt;&lt;/script&gt;
+
+&lt;div class="obalky_book"&gt;
+    &lt;div class="obalky_bibinfo"&gt;
+        &lt;div class="obalky_title"&gt;S elegancí ježka&lt;/div&gt;
+        &lt;div class="obalky_authors"&gt;Barbery, Muriel&lt;/div&gt;
+        &lt;div class="obalky_year"&gt;2008&lt;/div&gt;
+        &lt;div class="obalky_isbn"&gt;9788072942862&lt;/div&gt;
+        &lt;div class="obalky_oclc"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="obalky_permalink"&gt;http://www.vas-katalog.cz/0005738329-s-eleganci-jezka.html&lt;/div&gt;
+    &lt;div class="obalky_callback" name="obalky_display_cover"&gt;&lt;/div&gt;
+&lt;/div&gt;</pre>
+
+<p>
+Povinným argumentem je <tt>obalky_permalink</tt> s trvalým neměnným URL odkazem 
+na záznam do knihovního katalogu na danou knížku. Dále jsou potřebné bibliografické
+údaje nutné pro jednoznačnou identifikaci knížky, zejména tedy ISBN.
+</p>
+
+Podrobnější popis možností, jak propojit váš knihovní systém s databází 
+obálek knih můžete nalézt v 
+<a href="http://docs.google.com/View?docID=0Ac2A7CGzH5t9ZGZtM3gyNGZfNjhjcmZ3amhjZg">dokumentaci</a>.
+</p>
+
+<!--
+<div id="div_signup" style="display:none">
+<h1>Nový účet</h1>
+<form action="signup">
+<table>
+<tr><td>E-mail:<td><input type="text" name="email" class="styled" />
+<tr><td>Heslo:<td><input type="password" name="password1" class="styled" />
+<tr><td>Heslo znovu:<td><input type="password" name="password2" class="styled" />-->
+<!--<tr><td>Knihovna:<td><input type="password" name="password" class="styled" />-->
+<!--<img src="img/arrow.png">-->
+<!--<tr><td>&nbsp;<td><input type="submit" value="Vytvořit účet" class="button" />
+</table>
+<p>
+Už máte účet? <a href="#" onclick="return account(1,0)">Přihlašte se.</a>
+</p>
+</form>
+</div>-->
+
+<!--
+<h1>Vyhledávání</h1>
+<form action="search">
+<div>
+<input type="text" name="search" class="styled" /> 
+	<input type="submit" value="Hledat" class="button" />
+</div>
+</form>
+-->
+
+<!--
+<h1>Novinky</h1>
+<div>
+<h4>Úvodní obrazovka</h4>
+<b>Martin Šárfy</b> (17. červenec 2008)
+<p>
+Založen projekt, úvodní stránka, bla bla..
+</p>
+</div>
+-->
+
+[% PROCESS _footer %]

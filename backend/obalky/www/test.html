@@ -1,0 +1,97 @@
+﻿[% PROCESS _header %]
+
+<h1>Testovací stránka</h1>
+
+<div id="obalka_nahled" />
+
+<script>
+	var bibinfo = { "isbn" => "9788072038848" };
+	var permalink = "http://www.obalkyknih.cz/view?isbn=9788072038848";
+	obalky.process("obalky_display_cover","obalka_nahled",permalink,bibinfo);
+</script>
+
+
+<p>
+ObalkyKnih:
+
+<!--<script type="text/javascript">
+function ws_results(obj) {
+//	alert(obj.ResultSet.totalResultsAvailable);
+}
+function obalky_callback(isbn,has_cover) {
+	if(has_cover) {
+		document.write("<img src=\"http://www.obalkyknih.cz/api/cover?isbn="+isbn+"\"");
+	}
+//	alert(result);
+}
+</script>-->
+
+<!--<script type="text/javascript" src="http://search.yahooapis.com/ImageSearchService/V1/imageSearch?appid=YahooDemo&query=Madonna&output=json&callback=ws_results"></script>-->
+<!--<script type="text/javascript" src="http://www.obalkyknih.cz/api/has_cover?isbn=978-80-7198-461-0&output=json&callback=obalky_callback"></script>-->
+<!--<script type="text/javascript" src="http://grr:1234/api/has_cover?isbn=978-80-7198-461-0&output=json&callback=obalky_callback"></script>-->
+
+
+<p>
+LibraryThing: podle LibraryThing JSON Books API <a 
+href="http://www.librarything.com/wiki/index.php/LibraryThing_JSON_Books_API"
+>dokumentace</a> neni mozne v databazi vyhledavat, lze ziskavat detaily 
+(nazev, autor, obalka) pouze o knihach, ktere ma uzivatel na svem konte.
+</p>
+
+<p>
+<a href="http://code.google.com/apis/books/docs/dynamic-links.html">
+GoogleBooks</a>: lze vyhledavat podle ISBN (a taky OCLC nebo LCCN), lze 
+nalinkovat jejich thumbnail obrazek, lze odkazovat na Google Books 
+stranku o knizce. Nelze k ISBN zjistit bibliograficke udaje. 
+Slo by teoreticky stahnout a parsovat z odkazovane stranky
+(nazev v &lt;title&gt; tagu, autor s "By " prefixem) ale ...
+</p>
+
+<p>
+<a href="http://www.mularien.com/blog/2008/04/10/5-minute-guide-to-the-java-amazon-associates-web-service-api/">Amazon</a>: nejaky slozity postup
+(registrace dvou uctu,... ) ale melo by jit dle ISBN (ASIN) ziskat nazev 
+(item.getItemAttributes().getTitle()) pres Java API. Existuji i nejake
+perl moduly (DBD::Amazon, Net::Amazon::AWIS,
+Amazon: 
+http://www.hccp.org/amazon-asin-isbn.html
+http://www.mularien.com/blog/2008/04/10/5-minute-guide-to-the-java-amazon-associates-web-service-api/
+
+<p>
+<a href="http://isbndb.com">ISBNdb.com</a> 3.5M knih, 1M autoru,
+perl modul <a href="http://search.cpan.org/dist/WebService-ISBNDB/"
+>WebService::ISBNDB</a> pro pouziti. <a 
+href="http://aws.typepad.com/aws/2006/03/free_isbn_web_s.html">Popis</a>.
+
+<p>
+Amazon:
+<img src="http://ec2.images-amazon.com/images/P/0762423374.01.L.jog" />
+<img src="http://ec2.images-amazon.com/images/P/0545010225.01.L.jog" />
+</p>
+
+<p>
+<a href="http://www.librarything.com/blog/2008/08/million-free-covers-from-librarything.php"> A million free covers from LibraryThing</a>
+<img src="http://covers.librarything.com/devkey/33504605/large/isbn/0545010225">
+<img src="http://covers.librarything.com/devkey/33504605/large/isbn/0762423374">
+</p>
+
+
+<!--
+<div class="LT_item">
+<a href="http://www.librarything.com/book/33504605" class="LT_cover">
+<img title="Adventures of Huckleberry Finn" 
+	src="http://images.amazon.com/images/P/1580495834.01._SY100_SCLZZZZZZZ_.jpg"></a>
+	<span id="33504605" class="LT_titleandauthor">
+	<a href="http://www.librarything.com/book/33504605" 
+		class="LT_title">Adventures of Huckleberry Finn</a><span> by </span><a class="LT_author" href="http://www.librarything.com/author/twainmark">Mark Twain</a></span></div></div><div class="clearer"></div></div><script type="text/javascript" src="/api/json_books.php?userid=obalkyknih&amp;key=3573934425"></script>
+-->
+
+<div id="LT_widget"></div>
+
+<script type="text/javascript" 
+	src="http://www.librarything.com/api/json_books.php?userid=obalkyknih&amp;key=3573934425"></script>
+
+<iframe src="http://www.librarything.com/api/json_books.php?userid=obalkyknih&amp;key=3573934425"></iframe>
+
+<p style="padding: 150px" />
+
+[% PROCESS _footer %]

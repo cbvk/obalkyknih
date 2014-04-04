@@ -1,0 +1,14 @@
+
+$ convert cpk20021037386_1.pdf[0] -resize x236 obsah0.png
+$ convert cpk20021037386_1.pdf[0] -resize 166x obsah1.png
+$ identify -format '%w %h ' obsah0.png obsah1.png
+    155 236 166 253 -> (w0,h0,w1,h1)
+
+if($h0 == 236) {
+    $xoff=(166-$w0)/2
+    composite -compose atop -geometry +$xoff+1 obsah0.png frame.gif result.png
+} elsif($w1 == 166) {
+    $yoff=(236-$h1)/2
+    composite -compose atop -geometry +1+$yoff obsah1.png frame.gif result.png
+}
+

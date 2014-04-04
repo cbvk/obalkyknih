@@ -1,0 +1,76 @@
+﻿[%PROCESS _header %]
+
+<h1>Vkládání obálek</h1>
+
+[% PROCESS _errors %]
+
+<form name="insert" action=insert method="post">
+<input type=hidden name=batch value=[%batch%]>
+<table class="listing" width="100%" cellspacing=0>
+
+[%FOREACH upload = images -%]
+	<input type=hidden name=id_[%upload.id%] value=[%upload.id%]>
+[% IF upload.odd -%]
+<tr class="odd">
+[% ELSE -%]
+<tr class="even">
+[% END -%]
+	<td width="5%" style="vertical-align: middle">
+			<center><img height=45 src="[%upload.thumbfile%]"></center>
+	<td width="65%">
+		<table width="100%">
+<tr>
+<td width="10%">Název:
+<td width="55%"><input id=title_[%upload.id%] name=title_[%upload.id%] 
+			value="[%upload.title%]" size=40>
+<td width="10%">EAN/OCLC:
+<td width="25%">
+		<input id=id_[%upload.id%] name=id_[%upload.id%] 
+				value="[%upload.bibinfo.to_some_id%]" size=18>
+</tr><tr>
+<td>Autor:<td><input id=author_[%upload.id%] name=author_[%upload.id%] 
+			value="[%upload.author%]" size=30>
+<td>Rok:<td><input id=year_[%upload.id%] name=year_[%upload.id%] 
+			value="[%upload.year%]" size=8>
+</tr>
+</table>
+
+	<td width="25%">
+		[% UNLESS upload.bibinfo.ean OR upload.bibinfo.oclc 
+					OR upload.bibinfo.nbn -%]
+			Nevyplňený EAN/OCLC: [% upload.origname %]<br>
+		[% ELSE -%]
+			[% UNLESS upload.check_isbn_format -%]
+				Chybný formát ISBN: [%upload.isbn%]<br>
+			[% END -%]
+		[% END -%]
+<!--		[ UNLESS upload.thumbname -]
+			Neplatný soubor s obrázkem.<br>
+		[ END -] -->
+<!--		[% IF upload.check_duplicit_isbn -%]
+			Duplicitní ISBN s 
+			<a href="[% upload.check_duplicit_isbn %]">[% upload.check_duplicit_isbn %]</a><br>
+		[% END -%]-->
+		[% IF upload.check_duplicit_file -%]
+			Shoda souborů s
+			<a href="/view?[% upload.bibinfo.to_some_param %]">[% upload.check_duplicit_file %]</a><br>
+		[% END -%]
+	
+	<td width="5%">
+		[% IF upload.checked -%]
+			<input type=checkbox name=check_[%upload.id%] checked>
+		[% ELSE -%]
+			<input type=checkbox name=check_[%upload.id%]>
+		[% END -%]
+
+[%END-%]
+</table>
+
+<input type=submit class="button" name=import value="  Vložit označené  ">
+</form>
+
+<!--<div style="clear: both"></div>-->
+
+<p style="height: 4em"/>
+
+[%PROCESS _footer %]

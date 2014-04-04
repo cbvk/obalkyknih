@@ -1,0 +1,22 @@
+#!/bin/sh
+
+reset
+set -e
+
+cd /opt/obalky
+
+echo "Creating database schema"
+mysql < doc/model.sql
+
+#rm -rf lib/SchemaDB.pm lib/SchemaDB
+#perl -MDBIx::Class::Schema::Loader=make_schema_at,dump_to_dir:./lib -e 'make_schema_at("SchemaDB", {}, [ "dbi:mysql:dbname=obalky", "obalky","visk2009" ])' >/dev/null
+#for i in lib/SchemaDB/*.pm ; do class=`basename $i .pm`; echo "__PACKAGE__->resultset_class('DB::$class');1;" >> $i ; done
+#sed -i -e 's/"Core"/"TimeStamp","Core"/' lib/SchemaDB/Cover.pm
+
+prove --lib lib t
+
+echo ./bin/crawler.pl debug
+./bin/crawler.pl debug
+echo ./bin/harvest.pl debug
+./bin/harvest.pl debug
+

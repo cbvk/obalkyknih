@@ -1,0 +1,43 @@
+[% PROCESS _header_tovarna %]
+[% PROCESS _header_blue %]
+[% PROCESS _header_blackbox %]
+[% PROCESS _header_main %]
+
+<div class="quart">
+	<h3>Knihovny</h3>
+	<p><strong>Vylepšete svůj katalog</strong> pomocí  náhledů titulních stran, obsahů, anotací, recenzí, či hodnocení knih! To vše velmi jednoduše a zdarma díky naší službě.</p>
+	<p class="small"><a href="/for_libraries" title="">Více informací »</a></p>
+</div>
+
+<div class="quart">
+	<h3>Nakladatelé</h3>
+	<p>Chcete <strong>zvýšit prodej a&nbsp;zaujmout</strong> širší čtenářské publikum? Poskytněte nám fotky obálek a další informace o&nbsp;svých knihách. Do detailu knihy umístíme váš odkaz.</p>
+	<p class="small"><a href="/for_publishers" title="">Více informací »</a></p>
+</div>
+
+<div class="quart">
+	<h3>Dodavatelé IS</h3>
+	<p>Integrací <strong>API ObalkyKnih.cz</strong> snadno pozvednete váš knihovní software na zcela novou úroveň. Poskytujeme obálky knih, anotace, recenze, hodnocení a mnohé další.</p>
+	<p class="small"><a href="/for_developers" title="">Více informací »</a></p>
+</div>
+
+<div class="quart last">
+	<h3>Čtenáři</h3>
+	<p>Díky službě ObalkyKnih.cz snadno zjistíte, <strong>ve kterých knihovnách či obchodech</strong> je kniha, kterou hledáte. Dále si můžete prohlížet hodnocení knih, recenze apod.</p>
+	<p class="small"><a href="/for_patrons" title="">Více informací »</a></p>
+</div>
+
+<hr class="cl" />
+
+<p class="loga fr nob">
+[% FOREACH eshop IN eshops %]
+	[% IF eshop.logo_url %] <!-- logo by (nove) melo mit na vysku 40 bodu -->
+<a href="[% eshop.web_url %]" target="_blank"><img border=0 src="[% eshop.logo_url %]" alt="[% eshop.fullname %]"></a>
+	[% END %]
+[% END %]
+</p>
+<p>Zdrojem pro ObalkyKnih.cz jsou zejména spolupracující nakladatelé a knihkupci, kteří pro knihovny patřící do sdružení <a href="http://skip.nkp.cz">SKIP</a> za jistých podmínek souhlasí se zobrazováním obálek jejich knih v knihovních katalozích. Dalším zdrojem obálek jsou knihovny, které aktivně skenují obálky knih z jejich knihovních fondů a tyto vkládájí na obálkový server.</p>
+
+	</div>
+	
+[% PROCESS _footer_tovarna %]

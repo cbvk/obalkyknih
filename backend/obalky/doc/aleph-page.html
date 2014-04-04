@@ -1,0 +1,793 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd"> 
+<!-- filename: full-set-head-nobor  --> 
+<html> 
+<head> 
+<META HTTP-EQUIV="REFRESH" CONTENT="1200; URL=http://aleph.muni.cz/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51063?func=logout"> 
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8"> 
+<link rel="stylesheet" href="https://aleph.muni.cz/exlibris.css" TYPE="text/css"> 
+<title>Souborný katalog - Úplné zobrazení záznamu </title> 
+<script src="http://localhost:3000/api/functions.js"></script> 
+<script src="http://localhost:3000/api/custom.js"></script> 
+ 
+<script language="JavaScript"> 
+function obalky_display_mine(debug, bibinfo) { 
+        debug.innerHTML = "obalky_display_mine(bibinfo="+ 
+                                JSON.stringify(bibinfo)+")"; 
+} 
+function obalky_custom_onload() { 
+        var table = document.getElementById("fullbody"); 
+        var bibinfo = { "authors": [] }; 
+        var debug = document.getElementById("obalky_test"); 
+        var rows = table.getElementsByTagName("tr"); 
+        for(i = 0; i < rows.length; i++) { 
+                var tds = rows[i].getElementsByTagName("td"); 
+                var key = tds[0].innerText ? tds[0].innerText : tds[0].textContent; 
+                var val = tds[1].innerText ? tds[1].innerText : tds[1].textContent; 
+                var value = val ? val.replace(new 
+                        RegExp("[\n\t ]+"+String.fromCharCode(36)),""). 
+                        replace(/^[\n\t ]+/,"") : ''; // 36 - Aleph dolary zere.. 
+                if(key.match(/ISBN/)) bibinfo["isbn"] = value; 
+                if(key.match(/N.zev/)) bibinfo["title"] = value.replace(/\s+\:.*/,'');
+                if(key.match(/Rok vyd/)) bibinfo["year"] = value; 
+                if(key.match(/SYSNO/i)) { 
+                        bibinfo["sysno"] = value; 
+                        bibinfo["backlink"] = "http://aleph.muni.cz/"+ 
+                                "F?func=find-c&ccl_term=sys="+value; 
+                } 
+                if(key.match(/Auto/)) bibinfo["authors"].push( value ); 
+//              debug.innerHTML = debug.innerHTML + key + " "; 
+        } 
+        obalky.process("obalky_display_mine", "obalky_test", bibinfo); 
+        obalky.onload(); 
+} 
+ 
+</script> 
+</head> 
+<body topmargin="0" onload="obalky_custom_onload();"> 
+<!-- filename: head-1-nobor --> 
+<table width="100%" border="0" cellspacing="0" cellpadding="0" align="center"> 
+  <tr class="topbar"> 
+    <td valign="middle" height="20" width="103"> 
+      <a href="http://www.muni.cz" class="blue" target="_blank" title="Masarykova univerzita v Brně"> 
+
+      <img src="https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/logo-2-1.gif" width="103" height="20" border="0" alt="Logo MU"></a></td> 
+    <td class="topbar" valign="middle" height="20" width="*" align="center" colspan="15"> 
+    <table width="100%" cellpadding="0" cellspacing="0"><tr> 
+        <td class="topbar" valign="middle" 
+                align="center">Souborný katalog MU - ČTENÁŘ NEPŘIHLÁŠEN</td> 
+        <td class="topbar" valign="bottom" align="right"> 
+         <style type="text/css"> 
+         A.faq { 
+                FONT-WEIGHT: bold; 
+                FONT-SIZE: 13px; 
+                COLOR: #990000; 
+                TEXT-DECORATION: none 
+         } 
+         A.faq:hover{ 
+               FONT-WEIGHT: bold; 
+               FONT-SIZE: 13px; 
+               COLOR: #FF6600; 
+               TEXT-DECORATION: none 
+         } 
+       </style> 
+        <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51065?func=find-b-0&CON_LNG=ENG" border="0"><img border="0" src="https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/lang_eng.gif"></a> 
+       <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51066?func=file&file_name=help-2" class="faq" 
+          target="_blank">Časté dotazy - FAQ</a>&nbsp;&nbsp; 
+        </td> 
+    </tr></table> 
+ 
+ 
+    </td> 
+  </tr> 
+  <tr class="middlebar"> 
+    <td valign="middle" height="20"  width="103"> 
+      <a href="http://www.muni.cz" class="blue" target="_blank" title="Masarykova univerzita v Brně"> 
+      <img src="https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/logo-2-2.gif" width="103" height="20" border="0" alt="Logo MU"></a></td> 
+    <td class="middlebar" valign="middle" height="20" align="center" nowrap> 
+      <a href="https://aleph.muni.cz/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51067?func=file&file_name=login-session" 
+                class="blue" title="Zadejte své uživatelské jméno a heslo"> 
+      Přihlášení</a> 
+    </td> 
+    <td class="middlebar" valign="middle" height="20" align="center" nowrap> 
+      | 
+    </td> 
+    <td class="middlebar" valign="middle" height="20" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51068?func=file&file_name=base-list" class="blue" title="Volba databáze pro vyhledávání"> 
+      Katalogy</a> 
+    </td> 
+    <td class="middlebar" valign="middle" height="20" align="center" nowrap> 
+      | 
+    </td> 
+    <td class="middlebar" valign="middle" height="20" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51069?func=option-show&func_param=DISPLAY-OPTION" class="blue" title="Nastavení vašich voleb pro zobrazení"> 
+      Nastavení</a> 
+    </td> 
+    <td class="middlebar" valign="middle" height="20" align="center" nowrap> 
+      | 
+    </td> 
+    <td class="middlebar" valign="middle" height="20" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51070?func=file&file_name=feedback" class="blue" title="Zaslání konstruktivních připomínek k tomuto systému"> 
+      Připomínky</a> 
+    </td> 
+<!--    <td class="middlebar" valign="middle" height="20" align="center" nowrap> 
+      | 
+    </td> 
+    <td class="middlebar" valign="middle" height="20" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51071?func=ill-request-1&request_type=ill-book-request" class="blue" title="Požadavek na meziknihovní výpůjčku z jiné knihovny"> 
+      MVS</a> 
+    </td> 
+--> 
+    <td class="middlebar" valign="middle" height="20" align="center" nowrap> 
+      | 
+    </td> 
+    <td class="middlebar" valign="middle" height="20" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51072?func=file&file_name=help-1" class="blue" title="Nápověda k používání tohoto systému" target="_blank"> 
+      Nápověda</a> 
+    </td> 
+    <td class="middlebar" valign="middle" height="20" align="center" nowrap> 
+      | 
+    </td> 
+    <td class="middlebar" valign="middle" height="20" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51073?func=file&file_name=news_mub01_1" title="Zobrazení novinek knihovního fondu" class="blue">Novinky 
+<!--            <img src="https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/rss_icon.gif" border="0" alt="RSS">--> 
+</a> 
+    </td> 
+    <td class="middlebar" valign="middle" height="20" align="center" colspan="4" nowrap> 
+      &nbsp; 
+    </td> 
+  </tr> 
+  <tr class="bottombar"> 
+    <td valign="middle" height="20"  width="103"> 
+      <a href="http://www.muni.cz" class="blue" target="_blank" title="Masarykova univerzita v Brně"> 
+      <img src="https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/logo-2-3.gif" width="103" height="20" border="0" alt="Logo MU"></a></td> 
+    <td class="bottombar" valign="middle" height="20" align="center" nowrap> 
+<!--      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51074?func=scan-list" class="blue" title="Prohlížení abecedních rejstříků"> 
+      Rejstříky</a> 
+    </td> 
+    <td class="bottombar" valign="middle" height="20" align="center" nowrap> 
+      | 
+    </td> 
+    <td class="bottombar" valign="middle" height="20" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51075?func=find-b-0" class="blue" title="Vyhledávání záznamů pomocí klíčových slov"> 
+      Vyhledávání</a>--> 
+    </td> 
+    <td class="bottombar" valign="middle" height="20" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51076?func=find-b-0" class="blue" title="Vyhledávání záznamů pomocí klíčových slov"> 
+      Vyhledávání/Rejstříky</a> 
+    </td> 
+    <td class="bottombar" valign="middle" height="20" align="center" nowrap> 
+
+      | 
+    </td> 
+    <td class="bottombar" valign="middle" height="20" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51077?func=history" class="blue" title="Použití výsledků předchozích vyhledávání"> 
+      Dotazy</a> 
+    </td> 
+    <td class="bottombar" valign="middle" height="20" align="center" nowrap> 
+      | 
+    </td> 
+    <td class="bottombar" valign="middle" height="20" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51078?func=short" class="blue" title="Zobrazení seznamu vyhledaných záznamů"> 
+      Výsledky</a> 
+    </td> 
+    <td class="bottombar" valign="middle" height="20" align="center" nowrap> 
+      | 
+    </td> 
+    <td class="bottombar" valign="middle" height="20" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51079?func=basket-short" class="blue" title="Zobrazení záznamů, které jste uložili do své schránky"> 
+      Schránka</a> 
+    </td> 
+    <td class="bottombar" valign="middle" height="20" align="center" nowrap> 
+      | 
+    </td> 
+    <td class="bottombar" valign="middle" height="20" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51080?func=file&file_name=logout" class="blue" title="Otevření nové relace"> 
+      Konec</a> 
+    </td> 
+    <td class="bottombar" valign="middle" height="20" align="center" colspan="4" nowrap> 
+      &nbsp; 
+    </td> 
+  </tr> 
+  <tr> 
+    <td class="feedbackbar" valign="middle" height="20" align="center" colspan="16" nowrap> 
+      &nbsp;</td> 
+  </tr> 
+  <tr> 
+    <td valign="middle" height="20" background="https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-spacer.jpg" colspan="16"> 
+      &nbsp; 
+    </td> 
+  </tr> 
+</table> 
+<table width="100%" align="center" border="0" cellpadding="0" cellspacing="0"> 
+ <tr> 
+  <td class="bar" width="20%" align="center" nowrap> 
+    &nbsp; 
+  </td> 
+  <td class="bar" align="center" nowrap> 
+               <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51081?func=title-request-form&bib_doc_number=000586330" 
+               title="Zadat požadavek na titul" class="blue"> 
+               Požadavek na titul</a> 
+  </td> 
+  <td class="bar" align="center" nowrap> 
+               &nbsp;|&nbsp; 
+  </td> 
+ 
+  <td class="bar" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51082?func=myshelf-add-ful-1&doc_library=MUB01&doc_number=000586330" 
+               title="Přidat do mé schránky" class="blue"> 
+               Přidat do mé schránky</a> 
+  </td> 
+  <td class="bar" align="center" nowrap> 
+               &nbsp;|&nbsp; 
+  </td> 
+ 
+ 
+  <td class="bar" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51083?func=booking_req_form_bib&bib_library=MUB01&bib_doc_number=000586330&start_date=" 
+               title="Rezervovat" class="blue"> 
+               Rezervovat</a> 
+  </td> 
+ 
+  <td class="bar" align="center" nowrap> 
+               &nbsp;|&nbsp; 
+  </td> 
+  <td class="bar" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51084?func=short-locate-list&doc_number=000586330" 
+               title="Lokalizovat v jiných bázích" class="blue"> 
+               Lokalizovat</a> 
+  </td> 
+  <td class="bar" align="center" nowrap> 
+               &nbsp;|&nbsp; 
+  </td> 
+  <td class="bar" align="center" nowrap> 
+      <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51085?func=ill-request-doc&doc_number=000586330" 
+               title="Zadat požadavek MVS" class="blue"> 
+               Požadavek MVS</a> 
+  </td> 
+  <td class="bar" align="center" nowrap> 
+               &nbsp;|&nbsp; 
+  </td> 
+  <td class="bar" align="center" nowrap> 
+      <a href=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51086?func=full-mail-0&doc_library=MUB01&doc_number=000586330 
+               title="Uložit/odeslat" class="blue"> 
+               Uložit/odeslat</a> 
+  </td> 
+  <td class="bar" align="center" nowrap> 
+               &nbsp;|&nbsp; 
+  </td> 
+  <td class="bar" align="center" nowrap> 
+     <a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51087?func=save-server-0&set_number=005925&set_entry=000001" 
+        title="Uložit na server" class=blue> 
+        Uložit na server</a> 
+   </td> 
+  <td class="bar" align="center" nowrap> 
+               &nbsp;|&nbsp; 
+  </td> 
+   <td class="bar" align="center" valign="bottom" nowrap> 
+      <a href="javascript:open_window('/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51088?func=service-sfx&doc_number=000586330&line_number=0000&service_type=RECORD');"><img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-sfx.gif border=0 alt='Use SFX services'></a> 
+       
+  </td> 
+ </tr> 
+</table> 
+<p class=title> 
+  Úplné zobrazení záznamu 
+</p> 
+<table> 
+ <tr> 
+  <td class=text3>Zvolte formát:</td> 
+  <td class="text1"> 
+    <a href=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51089?func=full-set-set&set_number=005925&set_entry=000001&format=999> 
+    Standardní formát</a> 
+  </td> 
+  <td class="text1"> 
+    <a href=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51090?func=full-set-set&set_number=005925&set_entry=000001&format=037> 
+     Katalogizační záznam</a> 
+  </td> 
+  <td class="text1"> 
+    <a href=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51091?func=full-set-set&set_number=005925&set_entry=000001&format=040> 
+    Zkrácený záznam</a> 
+  </td> 
+  <td class="text1"> 
+     <a href=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51092?func=full-set-set&set_number=005925&set_entry=000001&format=002> 
+      S textovými návěštími</a> 
+  </td> 
+  <td class="text1"> 
+    <a href=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51093?func=full-set-set&set_number=005925&set_entry=000001&format=001> 
+    S kódy polí MARC</a> 
+
+  </td> 
+ </tr> 
+</table> 
+<table width=100%> 
+ <tr> 
+  <td class=text3 align=left> 
+    Záznam         1 z      1310 
+  </td> 
+  <td align=right> 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-prev-record-dim.gif border=0 alt='No Previous Record'> &nbsp; <A HREF=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51094?func=full-set-set&set_number=005925&set_entry=000002&format=999><img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-next-record.gif border=0 alt='Next Record'></A> 
+  </td> 
+ </tr> 
+</table> 
+ 
+<div style="color: gray; font-size: 8pt" id="obalky_test">(Test)</div> 
+
+<table><tr><td width="100%"> 
+<table id="fullbody" cellspacing=2 border=0 width=100%> 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+     &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <br> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+    Název &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51095?func=service&doc_number=000586330&line_number=0020&service_type=TAG");'>Velká <span class=text3 id=normalb>kniha</span> živočichů :&nbsp;hmyz, ryby, obojživelníci, plazi, ptáci, savci : 1582 barevných ilustrací /&nbsp;[zpracovali Mirko Bohuš ... et al. ; ilustrovali Jindřich Krejča, Veronika Topercerová ; sestavili Jindřich Krejča, Ladislav Korbel]</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+    Vydání &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    4., upr. vyd. 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+    Místo vyd. &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51096?func=service&doc_number=000586330&line_number=0022&service_type=TAG");'>Bratislava :</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+    Nakladatel &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51097?func=service&doc_number=000586330&line_number=0022&service_type=TAG");'>Príroda,</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+    Rok vyd. &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51098?func=service&doc_number=000586330&line_number=0022&service_type=TAG");'>2009</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+    Rozsah &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    344 s. :&nbsp;barev. il. 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+    ISBN &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    9788007017962<BR> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+    Poznámka &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    Obsahuje rejstřík. 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+    Předmět.heslo &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51099?func=service&doc_number=000586330&line_number=0025&service_type=TAG");'>živočichové&nbsp;--&nbsp;Evropa střední</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+     &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51100?func=service&doc_number=000586330&line_number=0026&service_type=TAG");'>hmyz&nbsp;--&nbsp;Evropa střední</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+     &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51101?func=service&doc_number=000586330&line_number=0027&service_type=TAG");'>ryby&nbsp;--&nbsp;Evropa střední</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+     &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51102?func=service&doc_number=000586330&line_number=0028&service_type=TAG");'>obojživelníci&nbsp;--&nbsp;Evropa střední</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+     &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51103?func=service&doc_number=000586330&line_number=0029&service_type=TAG");'>plazi&nbsp;--&nbsp;Evropa střední</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+     &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51104?func=service&doc_number=000586330&line_number=0030&service_type=TAG");'>ptáci&nbsp;--&nbsp;Evropa střední</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+     &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51105?func=service&doc_number=000586330&line_number=0031&service_type=TAG");'>savci&nbsp;--&nbsp;Evropa střední</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+    Forma a žánr &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51106?func=service&doc_number=000586330&line_number=0032&service_type=TAG");'>encyklopedie</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+     &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51107?func=service&doc_number=000586330&line_number=0033&service_type=TAG");'>obrazové publikace</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+    Autoři,ost. &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51108?func=service&doc_number=000586330&line_number=0034&service_type=TAG");'>Bohuš, Mirko</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+     &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51109?func=service&doc_number=000586330&line_number=0035&service_type=TAG");'>Krejča, Jindřich,&nbsp;1920-1991</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+     &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51110?func=service&doc_number=000586330&line_number=0036&service_type=TAG");'>Topercerová, Veronika</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+     &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-separator.gif alt='Link' border=0 alt=''><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51111?func=service&doc_number=000586330&line_number=0037&service_type=TAG");'>Korbel, Ladislav,&nbsp;1912-</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+     &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <br> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+    SYSNO &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    000586330 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+    Jednotky &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <A HREF=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51112?func=item-global&doc_library=MUB01&doc_number=000586330&year=&volume=&sub_library=>Všechny jednotky</A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+    Jednotky-DK &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <A HREF=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51113?func=item-global&doc_library=MUB01&doc_number=000586330&year=&volume=&sub_library=PEDF> Pedagogická fakulta</A><A HREF='javascript:open_window("/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51114?func=library&sub_library=PEDF");'><img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-info.gif border=0 alt='Library Info'></A> 
+  </td> 
+ </tr> 
+ 
+
+<!-- filename: full-999-body --> 
+ <tr> 
+  <td class=td1 
+      id=bold 
+      width=15% 
+      valign=top 
+      nowrap> 
+     &nbsp; 
+  </td> 
+  <td class=td1 id=value align=left > 
+    <br> 
+  </td> 
+ </tr> 
+
+<!-- filename: full-set-tail --> 
+</table> 
+ 
+<br> 
+<table> 
+<tr> 
+<td class=text3>Zvolte formát:</td> 
+<td class="text1"> 
+<a href=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51115?func=full-set-set&set_number=005925&set_entry=000001&format=999> 
+Standardní formát</a> 
+</td> 
+<td class="text1"> 
+<a href=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51116?func=full-set-set&set_number=005925&set_entry=000001&format=038> 
+Katalogizační lístek</a> 
+</td> 
+<td class="text1"> 
+<a href=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51117?func=full-set-set&set_number=005925&set_entry=000001&format=040> 
+Citace</a> 
+</td> 
+<td class="text1"> 
+<a href=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51118?func=full-set-set&set_number=005925&set_entry=000001&format=002> 
+S návěštími polí</a> 
+</td> 
+<td class="text1"> 
+<a href=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51119?func=full-set-set&set_number=005925&set_entry=000001&format=001> 
+S kódy polí MARC</a> 
+</td> 
+</tr> 
+</table> 
+<p align=right><img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-prev-record-dim.gif border=0 alt='No Previous Record'> &nbsp; <A HREF=/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51120?func=full-set-set&set_number=005925&set_entry=000002&format=999><img src=https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/f-next-record.gif border=0 alt='Next Record'></A> 
+<br> 
+ 
+<!-- tail-bar-include --> 
+<hr> 
+<div class=text1 align=center> 
+<a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51121?func=file&file_name=logout">Konec relace</a> - 
+<a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51122?func=option-show&func_param=DISPLAY-OPTION">Nastavení</a> - 
+<a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51123?func=file&file_name=feedback">Otázky/připomínky</a> - 
+<a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51124?func=file&file_name=help-1" target="new">Nápověda</a> - 
+<a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51125?func=ill-request-1&request_type=ill-book-request">MVS</a> - 
+<a href="http://www.exlibris-usa.com" target=new>Ex Libris</a> - 
+<a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51126?func=scan-list">Prohlížení</a> - 
+<a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51127?func=find-b-0">Vyhledávání</a> - 
+<a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51128?func=short">Výsledky dotazu</a> - 
+<a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51129?func=history">Předchozí dotazy</a> - 
+<a href="/F/Y8V5RXX59J144P9HB6RVAJY1VIGYYISAPBNJBDRFI63EC11CA9-51130?func=file&file_name=base-list">Databáze</a> 
+</div> 
+ 
+ 
+<!-- filename: copyrights --> 
+<br> 
+<div class="precopy"> 
+        <table class="copyrighttab" align="center"> 
+                <tr> 
+                <td class="copyimg"> 
+                        <a href="http://www.exlibris.co.il" class="blue" target="_blank" title="Ex Libris, producent integrovaného knihovnického systému ALEPH"><img 
+ src="https://aleph.muni.cz/exlibris/aleph/u18_1/alephe/www_f_cze/icon/logo_aleph.gif" border="0" alt="Aleph logo"></a> 
+                </td> 
+                <td> 
+                        <table> 
+                                <tr><td class="copyright">Copyright &copy; 2005 Ex Libris. Powered by Aleph 18.1</td> 
+                                <tr><td class="copyright"><a href="mailto:webmaster@aleph.muni.cz">webmaster@aleph.muni.cz</a></td> 
+                        </table> 
+                </tr> 
+        </table> 
+</div> 
+ 
+</body> 
+</body> 
+</html> 
+ 
+
+ 

@@ -1,0 +1,47 @@
+---
+abstract: 'Catalyst based application'
+author:
+  - ',,,'
+build_requires:
+  ExtUtils::MakeMaker: 6.42
+configure_requires:
+  ExtUtils::MakeMaker: 6.42
+distribution_type: module
+generated_by: 'Module::Install version 0.91'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Obalky
+no_index:
+  directory:
+    - inc
+    - t
+requires:
+  Business::ISBN: 0
+  Cache::FastMmap: 0
+  Catalyst: 5.7003
+  Catalyst::Action::RenderView: 0
+  Catalyst::Model::CDBI: 0
+  Catalyst::Plugin::ConfigLoader: 0
+  Catalyst::Plugin::Session::Store::FastMmap: 0
+  Catalyst::Plugin::Static::Simple: 0
+  Class::DBI::Loader::mysql: 0
+  Class::DBI::Plugin::DateTime::MySQL: 0
+  Class::DBI::mysql: 0
+  DBD::mysql: 0
+  DBIx::Class::TimeStamp: 0
+  DateTime::Format::MySQL: 0
+  FCGI: 0
+  List::MoreUtils: 0
+  MD5: 0
+  Net::OAI::Harvester: 0
+  Template: 0
+  Template::Timer: 0
+  Test::Pod::Coverage: 0
+  XML::LibXML: 0
+  YAML: 0
+  ZOOM: 0
+resources:
+  license: http://dev.perl.org/licenses/
+version: 2.00

@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="cs" lang="cs">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta name="Content-Language" content="cs" />
+	<meta name="author" content="design and code by TOVARNA.CZ, s.r.o." />
+	[% DEFAULT header_title = "Obálky knih - Databáze obálek knih" %]
+	<title>[% header_title %]</title>
+
+	<meta http-equiv="Pragma" content="no-cache" />
+	<meta name="robots" content="index,follow" />
+	<meta name="description" lang="cs" content="" />
+	<meta itemprop="name" content="Zasouvátko">
+	<meta itemprop="image" content="http://obalkyknih.cz">
+	<meta property="og:title" content="Obálky knih" />
+	<meta property="og:url" content="http://obalkyknih.cz" />
+	<meta property="og:image" content="http://obalkyknih.cz/skin/img/demo.png" />
+	<meta property="og:site_name" content="ObalkyKnih.cz" />
+
+	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+
+	[% IF seznam_main_image %]
+		<link rel="previewimage" href="[% seznam_main_image %]" />
+	[% END %]
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0" />
+	<link rel="stylesheet" media="screen,projection,tv" href="skin/style.css" type="text/css" />
+	<!--[if lte IE 9]><link rel="stylesheet" media="screen,projection,tv" href="skin/style-IE.css" type="text/css" /><![endif]-->
+	<!--[if lte IE 7]><link rel="stylesheet" media="screen,projection,tv" href="skin/style-IE7.css" type="text/css" /><![endif]-->
+	<link rel="stylesheet" media="print" href="skin/print.css" type="text/css" />
+	
+	<link rel="stylesheet" href="/local.css" type="text/css" />
+
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+	<script type="text/javascript" src="skin/script.js"></script>
+
+	<script type="text/javascript" src="system.js"></script>
+</head>
+<body class="homepage">
+
+<div id="page">
+
+
+	<div id="head"><div class="in">
+		<a href="/" id="logo"><img src="skin/img/logo_obalkyknih.cz.png" alt="Obálky knih" /></a>
+		<ul id="menu">
+			<li class="menu_home [% IF menu == 'index' %]active[% END %]"><a 
+				href="/"><span></span>Úvod</a></li>
+			<li class="menu_upload [% IF menu == 'upload' %]active[% END %]"><a href="/upload"><span></span>Přidat obálku</a></li>
+			<li class="menu_api [% IF menu == 'doc' %]active[% END %]"><a
+				href="/api"><span></span>API a dokumentace</a></li>
+			<li class="menu_about [% IF menu == 'about' %]active[% END %]"><a 
+				href="/about"><span></span>O projektu</a></li>
+		</ul>
+	</div></div>
+
+
+	<div id="content"><div class="in">
+

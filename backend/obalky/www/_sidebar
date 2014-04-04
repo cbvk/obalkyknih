@@ -1,0 +1,64 @@
+﻿
+		</div> <!-- container -->
+
+		<div class="sidenav">
+
+<div id="search">
+<h1>Vyhledání dle ISBN</h1>
+<form action="view">
+<table>
+<tr><td><input name="isbn" class="styled" />
+<tr><td><input type=submit value="  Vyhledat  " class="button" />
+</table>
+</form>
+</div>
+
+<div id="recent">
+<h1>Poslední přidané obálky</h1>
+<table cellspacing=4>
+[% FOREACH row = recent -%]
+	<tr>
+	[% FOREACH book = row.cols -%]
+		<td><a href="/view?[%book.bibinfo.to_some_param%]"><img height="80" 
+			border=0 src="/api/cover?[%book.bibinfo.to_some_param%]"></a></td>
+	[% END -%]
+	</tr>
+[% END -%]
+</table>
+
+</div>
+[% IF user %]
+
+<div id="div_login">
+<h1>Přihlášení</h1>
+<p>
+Přihlášený uživatel: <b>[%user%]</b><br>
+<a href="/logout">Odhlásit</a>
+</p>
+</div>
+
+[% ELSE %]
+
+<div id="div_login">
+<h1>Přihlášení</h1>
+<form name="login" action="https://www.obalkyknih.cz/login" method=post>
+<table>
+<tr><td>E-mail:<td><input type="text" name="email" class="styled" />
+<tr><td>Heslo:<td><input type="password" name="password" class="styled" />
+<!--<img src="img/arrow.png">-->
+	<input type="submit" name="submit" value="Přihlásit" class="button" />
+<!--<tr><td colspan=2>Nový uživatel? <a href="signup">Vytvořit účet</a>-->
+</table>
+<p>
+Jste nový uživatel? <a href="https://www.obalkyknih.cz/signup">Vytvořte si účet.</a><br>
+Zapoměli jste heslo? <a href="https://www.obalkyknih.cz/lostpassword">Poslat heslo.</a><br>
+</p>
+</form>
+</div>
+
+[% END %]
+
+
+		</div>
+		<div class="clearer"><span></span></div>
+

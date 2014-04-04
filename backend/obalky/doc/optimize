@@ -1,0 +1,89 @@
+
+code = find_code_by_referer(request)
+format, return, 
+client_ip = requst->address
+object_id
+cache_id
+book_ids (isbn, ean, oclc, nbn, sysno)
+
+log_request(method,code,format,client_ip,return)
+
+queue_put
+
+find_by(method,code,object_id,book_ids)
+	book->cover
+	generic() if method = thumbnail
+
+cache = assign(cache_id,code,client_ip,cover)
+
+----------------------------------------------------------
+
+A) sub cover|thumbnail { 
+	my $book_id = $memcache->get("book:".$query) # osekat query nejak?
+	if($book_id) {
+		my $key = "$method:$referer_domain:$book_id";
+		$response = $memcache->get($key);
+		return $c->response->"set_raw"($response) if $response;
+	}
+	...
+	# vypocti $header, $body, $book->id
+	...
+	$raw = $header."\n\n".$body;
+	$memcache->set("book:".$book->id,$query);
+	$memcache->set($key,$raw)
+	$c->response->"set_raw"($raw)
+
+   sub book_set_(cover,...) {
+   }
+
+B) sub cover|thumbnail {
+	my $book_ids = Obalky::Identifier->new($query)->normalize
+	my $key = "$method:$referer_domain:$book_ids";
+	$response = $memcache->get($key);
+	return $c->response->"set_raw"($response) if $response
+	...
+	# vypocti $header, $body
+	...
+	$raw = $header."\n\n".$body;
+	$memcache->set($key,$raw)
+	$c->response->"set_raw"($raw)
+
+ # zmeny:
+ #   -- cover object sa nemeni
+ #   -- cache definice vyjimecne
+
+ # book->cover (hlavne coveru -- isbn, oclc apod sa nemeni)
+ #    - potvrzovat abuse zmeny davkove?
+ #    - hashovat i $key potvrzovat abuse zmeny davkove?
+
+2. sub set_...
+	$book_ids = 
+	# aktualizace: smazat dle isbn, oclc, nbn, sysno,...
+
+key:
+	$method    - "cover"|"thumbnail"
+	$referer_domain
+	$query     - cely retezec, nenormalizovat
+
+value:
+    HTTP_Response ("Location: ...\n" || "Content-type:...\n\n..."
+
+
+
+	CoverInfo $cover_info = { id, generic, filename, backlink_url?,
+		license?, source?, book?, cover_width, cover_height, created?}
+
+	$cover_id
+	$image = $cover->cached_url($cache,$method)
+	$backlink - na obalky
+	$width, $height, ...
+	$return == "img"         => Location: ...
+	$return == "js"          => text/javascript ...
+	$return == "js_callback" => text/javascript ...
+	$return == "xml"         => application/xml ...
+
+side_effects:
+	$cache->mark_used
+	log_request($method,$code,$format,$client_ip,$return,
+				$result,$cover_id,$cache_id,$book_ids)
+

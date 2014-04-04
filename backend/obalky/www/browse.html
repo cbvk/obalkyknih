@@ -1,0 +1,71 @@
+﻿[%PROCESS _header %]
+
+<h1>Prohlížení obálek</h1>
+
+<form>
+<table>
+<tr><td>Autor:
+	<td><input name=author size=40 value="[%author%]">
+	<td width="100">&nbsp;
+	<td>Rok vydání:
+	<td><input name=year size=8 value="[%year%]">
+<tr><td>Název:
+	<td><input name=title size=40 value="[%title%]">
+	<td width="100">&nbsp;
+	<td>Vložil:
+	<td><input name=source value="[%source%]">
+<!--<tr><td>Lokální ID:
+	<td><select name=local_scheme>
+		</select>
+		<input name=local_id value="[%local_id%]">
+	<td>Vložil:
+	<td><input name=year value="[%year%]">-->
+<tr><td>ISBN:
+	<td><input name=isbn value="[%isbn%]">
+	<td width="100">&nbsp;
+	<td>Status:
+	<td><select name=filter>
+			<option></option>
+			<option>duplicitní</option>
+			<option>podobné</option>
+		</select>
+<tr><td>&nbsp;
+	<td><input type=submit name=browse value="  Hledat  ">
+</table>
+</form>
+
+<p/>
+<p>
+Výsledky hledání:
+<table width="100%" border=0 cellspacing=4>
+<tr><td width="40" valign="top"><img src="cover/t0001/t000191164.jpg">
+	<td width="" valign="top">Název<br>Autor&nbsp;&nbsp;Rok<br>ISBN
+	<td width="100" valign="top" align="right">
+		<input type=button value="  Smazat  "> <br>
+	    <input type=button value="  Změnit  ">
+<tr><td width="40" valign="top"><img src="cover/t0001/t000173373.jpg">
+	<td width="" valign="top">Název<br>Autor&nbsp;&nbsp;Rok<br>ISBN
+	<td width="100" valign="top" align="right">
+		<input type=button value="  Smazat  "> <br>
+	    <input type=button value="  Změnit  ">
+<tr><td width="40" valign="top"><img src="cover/t0001/t000171684.jpg">
+	<td width="" valign="top">Název<br>Autor&nbsp;&nbsp;Rok<br>ISBN
+	<td width="100" valign="top" align="right">
+		<input type=button value="  Smazat  "> <br>
+	    <input type=button value="  Změnit  ">
+</table>
+</p>
+
+<div style="float: right">
+[% PROCESS _page %]
+</div>
+
+<form action="upload">
+<input type=submit name=foo value="  Vložit  ">
+</form>
+
+<!--<div style="clear: both"></div>-->
+
+<p style="height: 4em"/>
+
+[%PROCESS _footer %]

@@ -1,0 +1,110 @@
+﻿[% PROCESS _header_old twocolumn=1 %]
+
+<h1>Služba zobrazování obálek knih</h1>
+<!--			<div class="descr">Jun 13, 2006 by Vulputate</div>-->
+
+<p>
+Projekt <a href="http://www.obalkyknih.cz">obalkyknih.cz</a> agreguje
+různé zdroje informací o knížkách do jedné, snadno použitelné webové
+služby. 
+Server <a href="http://www.obalkyknih.cz">obalkyknih.cz</a> v tuto 
+chvíli disponuje databází [% covers %] obálek a [% tocs %] obsahů 
+českých a zahraničních publikací.
+Služba je určena pro:
+</p>
+
+<table>
+<tr><td valign=top><h1>Pro knihovny</h1>
+<p>
+Služba slouží k obohacení bibliografických údajů ve vašem katalogu o další prvky, zejména náhledové obrázky titulních stran knih, naskenované stránky s obsahem knížky, anotace, recenze, či hodnocení knih.
+<a align=right href="for_libraries">>> více informací</a>
+</p>
+
+    <td valign=top><h1>Pro nakladatele</h1>
+<p>
+Poskytnutím obálek svých knih nabídnete svoje zboží atraktivnější formou, přičemž je čtenáři umožněno prokliknout se na vaše stránky, kde může zakoupit knížku, kterou aktuálně poptává.
+<a align=right href="for_publishers">>> více informací</a>
+</p>
+
+<tr><td valign=top><h1>Pro dodavatele knihovních IS</h1>
+<p>
+Integrací služby obálkyknih.cz do vašeho knihovního software získavají vaše knihovny katalog obohacený o další prvky, a to s minimálním úsilím.
+<a align=right href="for_developers">>> více informací</a>
+</p>
+
+    <td valign=top><h1>Pro čtenáře</h1>
+<p>
+Díky webu obálkyknih.cz můžete snadno zjistit, ve kterých knihovnách je knížka, kterou poptáváte či která knihkupectví knížku prodávají. Dále můžete číst nebo zadávat hodnocení knih apod.
+<a align=right href="for_patrons">>> více informací</a>
+</p>
+
+</table>
+
+<p>
+Zdrojem pro <a href="http://www.obalkyknih,.cz">obálkyknih.cz</a> jsou zejména spolupracující nakladatelé a knihkupci, kteří pro knihovny patřící do sdružení SKIP za jistých podmínek souhlasí se zobrazováním obálek jejich knih v knihovních katalozích. Dalším zdrojem obálek jsou knihovny, které aktivně skenují obálky knih z jejich knihovních fondů a tyto vkládájí na obálkový server.
+
+</p>
+
+<!--
+Primárním úkolem projektu obalkyknih.cz je agregace různých zdrojů 
+informací o knížkách do jedné snadno použitelné webové služby.
+-->
+
+<p>
+Do databáze obálek pro členy sdružení <a href="http://skip.nkp.cz">SKIP</a> zatím 
+přispívají:
+
+<table border="0" cellpadding="4" cellspacing="2"> 
+<tbody>
+[% FOREACH eshop IN eshops %]
+<tr>
+<td valign="top" align="left"><div align="right"><a href="[% eshop.web_url %]" target="_blank"><img border=0 src="[% eshop.logo_url %]" alt="[% eshop.fullname %]"></a></div></td> 
+<td valign="top" align="left">[% eshop.fullname %]</td> 
+</tr>
+[% END %]
+</tbody></table> 
+&nbsp;
+</p>
+
+[% PROCESS _sidebar %]
+
+<!--
+<div id="div_signup" style="display:none">
+<h1>Nový účet</h1>
+<form action="signup">
+<table>
+<tr><td>E-mail:<td><input type="text" name="email" class="styled" />
+<tr><td>Heslo:<td><input type="password" name="password1" class="styled" />
+<tr><td>Heslo znovu:<td><input type="password" name="password2" class="styled" />-->
+<!--<tr><td>Knihovna:<td><input type="password" name="password" class="styled" />-->
+<!--<img src="img/arrow.png">-->
+<!--<tr><td>&nbsp;<td><input type="submit" value="Vytvořit účet" class="button" />
+</table>
+<p>
+Už máte účet? <a href="#" onclick="return account(1,0)">Přihlašte se.</a>
+</p>
+</form>
+</div>-->
+
+<!--
+<h1>Vyhledávání</h1>
+<form action="search">
+<div>
+<input type="text" name="search" class="styled" /> 
+	<input type="submit" value="Hledat" class="button" />
+</div>
+</form>
+-->
+
+<!--
+<h1>Novinky</h1>
+<div>
+<h4>Úvodní obrazovka</h4>
+<b>Martin Šárfy</b> (17. červenec 2008)
+<p>
+Založen projekt, úvodní stránka, bla bla..
+</p>
+</div>
+-->
+
+[% PROCESS _footer_old %]

@@ -1,0 +1,45 @@
+﻿[% PROCESS _header %]
+
+<h1>Přihlášení do systému Obálkyknih.cz</h1>
+
+<!--
+
+You must have forgotten your password
+
+The email you've entered isn't in our records. Please try again.
+
+That's not a problem. It happens to the best of us!
+
+Enter your email address below so we can send you an email containing a special link that will help you to make a new password.
+
+Please make sure you enter the same email address as your Flickr account, otherwise it won't work.
+Tell us your email address
+
+-->
+
+[% PROCESS _errors %]
+
+<form name="login" action="/login" method=post>
+<fieldset>
+	<legend>Zadejte své přihlašovací údaje:</legend>
+
+	<input type=hidden name=return value="[%return%]">
+
+	<p><label for="email">E-mail:</label>
+		<input type="text" id="email" name="email" value="[% email %]"/></p>
+
+	<p><label for="password">Heslo:</label>
+		<input type="password" id="password" name="password" 
+				value="[% password %]"/></p>
+
+</fieldset>
+
+	<p><input type="submit" class="button big" name='submit' id="submit"
+			value="Přihlásit" />
+	&nbsp;&nbsp;<label for="submit" class="small">
+	Jste nový uživatel? <a href="/signup">Vytvořte si účet.</a>
+	Zapoměli jste heslo? <a href="/lostpassword">Poslat heslo.</a>
+	</p>
+</form>
+
+[% PROCESS _footer %]

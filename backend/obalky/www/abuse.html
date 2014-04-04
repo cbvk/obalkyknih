@@ -1,0 +1,38 @@
+﻿[%PROCESS _header %]
+
+[% PROCESS _errors %]
+
+<table cellspacing=4>
+
+<form method=post>
+
+<tr><th>Chybná obálka<th>Aktuální obálka<th>Název<th>IP<th>Popis
+		<th><!--Schválit-->
+[% FOREACH case IN abused %]
+<tr class="[% loop.parity %]">
+	<td valign=top width="20%"><a href="[% case.cover.get_cover_url %]"><img 
+		border=0 src="[% case.cover.get_cover_url %]"></a>
+	<td valign=top width="20%">
+		[% IF case.book.cover %]<a href="[% case.book.cover.get_cover_url %]"><img border=0 src="[% case.book.cover.get_cover_url %]"></a>[% END %]
+	<td valign=top width="30%"><a 
+			href="/view?[%case.book.bibinfo.to_some_param%]"
+				>[% case.book.bibinfo.to_human_title %]</a>
+	<td valign=top width="10%"><a href="[% case.referer %]">[% case.client_ip %]</a>
+	<td valign=top width="30%">[% case.note %]
+	<td valign=top width="10%"><input type=checkbox name="abuse_[% case.id %]">
+</tr>
+[% END %]
+</table>
+
+<p>
+<input type=submit name=revive value="  Vrátit označené obálky do katalogu  ">
+</p>
+</form>
+
+<br>
+<br>
+<br>
+<br>
+
+
+[%PROCESS _footer %]

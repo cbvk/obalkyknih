@@ -1,0 +1,6 @@
+Run script/obalky_server.pl to test the application.
+
+script/obalky_create.pl model DB DBIC::Schema DB create=static dbi:mysql:obalky obalky visk2009
+
+apt-get install enca # pro MKP.cz
+

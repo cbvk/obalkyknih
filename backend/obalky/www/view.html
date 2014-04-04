@@ -1,0 +1,244 @@
+﻿[%PROCESS _header %]
+
+[% PROCESS _errors %]
+
+<table cellspacing=4>
+
+[% IF books.size == 0 %]
+<div class="messageBox error">
+Tuto knihu ještě nemáme v databázi!
+</div>
+[% END %]
+
+<table class="detail">
+[% FOREACH book IN books %]
+<!-- [% book.id %] / cover [% book.cover %], detail [% detail %] -->
+
+<tr><td colspan=3><h1>[% book.bibinfo.to_human_title %]</h1></tr>
+
+<tr>
+  <td valign="top" width=180>
+
+
+	[% IF book.cover %]
+	<img class="nob" src="[% book.cover.get_cover_url %]">
+	<div style="clear: both" />
+	<form onsubmit="return view_abuse_onsubmit();" method="post">
+		<textarea name=note id=abuse_comment style="display: none"></textarea>
+		<input type=hidden name=cover value="[% book.cover.id %]">
+		<input type=hidden name=book value="[% book.id %]">
+		<input type=hidden name=referer value="[% referer %]">
+
+		<div id="antispam">
+			<label for="spamQuestion">Ochrana proti spamu. 
+									  Kolik je 15 + 8?</label>
+			<input id="spamQuestion" type="text" value="" name="spamQuestion"/>
+			<script type="text/javascript"> <!--
+				document.getElementById("spamQuestion").value=
+						(Math.round(23.7544614)-1);
+				document.getElementById("antispam").style.display = "none";
+			--></script>
+		</div>
+
+		<input name=report class="button" type="submit" 
+			value=" Ohlásit chybnou obálku ">
+	</form>
+	[% END %]
+
+  [% IF detail %]
+  	<i color="gray">Všechny obálky</i><br>
+
+	[% FOREACH cover IN book.covers %]
+	[% IF cover.product %]
+		<a href="[% cover.product.product_url %]"
+			>[% cover.product.eshop.fullname %]</a><br>
+	[% END %]
+	<a href="?[% book.bibinfo.to_some_param 
+			%]&book_id=[% book.id %]&set_cover=[% cover.id %]"><img 
+		class="nob [% IF book.cover AND book.cover.id == cover.id 
+					%]img_selected[% ELSE %]img_not_selected[% END %]"
+			src="[% book.cover.get_cover_url %]"></a>
+	<br><br>
+	[% END %]
+
+  [% END %]
+
+	<!-- nadherne CSS -->
+  <td class="nob">
+	<p>
+		[% IF book.bibinfo.authors_human %]
+		<b>Autor: </b>[% book.bibinfo.authors_human %]</br>
+		[% END %]
+
+		[% IF book.bibinfo.year %]
+		<b>Rok: </b>[% book.bibinfo.year %]<br>
+		[% END %]
+
+		[% FOREACH part = book.bibinfo.identifiers -%]
+		<b>[% part.name %]: </b>[% part.value %]<br>
+		[% END -%]
+	</p>
+
+	[% IF book.get_rating_count %]
+	<p>
+	<b>Hodnocení:</b> <img class="nob" 
+			src="/stars?value=[% book.get_rating_avg100 %]" />
+	<b>[% book.get_rating_avg5 %]/5</b>
+	([% book.get_rating_count %] hlasů)
+	</p>
+	[% END %]
+
+	[% IF book.displayable_products %]
+      <h3>Knihkupci a nakladatelé</h3>
+	  <p>
+	  <table width="100%" cellspacing=4>
+	  [% FOREACH product = book.displayable_products -%]
+		<tr><td align=right width="100"><a 
+					href="[% product.product_url %]"><img class="nob"
+					border=0 src="[% product.eshop.logo_url %]"></a>
+			<td width="280"><a href="[% product.product_url %]"
+						>[% product.eshop.fullname %]</a>
+			<td width="50">[% IF product.cover %]
+				  <a href="[% product.product_url %]"><img class="nob"
+					 src="[% product.cover.get_thumbnail_url %]"></a>[% END %]
+<!--			<td>[% product %]-->
+			<td><b>[% product.price_human %]</b>
+ 	  [% END -%]
+	  </table>
+	  </p>
+	  <br>
+	[% END %]
+
+<!--
+	[% IF book.marcs %]
+      <h3>Knihovny</h3>
+	  <p>
+	  <table width="100%">
+	  [% FOREACH marc = book.marcs -%]
+		<tr><td width="100">&nbsp;--><!-- [% marc.id %] --><!--
+			<td><a href="[% marc.fixed_permalink %]">[% marc.library.name %]</a>
+ 	  [% END -%]
+	  </table>
+	  </p>
+	[% END %]
+	-->
+
+<!-- Bara chtela doporucovani smazat, pac to hlasi blbosti a jsme za pitomce-->
+	[% IF book.tips_ids AND book.tips_ids.size %]
+      <h3>Doporučená literatura</h3>
+	  <p>
+	  <table width="100%">
+	  [% FOREACH bid = book.tips_ids -%]
+		<tr><td width="100">&nbsp;
+			<td><a href="/view?[%bid.bibinfo.to_some_param%]">[% bid.bibinfo.to_human_title %]</a>
+ 	  [% END -%]
+	  </table>
+	  </p>
+	[% END %]
+<!--	-->
+
+	[% IF book.reviews %]
+		<h3>Recenze</h3>
+	  	<table width="100%">
+	  	[% FOREACH review IN book.reviews %]
+	  	[% IF review.html_text %]
+	  	<tr><td valign=top>
+	  			[% IF review.product %]
+	  				<a href="[% review.product.product_url %]"><img border=0 
+	  					src="[% review.product.eshop.logo_url %]"></a>
+	  				<b>[% review.product.eshop.fullname %]</b>
+	  			[% END %]
+	  			[% IF review.visitor %]
+	  				<b>[% review.visitor_name %]</b> 
+	  				<i>([% review.visitor_blurred_ip %])</i>
+	  			[% END %]
+	  		<td align=right valign=top width=200>
+	  			[% IF review.rating AND review.rating != 0 %]
+	  				<img src="/stars?value=[% review.rating %]" />
+	  			[% END %]
+	  	<tr><td colspan=2 style="padding-left: 30px">[% review.html_text %]
+	  	[% END %]
+	  	[% END %]
+	  	</table>
+  	[% END %]
+
+	[% IF loop.first %]
+	<form method="post" onsubmit="return view_review_onsubmit();">
+	<input type=hidden name=review_book value="[% book.id %]">
+	<input type=hidden id=review_rating name=review_rating value=0>
+	[% IF book.reviews %]
+		<h3>Přidat čtenářskou recenzi</h3>
+	[% ELSE %]
+		<h3>Napište na knížku první čtenářskou rezenci!</h3>
+	[% END %]
+	<table>
+	<tr><td>Od: 
+		<td><input id=review_name name=review_name value=""> 
+				([% visitor_blurred_ip %])
+		<td align=right valign=top width=200>
+
+<ul id='star-rating' class='star-rating'>
+    <li class='current-rating' id='current-rating' style="width: 37px"></li>
+    <li><a href="#" onclick="vote([% book.id %],1); return false;" 
+           title='1 star out of 5' class='one-star'>1</a></li>
+    <li><a href="#" onclick="vote([% book.id %],2); return false;" 
+           title='2 star out of 5' class='two-stars'>2</a></li>
+    <li><a href="#" onclick="vote([% book.id %],3); return false;" 
+           title='3 star out of 5' class='three-stars'>3</a></li>
+    <li><a href="#" onclick="vote([% book.id %],4); return false;" 
+           title='4 star out of 5' class='four-stars'>4</a></li>
+    <li><a href="#" onclick="vote([% book.id %],5); return false;" 
+           title='5 star out of 5' class='five-stars'>5</a></li>
+</ul>
+<div id='current-rating-result'></div> <!-- used to show "success" message after vote -->
+
+
+	<tr><td>&nbsp;
+		<td colspan=2>
+		<textarea id=review_text name=review_text cols=50 rows=10></textarea>
+	<tr><td>&nbsp;
+		<td colspan=2>
+		<input type=submit name=review_add value="  Přidat recenzi " />
+	</table>
+	</form>
+	[% END %]
+
+
+  <td valign="top" width=180 align=right>
+
+  [% UNLESS detail %]
+
+	[% IF book.toc %]
+		<a href="[% book.toc.get_pdf_url %]"><img class="nob"
+			src="[% book.toc.get_thumbnail_url %]"></a>
+	[% END %]
+
+  [% ELSE %]
+
+	[% FOREACH toc IN book.tocs %]
+	[% IF toc.product %]
+		<a href="[% toc.product.product_url %]"
+			>[% toc.product.eshop.fullname %]</a><br>
+	[% END %]
+	<a href="?[% book.bibinfo.to_some_param 
+			%]&book_id=[% book.id %]&set_toc=[% toc.id %]">
+	<img class="[% IF book.toc AND book.toc.id == toc.id 
+					%]img_selected[% ELSE %]img_not_selected[% END %]"
+			src="[% book.toc.get_thumbnail_url %]"></a>
+	<br><br>
+	[% END %]
+
+  [% END %]
+
+</td></tr>
+
+<!-- TODO: pokud je jeste dalsi book za nama, udelej <HR> -->
+
+[% END %] <!-- FOREACH books -->
+</table>
+
+<p style="height: 4em"/>
+
+</div> <!-- id="main" -->
+
+[%PROCESS _footer %]

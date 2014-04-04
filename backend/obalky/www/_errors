@@ -1,0 +1,4 @@
+﻿[% IF error -%]
+    <div class="error messageBox">[% error %]</div>
+[% END -%]
+

@@ -1,0 +1,93 @@
+
+cover -> file_thumb, file_medium, file_orig, file_icon
+vyjet jejich id
+
+
+--
+
+
+do ctrvtku:
+ * JS pro hvezdicky, API pro pridavani komentaru
+ * dopsat dokumentaci k API 2.0
+ * prezentaci!!
+
+do finalna:
+ * redakcni sprava databaze - mazani obalek
+ * implementovat harvesting SKATu
+ * ne nutne: seznam.xml support
+ * asi ne nutne: skip.nkp.cz seznam obohatit o siglu, tu kontrolovat
+ * pridat non_skip_cover do book?
+
+---
+
+Zadani:
+
+	OK rozšíření o další typy identifikátorů (OCLC number, LCCN, NBN, případně další)
+	OK rozšíření o obsahy z TOC
+	-- rozšíření o stahování recenzí, anotací
+	-- rozšíření o hodnocení, tagy a komentáře čtenářů
+	-- rozšíření o rozhraní pro komunikaci s vydavatelstvími (např. standard ONIX)
+	OK zlepšení výkonu: Implementace podpory cache serverů pro obrázky a obálky, optimalizace rychlosti služby (memcache apod.), failover a load balancing
+	-- implementace podpory pro decentralizovanou redakci/správu databáze
+	-- integrace pravidel SKIP http://skip.nkp.cz/akcObalky.htm
+
+--
+
+Dalsi:
+
+ * redakcni sprava databaze:
+	-- par natvrdo uzivatelu
+	-- moznost vyjet abuse tabulku, s moznosti smazat spatne obalky
+
+ * dodelat zobrazeni a moznost prispivani k ratingu - LTFL
+
+ * napsat dokumentaci k API 2.0, rozeslat e-maily
+
+ * vzdy 1. v mesici vygenerovat TOC.xml.gz s datumy
+
+ * zbozi: oslovit ComputerPress nebo Seznam. Implementovat aspon jeden.
+
+ * dodelat SCKN, par nakladatelu, Google Books? Alespon skrz katalog MUNI?
+
+ * naimportovat obalky z www/upload (cca ~748 jpegu pojmenovanych dle ISBN)
+
+ * overit, zda funguje visitor pro pocitani doporuceni
+
+ * stahovat thingISBN systematicky? definovat logiku grupovani del/svazku/issn
+
+ * tagy - sestavovat z vecneho popisu (default z SK/MU/MZK katalogu)
+
+-- 
+# Zbozi - domluvit  s "Gibis" - email, nabidnout obsahy a ze se chceme pobavit. Jak to ma Heureka a dalsi srovnavaci?
+
+# ComputerPress, Grada -- zkusit jejich reakci, chtit XML feed (+EAN), nabidnout odkazy v knihovnach
+
+# rozsahy ISBN - NAK baze NK, Dvorakova -- export zalohy nebo OAI. ISSN prideluje NTK
+
+# Mestska Praha - 11.11. ma zabak schuzku, maji obalky, hodnoceni, anotace
+
+ * stav TOC k 20091017: _1.PDF 24667, *.PDF 25338 (1-14), TXT 12302, JPG 18040
+
+ * stahnout soucasna ISBN do #book a zharvestovat stejne zdroje
+	Kanzelsberger 10k, SKAT 7k, TOC 17k, Amazon 175k, NULL 143k
+	urcite v I. fazi: SKAT, TOC, AmazonAPI, Kanzelsberger, cil ~350k+
+	SKAT     - 2001-01-01 2006-08-01
+    SKAT+TOC - co mesic od 2006-08 do 2009-10
+
+ * export/import dat obalek 1.0 -> 2.0 (user,library,abuse?,upload!)
+     upload - ~748 jpeg souboru v www/upload/ pojmenovanych dle ISBN
+
+ * view - work / book / vsechna media + [ Ohlasit chybu ], Popis [    ]
+
+--
+
+ ? z queue/request zaloh vytahat _vsechna_ ISBN, naplnit #book a pak #work
+
+ * implementovat product.rating_*, pokus na Amazonu
+
+ * user.editor -- ma pravo spravovat obsah
+
+ * sehnat nejaky Zbozi.CZ XML feed
+
+ * ceske ISBN prefixy, pokryt 9x+ %
+

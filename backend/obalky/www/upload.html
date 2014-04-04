@@ -1,0 +1,74 @@
+﻿[%PROCESS _header %]
+
+<h1>Vložení naskenovaných obálek</h1>
+
+[% PROCESS _errors %]
+
+<form name="upload" action="/upload" 
+		enctype="multipart/form-data" method="post">
+<fieldset>
+	<legend>Zadejte obrázky ke vložení</legend>
+
+	<p><label for="file">Vložte soubor:</label>
+		<input type=file id="file" size=40 name=file></p>
+	<p class="small">Vložte soubor s naskenovaným obrázkem obálky knížky. 
+		Máte-li obrázku víc, vložte <a href="http://www.winzip.com" 
+		target="_blank">ZIP</a> 
+archiv složky.</p>
+
+	<p><label for="url">nebo URL adresu:</label>
+	   <input id="url" name=url size=60 value="[% url %]"></p>
+</fieldset>
+
+	<p><input type="submit" name="signup" class="button big" 
+			  value="  Vložit obálky...  " /> 
+		&nbsp;&nbsp;<input name="free" type="checkbox" id="free" /> 
+		<label for="free" class="small">
+			K nahrávanému souboru vlastním autorská práva a souhlasím 
+			s jeho volným použitím.</label></p>
+</form>
+
+<form>
+<fieldset>
+	<legend>Poznámky</legend>
+
+<p>
+Soubor s obrázkem knížky musí ve svém názvu obsahovat ISBN kód.
+Kód může být zapsán v 10 i 13 místné notaci, s pomlčkami nebo bez.
+</p>
+
+<p>Příklady správných jmen souborů:
+</p>
+
+<ul>
+<li>ISBN_978-80-7203-884-8.JPEG
+<li>isbn9788072038848.gif
+<li>1210-8790.gif
+<li>cnb001964495.gif
+<li>boa001-001261462.jpg
+<li>80-7203-884-8.PNG
+<li>8072038848.jpg
+</ul>
+
+
+<p>
+Formát obrázku může být JPEG, PNG nebo GIF s libovolným počtem
+barev a rozlišením.
+</p>
+
+<p>
+Obrázky můžou být v ZIP archivu zanořeny do libovolné úrovně 
+podadresářů. 
+</p>
+
+<p>
+Maximální počet najednou nahrávaných obrázků v ZIP archivu by neměl
+překročit 1000 obrázků.
+</p>
+
+</fieldset>
+</form>
+
+<!-- 600k maximum; large images will be scaled. Do not upload copyrighted images without permission. Uploading objectionable graphics is against LibraryThing's terms of service. -->
+
+[%PROCESS _footer %]

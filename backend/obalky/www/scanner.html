@@ -1,0 +1,68 @@
+[% PROCESS _header_tovarna %]
+
+[% PROCESS _header_blue %]
+
+       <div id="text"><div class="in">
+
+<div id="main">
+
+
+<h1>Zapojte se do skenování obsahů a obálek</h1>
+
+
+<p>
+Kterákoli zúčastněná knihovna může aktivně přispívat naskenováním obsahů a obálek s využitím skenovacího programu, vyvinutého <a href="http://www.mzk.cz">Moravskou zemskou knihovnou v Brně</a>. 
+Jedinou podmínkou je počítač s operačním systémem Windows ve verzi XP SP3 nebo novějším a deskový skener. 
+</p>
+
+<h2>Typy instalátorů</h2>
+<p>
+Program vyžaduje prostředí .NET 4.0 a v případě Windows XP i speciální knihovnu WIA. Instalátory jsou vydávány ve 2 verzích, administrátorské a uživatelské. 
+Program při každém spuštění kontroluje zda není dostupná aktualizace. Je-li dostupná nová verze, upozorní uživatele a nabídne možnost stažení a instalace.
+</p>
+<p>
+Administrátorský instalátor vyžaduje administrátorské oprávnění na daném PC při první instalaci a každé následné aktualizaci. Umožňuje instalaci pro všechny uživatele na daném PC 
+a zároveň je jeho součástí instalátor .NET 4.0 a WIA pro Windows XP. 
+</p>
+<p>
+Uživatelský instalátor sám nevyžaduje administrátorské oprávnění na daném PC při první instalaci ani při aktualizacích. Před první instalací je ale nutné stáhnout a spustit wia_and_.NET_Installer.exe, který zkontroluje
+jejich přítomnost a případně je nainstaluje. (Vyžaduje administrátorské oprávnění). Každý uživatel na daném počítači si však musí program instalovat zvlášť. Instalátor neobsahuje .NET 4.0 a WIA knihovnu.
+</p>
+
+<h2>Odkazy na instalátory</h2>
+<p>
+Instalátor administrátorské verze: <a href="http://www.obalkyknih.cz/obalkyknih-scanner/obalkyknih-scanner_setup.exe">obalkyknih-scanner_setup.exe</a> <br/>
+Instalátor uživatelské verze: <a href="http://www.obalkyknih.cz/obalkyknih-scanner/obalkyknih-scanner_setupNoAdmin.exe">obalkyknih-scanner_setupNoAdmin.exe</a> <br/>
+Instalátor .NET 4.0 a WIA: <a href="http://www.obalkyknih.cz/obalkyknih-scanner/wia_and_.NET_Installer.exe">wia_and_.NET_Installer.exe</a>
+</p>
+<h2>Základní nastavení</h2>
+<p>
+Po prvním spuštení programu je nutné nastavit siglu knihovny a připojení pro sběr metadatat - Z39.50 nebo X-Server(pro systém Aleph). 
+Další informace k nastavení jsou uvedeny přímo v programu v Menu -> Pomoc -> Návod. Vzorové nastavení pro MZK je uvedené na obrázku níže.
+Dále je nutné nastavit přihlašovací údaje do systému obalkyknih.cz. Zadávají se v okně Přihlašovací údaje (Menu -> Nastavení -> Přihlašovací údaje).
+Registrace do systému je možná na adrese <a href="http://www.obalkyknih.cz/signup">http://www.obalkyknih.cz/signup</a>.<br/>
+<span style="color:red">!!! Vzorové nastavení je platné jen pro MZK. Musíte nastavit hodnoty VAŠEHO Z39.50 serveru, nebo VAŠEHO XServeru a taky VAŠI Databázu!!!</span>
+<br/>
+<img src=/obalkyknih-scanner/scanner-nastaveni.png />
+</p>
+<!--
+<h2>Informační video</h2>
+<p>
+<iframe width="880" height="660" src="//www.youtube.com/embed/IntD1BWwytw?rel=0" frameborder="0" allowfullscreen></iframe>
+</p>-->
+<p>
+Dokumentace k programu je dostupná na adrese <a href="https://docs.google.com/document/d/1hTGa7gy0bOJqznFec-6u8Esr4rIso0pHER-x3X0bCco">https://docs.google.com/document/d/1hTGa7gy0bOJqznFec-6u8Esr4rIso0pHER-x3X0bCco</a>
+</p>
+<p>
+Pokud máte jakékoliv dotazy, neváhejte se na nás obrátit:<br>
+<ul>
+<li>Připomínky lze vkládat na adrese: <a href="https://github.com/moravianlibrary/ObalkyKnih-scanner/issues" target=_blank> https://github.com/moravianlibrary/ObalkyKnih-scanner/issues</a></li>
+<li>Michal Běčák, <b>michal.becak (at) mzk.cz</b></li>
+<li>Spolecná adresa <b>info (at) obalkyknih.cz</b></li>
+</ul>
+
+
+
+</p>
+
+[% PROCESS _footer_tovarna %]

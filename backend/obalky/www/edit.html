@@ -1,0 +1,65 @@
+﻿[%PROCESS _header %]
+
+[% PROCESS _errors %]
+
+
+<h1>Redakční správa</h1>
+
+<h2>Nové čtenářské recenze</h2>
+
+<p>
+Prosím pročtěte si všechny recenze, nevhodné označte. 
+Neoznačené recenze budou považovány za schválené. Naopak recenze, 
+které označíte, se nebudou na stránkách dále zobrazovat.
+</p>
+
+[% IF deleted OR approved %]
+<div class="messageBox">Děkujeme za spolupráci, [% approved %] 
+komentářů potvrzeno, [% deleted %] smazáno.</div>
+[% END %]
+
+<p>
+Strana: 
+[% FOREACH page IN [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ] %]
+	[% IF page == month %]
+		<b>[% page %]</b>
+	[% ELSE %]
+		<a href="?month=[% page %]">[% page %]</a>
+	[% END %]
+[% END %]
+</p>
+
+<form method=post>
+<table cellspacing=4>
+
+[% FOREACH review IN reviews %]
+[% IF NOT review.product AND NOT review.approved AND review.html_text %]
+<input type=hidden name="review_[% review.id %]" value="1" />
+
+<tr><td>&nbsp;
+	<td><a href="/view?[% review.book.bibinfo.to_some_param %]"
+			><b>[% review.book.bibinfo.to_human_title %]</b></a>
+	<td>&nbsp;
+<tr><td valign="top"><input type=checkbox name="delete_[% review.id %]">
+	<td valign="top">[% review.html_text %]
+	<td valign="top"><b>[% review.visitor_name %]</b><br>
+		<i>([% review.visitor_ip %])</i><br>
+		[% review.created %]
+
+[% END %]
+[% END %]
+
+<tr><td colspan=3>&nbsp;
+
+<tr><td>&nbsp;
+	<td><input type=submit name=censor class="button"
+		value="  Zkontrolováno, označené smazat  ">
+	<td>&nbsp;
+
+</table>
+</form>
+
+
+<p style="height: 4em"/>
+
+[%PROCESS _footer %]

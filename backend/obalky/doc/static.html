@@ -1,0 +1,158 @@
+<!DOCTYPE html "-//W3C//DTD XHTML 1.0 Strict//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<!--    <script src="http://localhost:3000/api/functions.js"></script> -->
+<!--    <script src="http://localhost:3000/api/custom.js"></script> -->
+	<script>
+var obalky = obalky || {};
+obalky.stringify = obalky.stringify || function (obj) {
+	var t = typeof (obj);
+	if (t != "object" || obj === null) {
+		if (t == "string") obj = '"'+obj+'"';
+		return String(obj);
+	} else {
+		// recurse array or object
+		var n, v, json = [], arr = (obj && obj.constructor == Array);
+		for (n in obj) {
+			v = obj[n]; t = typeof(v);
+			if (t == "string") v = '"'+v+'"';
+			else if (t == "object" && v !== null) v = obalky.stringify(v);
+			json.push((arr ? "" : '"' + n + '":') + String(v));
+		}
+		return (arr ? "[" : "{") + String(json) + (arr ? "]" : "}");
+	}
+};
+obalky.parse = obalky.parse || function (str) {
+	if (str === "") str = '""';
+	eval("var p=" + str + ";");
+	return p;
+};
+obalky.callback = obalky.callback || function (books) {
+	for each (book in books) {
+		for each (callback in book["callbacks"]) {
+			var element = document.getElementById(callback["id"]);
+			var function_pointer = eval(callback["name"]);
+			if(function_pointer) function_pointer(element,book);
+		}
+	}
+};
+obalky.download = obalky.download || function (books) {
+	var jsonScript = document.getElementById("obalky_json");
+	if (jsonScript) jsonScript.parentNode.removeChild(jsonScript);
+	var scriptElement = document.createElement("script");
+	scriptElement.setAttribute("id", "obalky_json");
+	scriptElement.setAttribute("type", "text/javascript");
+	scriptElement.setAttribute("src",
+		"http://mini:3000/api/books?books="+
+		encodeURIComponent(obalky.stringify(books)));
+	document.documentElement.firstChild.appendChild(scriptElement);
+//	alert(escape(obalky.stringify(books)));
+};
+obalky.findFirstNodeByClass = function (startNode, className) {
+	if (startNode.className == className) return startNode;
+	var childs = startNode.childNodes;
+	for(var i=0;i<childs.length;i++) {
+		var found = obalky.findFirstNodeByClass(childs[i], className);
+		if(found) return found;
+	}
+	return null;
+};
+obalky.findNodesByClass = function (startNode, className) {
+	var nodes = (startNode.className == className) ? [ startNode ] : [];
+	var childs = startNode.childNodes;
+	for(var i=0;i<childs.length;i++)
+		for each (node in obalky.findNodesByClass(childs[i], className)) 
+			nodes.push( node );
+	return nodes;
+};
+obalky.getValue = function (book, className) {
+	var el = obalky.findFirstNodeByClass(book,className);
+	return el ? el.textContent : undefined;
+};
+obalky.onload = function() {
+	var id = 0;
+	var books = [];
+	for each (book in obalky.findNodesByClass(document.body,"obalky_book")) {
+		if(!book) alert(obalky.stringify(book));//"no book??");
+		var info = obalky.findFirstNodeByClass(book,"obalky_bibinfo");
+		if(!info) continue;
+
+		// nacti ostatni...
+		var bibinfo = {
+			"isbn": obalky.getValue(info,"obalky_isbn"),
+			"backlink": obalky.getValue(info,"obalky_backlink"),
+		};
+		// zkontroluj povinna metadata?
+		if(!bibinfo["backlink"]) continue;	
+
+		var calls = [];
+		for each (callback in obalky.findNodesByClass(book,"obalky_callback")) {
+			callback.id = callback.id ? callback.id : "obalky_callback-"+(++id);
+			calls.push(	{ "name": callback.getAttribute("name"), 
+						  "id": callback.id });
+		}
+		// zbytecne stahovat?
+		if(calls.length == 0) continue;
+
+		books.push( { "bibinfo": bibinfo, "callbacks": calls } );
+	}
+	obalky.download(books);
+};
+obalky.previous_onload = window.onload; // IE way...
+window.onload = function() {
+	if(obalky.previous_onload) obalky.previous_onload();
+	obalky.onload();
+};
+    </script>
+
+    <script>
+function obalky_display_thumbnail() { alert("display thumbnail!"); }
+function obalky_display_tips()      { alert("display tips!"); }
+function obalky_display_debug(element, book) { 
+	alert("obalky_display_debug("+obalky.stringify(book)+")"); 
+}
+    </script>
+
+  </head>
+  <body>
+
+<div class="obalky_book">
+	<div class="obalky_bibinfo" style="display: none">
+		<div class="obalky_sysno">000557276</div>
+		<div class="obalky_backlink">http://aleph/F?ccl_term=sys=000557276</div>
+		<div class="obalky_title">S elegancí ježka</div>
+		<div class="obalky_authors">Barbery, Muriel</div>
+		<div class="obalky_year">2008</div>
+		<div class="obalky_isbn">9788072942862</div>
+		<div class="obalky_oclc"></div>
+	</div>
+
+	<div class="obalky_callback" name="obalky_display_debug" />
+<!--	<div class="obalky_callback" name="obalky_display_cover" />
+	<div class="obalky_callback" name="obalky_display_thumbnail" />
+	<div class="obalky_callback" name="obalky_display_reviews" />
+	<div class="obalky_callback" name="obalky_display_comments" />
+	<div class="obalky_callback" name="obalky_display_annotation" />
+	<div class="obalky_callback" name="obalky_display_rating" />
+
+	<div class="obalky_callback" name="obalky_display_all" />
+	<div class="obalky_callback" name="obalky_display_default" />
+
+	<div class="obalky_callback" name="my_display_something" />
+	<div class="obalky_callback" name="my_display_something_with_arg">
+		<div id="my_argument" style="display:none">je-li potreba</div>
+	</div>-->
+</div>
+
+<div class="obalky_book">
+	<div class="obalky_bibinfo" style="display: none">
+		<div class="obalky_isbn">9788072942862</div>
+	</div>
+	<div class="obalky_callback" name="obalky_display_thumbnail" />
+</div>
+
+  </body>
+</html>
+

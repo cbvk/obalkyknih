@@ -1,0 +1,47 @@
+
+Integrace s Alephem
+-------------------
+
+<!-- filename: full-set-head[|-bor|-nobor]  -->
+<html>
+  <head>
+	<script src="http://www.obalkyknih.cz/api/functions.js"></script>
+	<script src="http://www.obalkyknih.cz/api/custom.js"></script>
+	<script>
+function obalky_display_custom(debug, bibinfo) {
+//      debug.innerHTML = "obalky_display_mine(bibinfo="+
+//                              JSON.stringify(bibinfo)+")";
+}
+function obalky_parse_aleph_custom() {
+        var table = document.getElementById("fullbody");
+        var bibinfo = { "authors": [] };
+        for(var row in table.getElementsByTagName("tr")) {
+                if(!row.getElementsByTagName) continue;
+                var tds = row.getElementsByTagName("td");
+                var key = tds[0].textContent;
+                var value = tds[1].textContent.replace(new
+                        RegExp("[\n\t ]+"+String.fromCharCode(36)),"").
+                        replace(/^[\n\t ]+/,""); // 36 - Aleph dolary zere..
+
+                if(key.match(/ISBN/)) bibinfo["isbn"] = value;
+                if(key.match(/N.zev/)) bibinfo["title"] = value;
+                if(key.match(/Rok vyd/)) bibinfo["year"] = value;
+                if(key.match(/SYSNO/i)) {
+                        bibinfo["sysno"] = value;
+                        bibinfo["backlink"] = "http://aleph.muni.cz/"+
+                                "F?func=find-c&ccl_term=sys="+value;
+                }
+                if(key.match(/Auto/)) bibinfo["authors"].push( value );
+        }
+        obalky.process("obalky_display_custom", "obalky_place", bibinfo);
+        obalky.onload();
+}
+	</script>
+  </head>
+  <body onload="obalky_parse_aleph_custom();">
+	<!-- <table id="fullbody">[...]</table> -->
+	<div id="obalky_place" />
+  </body>
+</html>
+
+

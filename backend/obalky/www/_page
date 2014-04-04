@@ -1,0 +1,19 @@
+﻿[% IF pages %]
+    strana:
+    [% IF page_prev %]
+            <a href="?[%page_url%]&page=[%page_prev%]">&lt; předešlá</a>
+    [% ELSE %]
+            <font color="#A0A0A0">&lt; předešlá</font>
+    [% END -%]
+    [% FOREACH no = pages %]
+        [% IF page == no %]<b>[% no %]</b>[% ELSE -%]
+            <a href="?[%page_url%]&page=[%no%]">[%no%]</a>
+        [% END -%]
+    [% END %]
+    [% IF page_next %]
+            <a href="?[%page_url%]&page=[%page_next%]">další &gt;</a>
+    [% ELSE %]
+            <font color="#A0A0A0">další &gt;</font>
+    [% END -%]
+[% END -%]
+

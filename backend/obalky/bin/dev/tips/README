@@ -1,0 +1,3 @@
+collect_apache
+pair
+./matrix 1073741824 < /home/obalky/pairs.20111128 > ~/matrix.20111128

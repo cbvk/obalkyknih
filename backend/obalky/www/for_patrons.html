@@ -1,0 +1,20 @@
+﻿[% PROCESS _header twocolumn=1 %]
+
+<h1>Služba zobrazování obálek knih pro čtenáře</h1>
+<!--			<div class="descr">Jun 13, 2006 by Vulputate</div>-->
+
+<p>
+Díky webu <a href="http://www.obalkyknih.cz">obalkyknih.cz</a> 
+můžete snadno zjistit, ve kterých knihovnách je knížka, kterou poptáváte či která knihkupectví knížku prodávají.
+
+<div>
+<form action="/view">
+<fieldset>
+	<legend>Vyhledání dle ISBN</legend>
+	<p><legend for="search">Zadejte ISBN:</legend>
+		<input id="search" name="isbn" /></p>
+</fieldset>
+<input type=submit value="  Vyhledat  " class="button" />
+</form>
+
+[% PROCESS _footer %]

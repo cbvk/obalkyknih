@@ -1,0 +1,31 @@
+﻿[% PROCESS _header twocolumn=1 %]
+
+<h1>O projektu Obálkyknih.cz</h1>
+
+<p>
+Služba <a href="http://www.obalkyknih.cz">obalkyknih.cz</a> vznikla v roce 
+2008 díky projektu <a href="http://www.mzk.cz">Moravské zemské knihovny</a> 
+v rámci programu VISK3. 
+
+Jejím původním cílem bylo stát se centrálním repozitářem obrázků obálek knih 
+určených pro integraci do katalogů knihoven. V uplynulém roce 2009 navíc projekt 
+prošel dalším intenzivním vývojem, přičemž služba se nově zaměřuje na rozšíření 
+databáze z obálek knih také na další obohacující prvky.
+</p>
+
+<!-- Poděkování -->
+
+<p>
+Vřelé dík patří zejména <a href="http://www.vkol.cz">Vědecké knihovně 
+Olomouc</a> za pomoc s technickým řešením implementace obálek knih.
+</p>
+
+<!-- Kontakt -->
+<!--<p>
+Pokud máte jakékoliv dotazy, neváhejte nás
+</p>-->
+
+
+[% PROCESS _sidebar %]
+
+[% PROCESS _footer %]
