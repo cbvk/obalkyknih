@@ -225,6 +225,31 @@ Tuto knihu ještě nemáme v databázi!
 	<img class="[% IF book.toc AND book.toc.id == toc.id 
 					%]img_selected[% ELSE %]img_not_selected[% END %]"
 			src="[% book.toc.get_thumbnail_url %]"></a>
+	
+	[% IF book.toc %]
+	<div style="clear: both"></div>
+	<form onsubmit="return view_abuse_toc_onsubmit();" method="post">
+		<textarea name=note id=abuse_toc_comment style="display: none; width: 178px;"></textarea>
+		<input type=hidden name=toc value="[% book.toc.id %]">
+		<input type=hidden name=book value="[% book.id %]">
+		<input type=hidden name=referer value="[% referer %]">
+
+		<div id="antispamToc">
+			<label for="spamQuestionToc">Ochrana proti spamu. 
+									  Kolik je 15 + 8?</label>
+			<input id="spamQuestionToc" type="text" value="" name="spamQuestion"/>
+			<script type="text/javascript"> <!--
+				document.getElementById("spamQuestionToc").value=
+						(Math.round(23.7544614)-1);
+				document.getElementById("antispamToc").style.display = "none";
+			--></script>
+		</div>
+
+		<input name=report class="button" type="submit" style="width: 178px;" 
+			value=" Ohlásit chybný obsah ">
+	</form>
+	[% END %]
+	
 	<br><br>
 	[% END %]
 

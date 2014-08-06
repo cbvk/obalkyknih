@@ -16,6 +16,7 @@ sub get_book_record {
 # https://aleph.mzk.cz:443/F?func=direct&doc_number=000907247&local_base=MZK03&format=999
 	$permalink = undef if($permalink !~ /local_base\=/ and
 			$permalink =~ /aleph.mzk.*\?func\=find-c&ccl_term\=sys/);
+	$permalink = undef;
 
 	# najdi dle permalinku, ale jen pokud je bibinfo porad stejne
     my $record = $permalink ? DB->resultset('Marc')->find({ 

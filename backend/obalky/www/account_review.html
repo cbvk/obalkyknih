@@ -1,0 +1,101 @@
+[% PROCESS _header_tovarna %]
+[% PROCESS _header_blue %]
+[% PROCESS _header_main %]
+
+[% PROCESS _errors %]
+
+[% IF signed %]
+
+[% PROCESS _header_admin_submenu %]
+
+<p>
+Pod Vašim účtem spravujete knihovnu <strong>[%library.code%]</strong>
+</p>
+<br />
+
+<p />
+[% IF review_list.size %]
+
+	[% IF filter_key %]
+		<a href="/account_review?[%IF order%]&o=[%order%][%END%][%IF order_dir%]&od=[%order_dir%][%END%][%IF per_page%]&pp=[%per_page%][%END%][% IF params.i %]&i=[%params.i%][% END %]">Zrušit filtrování podle fráze: "[%filter_val%]"</a>
+	[% END %]
+
+	[% PROCESS _pagination %]
+
+	<table class="qe-table">
+	<tr>
+		<th>&nbsp;</th>
+		<th>
+			<a href="/account_review?o=created&amp;od=[% IF order=='created' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%][% IF params.i %]&i=[%params.i%][% END %]">Publikováno</a>
+		</th>
+		<th>
+			<a href="/account_review?o=title&amp;od=[% IF order=='title' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%][% IF params.i %]&i=[%params.i%][% END %]">Titul</a>
+			<a href="#" class="f-icon" title="Vyhledat"> <img src="/img/magnifier.png" alt="Vyhledat" /></a>
+			<form action="/account_review" method="get" class="f-form">
+				<fieldset>
+					<input type="text" name="fv" value="[% IF filter_key=='title' %][%filter_val%][% END %]" />
+					<input type="hidden" name="fk" value="title" />
+					[%IF order%]<input type="hidden" name="o" value="[%order%]" />[%END%]
+					[%IF order_dir%]<input type="hidden" name="od" value="[%order_dir%]" />[%END%]
+					[%IF per_page%]<input type="hidden" name="pp" value="[%per_page%]" />[%END%]
+					[%IF params.i%]<input type="hidden" name="i" value="[%params.i%]" />[%END%]
+					<input type="submit" name="fs" value="   OK   " />
+					<input type="button" name="fc" value=" Zrušit " class="f-cancel" />
+				</fieldset>
+			</form>
+		</th>
+		<th>
+			<a href="/account_review?o=html_text&amp;od=[% IF order=='html_text' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%][% IF params.i %]&i=[%params.i%][% END %]">Komentář</a>
+			<a href="#" class="f-icon" title="Vyhledat"> <img src="/img/magnifier.png" alt="Vyhledat" /></a>
+			<form action="/account_review" method="get" class="f-form">
+				<fieldset>
+					<input type="text" name="fv" value="[% IF filter_key=='html_text' %][%filter_val%][% END %]" />
+					<input type="hidden" name="fk" value="html_text" />
+					[%IF order%]<input type="hidden" name="o" value="[%order%]" />[%END%]
+					[%IF order_dir%]<input type="hidden" name="od" value="[%order_dir%]" />[%END%]
+					[%IF per_page%]<input type="hidden" name="pp" value="[%per_page%]" />[%END%]
+					[%IF params.i%]<input type="hidden" name="i" value="[%params.i%]" />[%END%]
+					<input type="submit" name="fs" value="   OK   " />
+					<input type="button" name="fc" value=" Zrušit " class="f-cancel" />
+				</fieldset>
+			</form>
+		</th>
+		<th>
+			<a href="/account_review?o=rating&amp;od=[% IF order=='rating' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%][% IF params.i %]&i=[%params.i%][% END %]">Hodn.</a>
+		</th>
+	</tr>
+	
+	[% FOREACH row IN review_list %]
+	<tr>
+		<td[%td_class%]>
+			<a href="/account_review?d=[% row.id %][% IF params.i %]&i=[%params.i%][% END %]" class="confirm-common">SMAZAT</a>
+		</td>
+		<td[%td_class%]>[%row.created.strftime('%d.%m.%Y&nbsp;%H:%M')%]</td>
+		<td[%td_class%]><strong>[%row.get_column('title')%]</strong></td>
+		<td[%td_class%]>[%row.html_text%]</td>
+		<td[%td_class%]>[%row.rating%]</td>
+	</tr>
+	[% END %]
+	</table>
+	
+	<br/>
+	[% PROCESS _pagination %]
+	<br/>
+
+[% ELSE %]
+<p class="info info-box">
+	Pod Vašim účtem nemáte žádné hodnocení uživatele.<br /><br /><br />
+</p>
+[% END %]
+
+<p style="padding: 20px" />
+
+
+[% ELSE %]
+
+[% PROCESS _form_signin %]
+
+[% END %]
+
+[% PROCESS _footer_tovarna %]
+

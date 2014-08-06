@@ -18,6 +18,7 @@ our $WWW_DIR = "$ROOT_DIR/www"; # je v obojim..
 our $DEBUG = -e "$ROOT_DIR/debug" ? 1 : 0;
 our $WWW_DOMAIN = "www.obalkyknih.cz"; # je v obojim..
 $WWW_DOMAIN = "iris.mzk.cz:3000" if $DEBUG;
+our $ADMIN_EMAIL = 'info@obalkyknih.cz';
 
 # Set flags and add plugins for the application
 #

@@ -55,9 +55,17 @@ sub save_to {
 			$tmp = Obalky::Tools->wget_to_file(
 						$cover_url, "$TMP_DIR/cover-".$product->id);
 		}
+		my $checksum_old = $book->cover ? $book->cover->checksum : undef;
 		$cover = DB->resultset('Cover')->create_from_file($book,$product,$tmp);
+		my $checksum_new = $cover->checksum;
 		$cover->update({ orig_url => $cover_url }) if($cover);
 		$product->update({ cover => $cover });
+		
+		# vyvolej synchronizacni udalost pokud obalka existuje
+		if ($checksum_old ne $checksum_new) {
+			my $bibinfo = Obalky::BibInfo->new($product);
+			DB->resultset('FeSync')->request_sync_remove($bibinfo);
+		}
 	}
 
 	# 2. TOC

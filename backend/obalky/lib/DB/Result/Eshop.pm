@@ -1,21 +1,36 @@
+use utf8;
 package DB::Result::Eshop;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+DB::Result::Eshop
+
+=cut
 
 use strict;
 use warnings;
 
 use Moose;
 use MooseX::NonMoose;
-use namespace::autoclean;
+use MooseX::MarkAsMethods autoclean => 1;
 extends 'DBIx::Class::Core';
+
+=head1 COMPONENTS LOADED
+
+=over 4
+
+=item * L<DBIx::Class::InflateColumn::DateTime>
+
+=back
+
+=cut
 
 __PACKAGE__->load_components("InflateColumn::DateTime");
 
-=head1 NAME
-
-DB::Result::Eshop
+=head1 TABLE: C<eshop>
 
 =cut
 
@@ -32,14 +47,8 @@ __PACKAGE__->table("eshop");
 =head2 name
 
   data_type: 'varchar'
-  is_nullable: 1
+  is_nullable: 0
   size: 16
-
-=head2 fullname
-
-  data_type: 'varchar'
-  is_nullable: 1
-  size: 64
 
 =head2 try_count
 
@@ -53,13 +62,13 @@ __PACKAGE__->table("eshop");
   default_value: 0
   is_nullable: 1
 
-=head2 logo_url
+=head2 xmlfeed_url
 
   data_type: 'varchar'
   is_nullable: 1
   size: 255
 
-=head2 xmlfeed_url
+=head2 logo_url
 
   data_type: 'varchar'
   is_nullable: 1
@@ -71,27 +80,57 @@ __PACKAGE__->table("eshop");
   is_nullable: 0
   size: 255
 
+=head2 fullname
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 64
+
 =cut
 
 __PACKAGE__->add_columns(
   "id",
   { data_type => "integer", is_auto_increment => 1, is_nullable => 0 },
   "name",
-  { data_type => "varchar", is_nullable => 1, size => 16 },
-  "fullname",
-  { data_type => "varchar", is_nullable => 1, size => 64 },
+  { data_type => "varchar", is_nullable => 0, size => 16 },
   "try_count",
   { data_type => "integer", default_value => 0, is_nullable => 1 },
   "hit_count",
   { data_type => "integer", default_value => 0, is_nullable => 1 },
-  "logo_url",
-  { data_type => "varchar", is_nullable => 1, size => 255 },
   "xmlfeed_url",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
+  "logo_url",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "web_url",
   { data_type => "varchar", is_nullable => 0, size => 255 },
+  "fullname",
+  { data_type => "varchar", is_nullable => 1, size => 64 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<eshop_weburl>
+
+=over 4
+
+=item * L</web_url>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("eshop_weburl", ["web_url"]);
 
 =head1 RELATIONS
@@ -127,11 +166,11 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-11-27 11:45:33
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:plGnAw/KILkwPOk8SEGvFA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-04-25 16:11:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:lpJLiWhJip0QLDrk4h8g3g
+
 
 use Data::Dumper;
-use utf8;
 
 sub product_count {
 	my($eshop) = @_;
@@ -187,8 +226,6 @@ sub add_product {
 
 	return $product;
 }
-
-1;
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 __PACKAGE__->meta->make_immutable;

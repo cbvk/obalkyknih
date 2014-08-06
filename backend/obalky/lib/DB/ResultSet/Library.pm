@@ -57,4 +57,72 @@ sub load_libraries {
 	$g_lib_time = time;
 }
 
+sub activate_library {
+	my($pkg,$id) = @_;
+	my @errors;
+	
+	push @errors, "Neplatný identifikátor knihovny.\n" 
+		unless($id =~ /^\d+$/);
+	
+	my $ret = DB->resultset('Library')->find($id);
+	push @errors, "Knihovna je aktivní.\n"
+		unless ($ret->flag_active == 0);
+	
+	unless (@errors) {
+		my $res = $ret->update({ flag_active => 1 });
+		if ($res) {
+			my $retUser = DB->resultset('User')->search({ library => $id })->next;
+			if ($retUser) {
+				my $login = $retUser->login;
+				my $admin_email = $Obalky::ADMIN_EMAIL;
+				open(MUTT,"|mutt -b '$admin_email' -s 'obalkyknih.cz -- aktivace Vasi knihovny' '$login'");
+				print MUTT <<EOF;
+
+Vase knihovna byla aktivovana.
+
+Prihlaste se prosim na adrese https://www.obalkyknih.cz/login
+E-MAIL: $login
+
+a pridejte Vasi prvni adresu online katalogu, na kterem planujete zobrazovat nahledy obalek knih.
+
+V pripade jakychkoliv dotazu nas nevahejte kontaktovat na email $admin_email
+
+Hezky den,
+obalkyknih.cz
+EOF
+				close(MUTT);
+			}
+		}
+	} else {
+		die $errors[0]."\n" if(@errors == 1);
+		die "<ul>".(join("\n",map "<li>$_</li>", @errors))."</ul>\n";
+	}
+
+	return 1;
+}
+
+sub deactivate_library {
+	my($pkg,$id) = @_;
+	my @errors;
+	
+	push @errors, "Neplatný identifikátor knihovny.\n" 
+		unless ($id =~ /^\d+$/);
+	
+	my $library = DB->resultset('Library')->find($id);
+	push @errors, "Knihovna je aktivní.\n"
+		unless ($library->flag_active == 0);
+	
+	unless (@errors) {
+		my $user = DB->resultset('User')->search({ library => $id })->next;
+		$user->update({ library => undef });
+		$user->delete if ($user && !$user->eshop);
+		$library->delete;	
+	} else {
+		die $errors[0]."\n" if(@errors == 1);
+		die "<ul>".(join("\n",map "<li>$_</li>", @errors))."</ul>\n";
+	}
+
+	return 1;
+}
+
 1;

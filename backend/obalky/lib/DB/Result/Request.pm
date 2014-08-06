@@ -1,21 +1,36 @@
+use utf8;
 package DB::Result::Request;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+DB::Result::Request
+
+=cut
 
 use strict;
 use warnings;
 
 use Moose;
 use MooseX::NonMoose;
-use namespace::autoclean;
+use MooseX::MarkAsMethods autoclean => 1;
 extends 'DBIx::Class::Core';
+
+=head1 COMPONENTS LOADED
+
+=over 4
+
+=item * L<DBIx::Class::InflateColumn::DateTime>
+
+=back
+
+=cut
 
 __PACKAGE__->load_components("InflateColumn::DateTime");
 
-=head1 NAME
-
-DB::Result::Request
+=head1 TABLE: C<request>
 
 =cut
 
@@ -86,7 +101,7 @@ __PACKAGE__->table("request");
 
   data_type: 'varchar'
   is_nullable: 1
-  size: 32
+  size: 64
 
 =head2 authors
 
@@ -152,7 +167,7 @@ __PACKAGE__->add_columns(
   "oclc",
   { data_type => "varchar", is_nullable => 1, size => 32 },
   "nbn",
-  { data_type => "varchar", is_nullable => 1, size => 32 },
+  { data_type => "varchar", is_nullable => 1, size => 64 },
   "authors",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "title",
@@ -166,24 +181,20 @@ __PACKAGE__->add_columns(
   "result",
   { data_type => "varchar", is_nullable => 0, size => 64 },
 );
-__PACKAGE__->set_primary_key("id");
 
-=head1 RELATIONS
+=head1 PRIMARY KEY
 
-=head2 library
+=over 4
 
-Type: belongs_to
+=item * L</id>
 
-Related object: L<DB::Result::Library>
+=back
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "library",
-  "DB::Result::Library",
-  { id => "library" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
+__PACKAGE__->set_primary_key("id");
+
+=head1 RELATIONS
 
 =head2 cover
 
@@ -200,14 +211,29 @@ __PACKAGE__->belongs_to(
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
   },
 );
 
+=head2 library
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-11-27 06:34:35
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:W7/ztUG0OmXB0pVfSRA+8A
+Type: belongs_to
+
+Related object: L<DB::Result::Library>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "library",
+  "DB::Result::Library",
+  { id => "library" },
+  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-08-01 15:44:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uK+bm6z1POSi1lcLEcGE6g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

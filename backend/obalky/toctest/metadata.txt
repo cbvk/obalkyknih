@@ -1,6 +1,4 @@
-Title: XML pro každého : podrobný prùvodce
-Author: Kosek, Jiøí
-Year: 2000
-ISBN: 80-7169-860-1
-CNB: 000963469
-OCLC: 85001122
+Title: Produkt ze skeneru
+Author: Author ze skeneru
+Year: 2013
+ISBN: 9781112226666

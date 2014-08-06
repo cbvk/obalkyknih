@@ -20,7 +20,7 @@ $(function () {
 
 var topLinks = $(".topLinks > ul > li > a", "#blackbox");
 var topLinksEl;
-topLinks.live("click", function(event) {
+topLinks.on("click", function(event) {
 	event.preventDefault();
 	topLinks.removeClass("active");
 	$(this).addClass("active");

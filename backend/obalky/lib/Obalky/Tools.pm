@@ -2,6 +2,7 @@
 package Obalky::Tools;
 
 use LWP::UserAgent;
+use Obalky::Config;
 
 # Samostatna knihovna
 
@@ -90,12 +91,19 @@ sub cmdCronTocOcr {
 			warn "Running ocr/run.sh $inpdf $out\n" if($ENV{DEBUG});
 			system("/opt/obalky/ocr/run.sh $inpdf $out >/dev/null 2>/dev/null");
 		}
-		if(-f $out) { # nahrej OCR do DB
+		if(-f $out) { # OCR na file system
 			my $text = decode_utf8(`cat $outTxt`);
 			my $content = Obalky::Tools->slurp($out);
 			warn "Updating $tocId, text ".length($text)." chars, PDF ".
 				length($content)." bytes\n";
-			$toc->update({ full_text => $text, pdf_file => $content });
+			$toc->update({ full_text => $text, pdf_file => undef });
+			#PDF files are grouped in dir
+			my $dirGroupName = int($tocId/10000+1)*10000;
+			mkdir($Obalky::Config::TOC_DIR.'/'.$dirGroupName) unless (-d $Obalky::Config::TOC_DIR.'/'.$dirGroupName);
+			#place PDF onto file system
+			open(OUTFILE, ">".$Obalky::Config::TOC_DIR.'/'.$dirGroupName.'/'.$tocId.'.pdf');
+			print OUTFILE $content;
+			close(OUTFILE);
 			unlink $in, $inpdf, $out, $outTxt; # done
 		}
 	}

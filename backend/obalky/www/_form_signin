@@ -1,0 +1,22 @@
+<form name="login" action="/login" method=post>
+<fieldset>
+	<legend>Zadejte své přihlašovací údaje:</legend>
+
+	<input type=hidden name=return value="[%return%]">
+
+	<p><label for="email">E-mail:</label>
+		<input type="text" id="email" name="email" value="[% email %]"/></p>
+
+	<p><label for="password">Heslo:</label>
+		<input type="password" id="password" name="password" 
+				value="[% password %]"/></p>
+
+</fieldset>
+
+	<p><input type="submit" class="button big" name='submit' id="submit"
+			value="Přihlásit" />
+	&nbsp;&nbsp;<label for="submit" class="small">
+	Jste nový uživatel? <a href="/signup">Vytvořte si účet.</a>
+	Zapoměli jste heslo? <a href="/lostpassword">Poslat heslo.</a>
+	</p>
+</form>

@@ -1,21 +1,36 @@
+use utf8;
 package DB::Result::Tip;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+DB::Result::Tip
+
+=cut
 
 use strict;
 use warnings;
 
 use Moose;
 use MooseX::NonMoose;
-use namespace::autoclean;
+use MooseX::MarkAsMethods autoclean => 1;
 extends 'DBIx::Class::Core';
+
+=head1 COMPONENTS LOADED
+
+=over 4
+
+=item * L<DBIx::Class::InflateColumn::DateTime>
+
+=back
+
+=cut
 
 __PACKAGE__->load_components("InflateColumn::DateTime");
 
-=head1 NAME
-
-DB::Result::Tip
+=head1 TABLE: C<tip>
 
 =cut
 
@@ -58,6 +73,17 @@ __PACKAGE__->add_columns(
   "weight",
   { data_type => "integer", is_nullable => 1 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("id");
 
 =head1 RELATIONS
@@ -74,7 +100,7 @@ __PACKAGE__->belongs_to(
   "book1",
   "DB::Result::Book",
   { id => "book1" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
 );
 
 =head2 book2
@@ -89,12 +115,12 @@ __PACKAGE__->belongs_to(
   "book2",
   "DB::Result::Book",
   { id => "book2" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-11-27 06:34:35
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NRTp2OfcmP/FlgcclDdF5Q
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-04-25 16:11:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YglxP8dJQFBvENMNTvybRA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

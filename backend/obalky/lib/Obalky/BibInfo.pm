@@ -269,6 +269,13 @@ sub to_some_id {
 	return $id->nbn if($id->nbn);
 	return $id->oclc ? "oclc".$id->oclc : "NULL";
 }
+sub to_some_hash {
+	my($id) = @_;
+	my $isbn = $id->to_isbn;
+	return {isbn => $isbn} if($isbn);
+	return {nbn => $id->nbn} if($id->nbn);
+	return $id->oclc ? {oclc=>"oclc".$id->oclc} : "NULL";
+}
 
 sub to_string {
 	my($id) = @_;

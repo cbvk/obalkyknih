@@ -1,0 +1,153 @@
+[% PROCESS _header_tovarna %]
+[% PROCESS _header_blue %]
+[% PROCESS _header_main %]
+
+[% PROCESS _errors %]
+
+[% IF signed %]
+
+[% PROCESS _header_admin_submenu %]
+
+<p />
+
+[% IF library %]
+	<p>
+	Pod Vašim účtem spravujete knihovnu <strong>[%library.code%]</strong>
+	</p>
+	<br />
+
+	[% IF library.flag_active == 0 %]
+		<h2>Váše knihovna zatím není aktivní.</h2>
+		<br />
+		<h3>
+			Prosím vyčkejte na aktivaci správcem systému.<br />
+			O aktivaci budete informováni prostřednictvím emailu.
+		</h3>
+	[% ELSE %]
+	
+		<h2>Vaše URL adresy katalogů, kde se obálky zobrazují</h2>
+		
+		[% IF ref_list.size %]
+		
+		<p>Seznam adres katalogů:</p>
+		
+		<table class="qe-table">
+		<tr>
+			<th colspan="2">Operace</th>
+			<th>URL adresa katalogu (referer)</th>
+		</tr>
+		[% FOREACH row IN ref_list %]
+		<tr>
+			<td><a href="/account?e=[%row.id%][% IF is_admin %]&amp;i=[%library.id%][% END %]" class="qe-action-edit">Upravit</a></td>
+			<td><a href="/account?d=[%row.id%][% IF is_admin %]&amp;i=[%library.id%][% END %]" class="qe-action-del">Smazat</a></td>
+			<td class="qe-value">
+				<span class="qe-value">[% row.ref %]</span>
+				<form action="/account?e=[%row.id%][% IF is_admin %]&amp;i=[%library.id%][% END %]" method="post" class="qe-form">
+				<fieldset>
+					<input type="text" name="qe-content" value="[%row.ref%]" />
+					<input type="submit" name="qe-submit" value="   OK   " />
+					<input type="image" name="qe-submit-loader" src="/img/loading_small.gif" disabled="disabled" />
+					<input type="button" name="qe-cancel" value=" Zrušit " class="qe-cancel" />
+				</fieldset>
+				</form>
+			</td>
+		</tr>
+		[% END %]
+		</table>
+		
+		[% ELSE %]
+		<p class="red info">Přidejte Vaši první adresu katalogu, kde budete obálky zobrazovat.</p>
+		[% END %]
+		
+		<p class="info info-box">
+			Je nutné mít zadané všechny Vaše adresy katalogů, kde se náhledy obálek a obsahů budou zobrazovat. Bez tohoto nastavení není možné projekt Obálky knih.cz ve Vašem katalogu používat.	
+			Pokud např. adresa jedné z Vašich stránek katalogu je ve tvaru:
+			<span class="block-tiny"><strong>http://aleph.adresa_vasi_knihovny.cz/F/FE1S9QM5HLSDCCH7F......</strong> atd.,</span>
+			přidejte do tohoto seznamu URL adres katalogů Vaši adresu katalogu (včetně http:// na začátku):
+			<span class="block-tiny"><strong class="margin-tiny">http://aleph.adresa_vasi_knihovny.cz</strong></span>
+			Pokud je Váš knihovní systém dostupný z alternativní URL, např. <strong>http://katalog.adresa_vasi_knihovny.cz</strong> a jiných, zadejte prosím Všechny takovéto URL katalogů.
+		</p>
+		
+		
+		<p>&nbsp;</p>
+		<h2>Vaše IP adresy systémů, které mají přístup k metadata API</h2>
+		
+		[% IF ip_list.size %]
+		
+			<p>Seznam adres systémů:</p>
+			
+			<table class="qe-table">
+			<tr>
+				<th colspan="2">Operace</th>
+				<th>IP adresa systému</th>
+			</tr>
+			[% FOREACH row IN ip_list %]
+			<tr>
+				<td><a href="/account?e=[%row.id%][% IF params.i %]&i=[% params.i %][% END %]" class="qe-action-edit">Upravit</a></td>
+				<td><a href="/account?d=[%row.id%][% IF params.i %]&i=[% params.i %][% END %]" class="qe-action-del">Smazat</a></td>
+				<td>
+					<span class="qe-value">[% row.ip %]</span>
+					<form action="/account?e=[%row.id%][% IF is_admin %]&amp;i=[%library.id%][% END %]" method="post" class="qe-form">
+					<fieldset>
+						<input type="text" name="qe-content" value="[%row.ip%]" />
+						<input type="submit" name="qe-submit" value="   OK   " />
+						<input type="image" name="qe-submit-loader" src="/img/loading_small.gif" disabled="disabled" />
+						<input type="button" name="qe-cancel" value=" Zrušit " class="qe-cancel" />
+					</fieldset>
+					</form>
+				</td>
+			</tr>
+			[% END %]
+			</table>
+			<p>&nbsp;</p>
+		
+		[% ELSE %]
+		<p class="red info">Přidejte Váš první systém, který bude pracovat s metadata API.</p>
+		[% END %]
+		
+		<p class="info info-box">
+			Metadata API je určené pro knihovní systémy (logiku knihovních systémů) a nabízí přístup ke všem informacím poskytovaných projektem Obálky knih.cz 
+			včetně získávání a publikace hodnocení a komentářů, OCR přepisy obsahů pro účely indexace v knihovních systémemch atd. Podrobný popis funkčnosti je
+			k dispozici v dokumentaci projektu. Pro přístup k metadata API je nutné mít registrovanou IP adresu/y systémů, které budou k metadata API přistupovat.
+		</p>
+
+		<p style="padding:10px" />
+		<form action="/account?new=1[% IF params.i %]&i=[% params.i %][% END %]" method="post" id="new-permission">
+		<fieldset>
+			<legend>Přidat novou adresu katalogu, nebo systému</legend>
+			<p>
+				<input type="radio" name="permtype" value="ref" id="type-ref" checked [% IF params.permtype=='ref' %]checked="checked" [% END %]/>
+				<label for="type-ref" class="label-wide">URL adresa katalogu</label>
+			</p>
+			<p>
+				<input type="radio" name="permtype" value="ip" id="type-ip" [% IF params.permtype=='ip' %]checked="checked" [% END %]/>
+				<label for="type-ip" class="label-wide">IP adresa systému</label>
+			</p>
+			<p>
+				<label for="perm-val">Nová hodnota:</label>
+				<input type="text" name="permval" value="[% params.permval %]" id="perm-val" />
+			</p>
+			<p>
+				<input type="submit" name="new-ref" value="  Přidat oprávnění  " id="perm-submit" />
+			</p>
+		</fieldset>
+		</form>
+	
+	[% END %]
+	
+[% ELSE %]
+<p>
+Pod Vašim účtem nespravujete žádnou knihovnu
+</p>
+[% END %]
+	
+<p style="padding: 20px" />
+	
+[% ELSE %]
+
+[% PROCESS _form_signin %]
+
+[% END %]
+
+[% PROCESS _footer_tovarna %]
+

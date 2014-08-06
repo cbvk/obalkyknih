@@ -1,21 +1,36 @@
+use utf8;
 package DB::Result::Library;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+DB::Result::Library
+
+=cut
 
 use strict;
 use warnings;
 
 use Moose;
 use MooseX::NonMoose;
-use namespace::autoclean;
+use MooseX::MarkAsMethods autoclean => 1;
 extends 'DBIx::Class::Core';
+
+=head1 COMPONENTS LOADED
+
+=over 4
+
+=item * L<DBIx::Class::InflateColumn::DateTime>
+
+=back
+
+=cut
 
 __PACKAGE__->load_components("InflateColumn::DateTime");
 
-=head1 NAME
-
-DB::Result::Library
+=head1 TABLE: C<library>
 
 =cut
 
@@ -48,28 +63,34 @@ __PACKAGE__->table("library");
   is_nullable: 0
   size: 255
 
-=head2 address
+=head2 webopac
 
   data_type: 'varchar'
   is_nullable: 0
   size: 255
 
+=head2 address
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
 =head2 city
 
   data_type: 'varchar'
-  is_nullable: 0
+  is_nullable: 1
   size: 64
 
 =head2 emailboss
 
   data_type: 'varchar'
-  is_nullable: 0
+  is_nullable: 1
   size: 64
 
 =head2 emailads
 
   data_type: 'varchar'
-  is_nullable: 0
+  is_nullable: 1
   size: 64
 
 =head2 skipmember
@@ -77,11 +98,17 @@ __PACKAGE__->table("library");
   data_type: 'tinyint'
   is_nullable: 1
 
-=head2 webopac
+=head2 flag_active
 
-  data_type: 'varchar'
+  data_type: 'tinyint'
+  default_value: 0
+  extra: {unsigned => 1}
   is_nullable: 0
-  size: 255
+
+=head2 purpose_description
+
+  data_type: 'mediumtext'
+  is_nullable: 1
 
 =cut
 
@@ -99,23 +126,71 @@ __PACKAGE__->add_columns(
   },
   "name",
   { data_type => "varchar", is_nullable => 0, size => 255 },
-  "address",
-  { data_type => "varchar", is_nullable => 0, size => 255 },
-  "city",
-  { data_type => "varchar", is_nullable => 0, size => 64 },
-  "emailboss",
-  { data_type => "varchar", is_nullable => 0, size => 64 },
-  "emailads",
-  { data_type => "varchar", is_nullable => 0, size => 64 },
-  "skipmember",
-  { data_type => "tinyint", is_nullable => 1 },
   "webopac",
   { data_type => "varchar", is_nullable => 0, size => 255 },
+  "address",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
+  "city",
+  { data_type => "varchar", is_nullable => 1, size => 64 },
+  "emailboss",
+  { data_type => "varchar", is_nullable => 1, size => 64 },
+  "emailads",
+  { data_type => "varchar", is_nullable => 1, size => 64 },
+  "skipmember",
+  { data_type => "tinyint", is_nullable => 1 },
+  "flag_active",
+  {
+    data_type => "tinyint",
+    default_value => 0,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
+  "purpose_description",
+  { data_type => "mediumtext", is_nullable => 1 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<library_code>
+
+=over 4
+
+=item * L</code>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("library_code", ["code"]);
 
 =head1 RELATIONS
+
+=head2 library_perms
+
+Type: has_many
+
+Related object: L<DB::Result::LibraryPerm>
+
+=cut
+
+__PACKAGE__->has_many(
+  "library_perms",
+  "DB::Result::LibraryPerm",
+  { "foreign.library" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 marcs
 
@@ -158,21 +233,6 @@ Related object: L<DB::Result::Review>
 __PACKAGE__->has_many(
   "reviews",
   "DB::Result::Review",
-  { "foreign.library" => "self.id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 seances
-
-Type: has_many
-
-Related object: L<DB::Result::Seance>
-
-=cut
-
-__PACKAGE__->has_many(
-  "seances",
-  "DB::Result::Seance",
   { "foreign.library" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -223,8 +283,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-11-27 06:34:35
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:JOwY0Tc/GAgFkarXVAa6Sw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-08-01 15:51:03
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:WbprZ75IGBV1mVn7fblEew
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -1,21 +1,36 @@
+use utf8;
 package DB::Result::Toc;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+DB::Result::Toc
+
+=cut
 
 use strict;
 use warnings;
 
 use Moose;
 use MooseX::NonMoose;
-use namespace::autoclean;
+use MooseX::MarkAsMethods autoclean => 1;
 extends 'DBIx::Class::Core';
+
+=head1 COMPONENTS LOADED
+
+=over 4
+
+=item * L<DBIx::Class::InflateColumn::DateTime>
+
+=back
+
+=cut
 
 __PACKAGE__->load_components("InflateColumn::DateTime");
 
-=head1 NAME
-
-DB::Result::Toc
+=head1 TABLE: C<toc>
 
 =cut
 
@@ -30,12 +45,6 @@ __PACKAGE__->table("toc");
   is_nullable: 0
 
 =head2 product
-
-  data_type: 'integer'
-  is_foreign_key: 1
-  is_nullable: 0
-
-=head2 book
 
   data_type: 'integer'
   is_foreign_key: 1
@@ -62,14 +71,18 @@ __PACKAGE__->table("toc");
   data_type: 'text'
   is_nullable: 1
 
+=head2 book
+
+  data_type: 'integer'
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
   "id",
   { data_type => "integer", is_auto_increment => 1, is_nullable => 0 },
   "product",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
-  "book",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "pdf_url",
   { data_type => "varchar", is_nullable => 1, size => 255 },
@@ -79,13 +92,74 @@ __PACKAGE__->add_columns(
   { data_type => "mediumblob", is_nullable => 1 },
   "full_text",
   { data_type => "text", is_nullable => 1 },
+  "book",
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<toc_product>
+
+=over 4
+
+=item * L</product>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("toc_product", ["product"]);
 
 =head1 RELATIONS
 
-=head2 books
+=head2 abuses
+
+Type: has_many
+
+Related object: L<DB::Result::Abuse>
+
+=cut
+
+__PACKAGE__->has_many(
+  "abuses",
+  "DB::Result::Abuse",
+  { "foreign.toc" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 book
+
+Type: belongs_to
+
+Related object: L<DB::Result::Book>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "book",
+  "DB::Result::Book",
+  { id => "book" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
+=head2 book_tocs
 
 Type: has_many
 
@@ -94,10 +168,40 @@ Related object: L<DB::Result::Book>
 =cut
 
 __PACKAGE__->has_many(
-  "books",
+  "book_tocs",
   "DB::Result::Book",
   { "foreign.toc" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 book_tocs_2s
+
+Type: has_many
+
+Related object: L<DB::Result::Book>
+
+=cut
+
+__PACKAGE__->has_many(
+  "book_tocs_2s",
+  "DB::Result::Book",
+  { "foreign.toc" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 product
+
+Type: belongs_to
+
+Related object: L<DB::Result::Product>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "product",
+  "DB::Result::Product",
+  { id => "product" },
+  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
 );
 
 =head2 products
@@ -115,48 +219,25 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 product
 
-Type: belongs_to
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-07-31 23:20:47
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:EztjOI6CAuo90MgzAXDuQg
 
-Related object: L<DB::Result::Product>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "product",
-  "DB::Result::Product",
-  { id => "product" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 book
-
-Type: belongs_to
-
-Related object: L<DB::Result::Book>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "book",
-  "DB::Result::Book",
-  { id => "book" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-11-27 06:34:35
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9VASlHBr4rgc5UfhGkgQjQ
 
 use Obalky::Config;
 use Obalky::Tools;
-use utf8;
 
 sub set_pdf {
 	my($toc,$url,$content,$tmpfile,$firstpage) = @_;
-	$toc->update({ pdf_url => $url, pdf_file => $content });
+	$toc->update({ pdf_url => $url, pdf_file => undef });
 	$toc->make_thumbnail($content,$tmpfile,$firstpage);
+	#PDF files are grouped in dir
+	my $dirGroupName = int($toc->get_column('id')/10000+1)*10000;
+	mkdir($Obalky::Config::TOC_DIR.'/'.$dirGroupName) unless (-d $Obalky::Config::TOC_DIR.'/'.$dirGroupName);
+	#place PDF onto file system
+	open(OUTFILE, ">".$Obalky::Config::TOC_DIR.'/'.$dirGroupName.'/'.$toc->get_column('id').'.pdf');
+	print OUTFILE $content;
+	close(OUTFILE);
 }
 
 sub to_xml {
@@ -239,8 +320,19 @@ sub get_text_url      {
 sub get_file {
 	my($toc,$method) = @_;
 	return ("image/png",$toc->pdf_thumbnail,"jpeg") if($method eq 'thumbnail');
-	return ("application/pdf",$toc->pdf_file,"pdf") if($method eq 'pdf');
 	return ("text/plain",$toc->full_text,"txt")     if($method eq 'text');
+	# cele PDF ze souboroveho systemu, nebo DB jako odpoved /file/toc/#/pdf
+	if($method eq 'pdf') {
+		# z DB
+		return ("application/pdf",$toc->pdf_file,"pdf") if($toc->pdf_file);
+		# ze souboroveho systemu
+		my $dirGroupName = int($toc->get_column('id')/10000+1)*10000;
+		open(PDF, $Obalky::Config::TOC_DIR.'/'.$dirGroupName.'/'.$toc->get_column('id').'.pdf') or die "could not open PDF [$!]";
+		binmode PDF;
+		my $pdf_file = do { local $/; <PDF> };
+		close(PDF);
+		return ("application/pdf",$pdf_file,"pdf");
+	}
 }
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

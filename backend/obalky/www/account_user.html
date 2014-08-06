@@ -1,0 +1,35 @@
+﻿[% PROCESS _header %]
+
+[% IF library_admin %]
+[% PROCESS _header_admin_submenu %]<p>&nbsp;</p>
+[% ELSE %]
+<h1>Nastavení uživatelského účtu</h1>
+[% END %]
+
+[% PROCESS _errors %]
+
+<form name="account_user" action="/account_user" method=post>
+<fieldset>
+	<legend>Změna Vašich uživatelských nastavení:</legend>
+
+	<input type=hidden name=return value="[%return%]">
+	
+	[% IF library_admin==1 %]<p><input type="checkbox" id="flag_review_report" name="flag_review_report" value="1" class="fl" [% IF flag_review_report==1 %]checked="checked"[% END %] />
+		<label for="flag_review_report" class="label-wide">Zasílat týdenní report nově publikovaných hodnocení</label></p>[% END %]
+
+	<p><label for="email">Původní heslo:</label>
+		<input type="password" id="email_old" name="email_old" value="[% email_old %]"/></p>
+
+	<p><label for="email">Nové heslo:</label>
+		<input type="password" id="email_new" name="email_new" value="[% email_new %]"/></p>
+	
+	<p><label for="email">Potvrzení hesla:</label>
+		<input type="password" id="email_confirm" name="email_confirm" value="[% email_confirm %]"/></p>
+
+</fieldset>
+
+	<p><input type="submit" class="button big" name='submit' id="submit" value="Změnit nastavení" /></p>
+	
+</form>
+
+[% PROCESS _footer %]

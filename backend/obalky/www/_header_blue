@@ -18,6 +18,7 @@
 				<p class="small">
 					<!-- <a href="/">Nastavení»</a> 
 					&nbsp;&nbsp; --> 
+					<a href="/account">Nastavení »</a> <br/>
 					<a href="/logout">Odhlásit</a> </p>
 			
 				[% ELSE %]

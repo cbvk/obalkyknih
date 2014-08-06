@@ -11,16 +11,14 @@
 <p />
 
 <p>
-Uživateslký účet <a href="mailto:[%email%]">[%email%]</a>
-byl úspěšne zaregistrován.
+Uživateslký účet <a href="mailto:[%email%]">[%email%]</a> byl úspěšne zaregistrován.
 </p>
 
 <p>
-Heslo a další nastavení si můžete změnit v menu 'nastavení'
-v horní části obrazovky.
+Heslo a další nastavení si můžete změnit v menu 'nastavení' v horní části obrazovky po přihlášení.
 </p>
 
-<form name="submit" action="/">
+<form name="submit" action="/login" method="post">
 <!--<input type=submit value="  Vstoupit do systému  ">-->
 <input type=submit name="submit" value="  Přihlásit se do systému  ">
 </form>
@@ -48,6 +46,7 @@ v horní části obrazovky.
 		
 		<fieldset class="longer">
 			<legend>Informace o nakladatelství, vydavatelství, zdroji dat</legend>
+			<p class="info red">Informace: Tuto část formuláře vyplňují pouze nakladatelé, vydavatelé, nebo knihkupci.</p>
 			<p><label for="eshop_name">Název společnosti/instituce:</label><input type="text" name="eshop_name" value="[% eshop_name %]" id="eshop_name" /></p>
 			<p><label for="eshop_url">Webová stránka:</label><input type="text" name="eshop_url" value="[% eshop_url %]" id="eshop_url" /></p>
 			<p class="small">Pro vkládání vaší knižní nabídky vyplňte adresu, na které máte tzv. XML feed s popisem vašeho zboží. <a href="http://napoveda.seznam.cz/cz/zbozi/napoveda-pro-internetove-obchody/specifikace-xml/">Více informací o formátu XML feedu.</a></p>
@@ -58,6 +57,7 @@ v horní části obrazovky.
 		
 		<fieldset class="longer">
 			<legend>Informace o knihovně</legend>
+			<p class="info red">Informace: Tuto část formuláře vyplňují pouze knihovny.</p>
 			<p class="small">Vyplňte prosím následující informace o knihovně. Registrovaný
 			uživatel knihovny může prohlížet databázi obálek knih, vkládat a opravovat
 			záznamy.</p>
@@ -67,9 +67,13 @@ v horní části obrazovky.
 			<p><label for="libcity">Město:</label><input type="text" name="libcity" value="[% libcity %]" id="libcity" /></p>
 			<p><label for="libemailboss">E-mail ředitele(ky) knihovny:</label><input type="text" name="libemailboss" value="[% libemailboss %]" id="libemailboss" /></p>
 			<p><label for="libemailads">E-mail pro obchodní sdělení:</label><input type="text" name="libemailads" value="[% libemailads %]" id="libemailads" /></p>
-[% END %]
 			<p title="URL adresa katalogu"><label for="libopac">Webový katalog:</label><input type="text" name="libopac" value="[% libopac %]" id="libopac" /></p>
+[% END %]
 			<p><label for="libcode">Sigla knihovny:</label><input type="text" name="libcode" value="[% libcode %]" id="libcode" /></p>
+			<p>
+				<label for="libpurpose">Stručně popište jak, nebo kde plánujete službu Obálkyknih.cz používat:</label>
+				<textarea type="text" name="libpurpose" id="libpurpose" rows="4">[% libpurpose %]</textarea>
+			</p>
 		</fieldset>
 			
 		<p><input type="submit" name="signup" class="button big" value="Vytvořit účet" /> &nbsp;&nbsp;<input name="libskipmember" type="checkbox" id="libskipmember" [% IF libskipmember %]checked[% END %] /> <label for="libskipmember" class="small">Prohlašuji, že knihovna je členem sdružení <a href="http://skip.nkp.cz">SKIP</a> (nepovinné)</label></p>

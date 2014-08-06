@@ -54,8 +54,9 @@ sub sendpassword {
 			" nebyl v systému nalezen.\n" unless $pkg->find_by_email($email);
 
 	my $reset = $pkg->reset_encode($email);
+	my $admin_email = $Obalky::ADMIN_EMAIL;
 
-	open(MUTT,"|mutt -b 'martin\@sarfy.cz' ".
+	open(MUTT,"|mutt -b '$admin_email' ".
 			"-s 'obalkyknih.cz -- vyresetovani hesla' '$email'");
 	print MUTT <<EOF;
 
@@ -75,6 +76,8 @@ sub signup {
 	my($pkg,$hash) = @_; 
 	my $login = $hash->{email};
 	my $libcode = $hash->{libcode};
+	$libcode =~ s/[ \-]//g;
+	my $libpurpose = $hash->{purpose_description};
 
 	my @errors;
 
@@ -105,8 +108,15 @@ sub signup {
 		push @errors, "Registrovat se můžou jen knihovny nebo nakladatelství\n";
 	}
 
+	if($hash->{libcode} && length($libcode)!=6) {
+		push @errors, "SIGLA musí obsahovat 6 znaků bez mezer a pomlček\n";
+	}
+
 	my $eshop;
 	if($hash->{eshop_name}) {
+		push @errors, "Neplatná URL adresa XML feedu."
+			if($hash->{xmlfeed} and not $hash->{xmlfeed} =~ /^http\:\/\/.+\..+$/);
+		
 		my $eshopinfo = { fullname => $hash->{eshop_name},
 						  web_url => $hash->{eshop_url},
 						  logo_url => $hash->{logo_url},
@@ -125,6 +135,8 @@ sub signup {
 	if($libcode) { 
 		push @errors, "Není vyplněn název knihovny."
 			unless($hash->{libname});
+		push @errors, "Není vyplněn stručný popis použití služby Obálkyknih.cz."
+			unless($hash->{libpurpose});
 
 =begin
 		push @errors, "Není vyplněno město knihovny."  unless($hash->{libcity});
@@ -140,23 +152,20 @@ sub signup {
 			unless($hash->{libemailads});
 		push @errors, "E-mail pro zasílání komerčních sdělení není korektní."
 			unless(Obalky::Tools->valid_email($hash->{libemailads}));
-=cut
-
 		push @errors, "Neplatná URL adresa webového katalogu."
 			unless($hash->{libopac} =~ /^http\:\/\/.+\..+$/);
-
-		push @errors, "Neplatná URL adresa XML feedu."
-			if($hash->{xmlfeed} and not $hash->{xmlfeed} =~ /^http\:\/\/.+\..+$/);
+=cut
 	}
 
 	my($user,$library);
 	unless(@errors) {
 		my $skipmember = ($hash->{libskipmember} and 
 				lc($hash->{libskipmember}) ne 'off');
+		my $flagadmin = 0;
 		if($libcode) {
 			my $libinfo = { code => $libcode, city => $hash->{libcity},
-				emailboss => $hash->{libemailboss}, 
-				address => $hash->{libaddress},
+				name => $hash->{libname}, purpose_description => $hash->{libpurpose},
+				emailboss => $hash->{libemailboss}, address => $hash->{libaddress},
 				emailads => $hash->{libemailads}, skipmember => $skipmember };
 
 			$library = DB->resultset('Library')->find_by_code($libcode);
@@ -164,17 +173,19 @@ sub signup {
 				$library->update($libinfo);
 			} else {
 				$library = DB->resultset('Library')->create($libinfo);
+				$flagadmin = 1;
 			}
 			push @errors, "Interní chyba: Nelze vytvořit knihovnu '$libcode'."
 				unless($library);
 		}
 
-		unless(@errors) { 
+		unless(@errors) {
 			eval { $user = $pkg->create({
 				login => $login, fullname => $hash->{fullname},
-				password => $hash->{password1},  
-				library => $library ? $library->id : undef, 
-				eshop => $eshop ? $eshop->id : undef
+				password => $hash->{password1},
+				library => $library ? $library->id : undef,
+				eshop => $eshop ? $eshop->id : undef,
+				flag_library_admin => $flagadmin
 			}) };
 
 			push @errors, $@ if $@;
@@ -187,6 +198,40 @@ sub signup {
 						if($library and not $test->library);
 				push @errors, "Nevytvořena společnost."
 						if($eshop and not $test->eshop);
+				
+				# Info email knihovni a info email spravci
+				if ($library and $test->library) {
+					my $admin_email = $Obalky::ADMIN_EMAIL;
+					open(MUTT,"|mutt -b '$admin_email' -s 'obalkyknih.cz -- registrace knihovny' '$login'");
+					print MUTT <<EOF;
+
+Vas uzivatelsky ucet pro knihovny byl vytvoren.
+
+Vyckejte prosim na schvaleni registrace spravcem systemu Obalky knih.cz.
+Po schvaleni budete schopni pridat prava pro Vas knihovni katalog, ve kterem planujete sluzby projektu Obalky knih.cz vyuzivat.
+
+Hezky den,
+obalkyknih.cz
+EOF
+					close(MUTT);
+					
+					open(MUTT,"|mutt -b '$admin_email' -s 'obalkyknih.cz -- registrace knihovny' '$admin_email'");
+					print MUTT <<EOF;
+
+Vytvoren novy uzivatelsky ucet knihovny.
+Nutne povolit, nebo zamitnout po zalogovani jako: $admin_email
+na strance https://www.obalkyknih.cz/login
+
+Login: $login
+Sigla: $libcode
+
+Popis pouziti: $libpurpose
+
+Hezky den,
+obalkyknih.cz
+EOF
+					close(MUTT);
+				}
 			}
 		}
 	}

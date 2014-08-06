@@ -1,21 +1,36 @@
+use utf8;
 package DB::Result::Upload;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+DB::Result::Upload
+
+=cut
 
 use strict;
 use warnings;
 
 use Moose;
 use MooseX::NonMoose;
-use namespace::autoclean;
+use MooseX::MarkAsMethods autoclean => 1;
 extends 'DBIx::Class::Core';
+
+=head1 COMPONENTS LOADED
+
+=over 4
+
+=item * L<DBIx::Class::InflateColumn::DateTime>
+
+=back
+
+=cut
 
 __PACKAGE__->load_components("InflateColumn::DateTime");
 
-=head1 NAME
-
-DB::Result::Upload
+=head1 TABLE: C<upload>
 
 =cut
 
@@ -94,7 +109,7 @@ __PACKAGE__->table("upload");
 
   data_type: 'varchar'
   is_nullable: 1
-  size: 32
+  size: 64
 
 =head2 authors
 
@@ -145,7 +160,7 @@ __PACKAGE__->add_columns(
   "oclc",
   { data_type => "varchar", is_nullable => 1, size => 32 },
   "nbn",
-  { data_type => "varchar", is_nullable => 1, size => 32 },
+  { data_type => "varchar", is_nullable => 1, size => 64 },
   "authors",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "title",
@@ -153,29 +168,20 @@ __PACKAGE__->add_columns(
   "year",
   { data_type => "varchar", is_nullable => 1, size => 32 },
 );
-__PACKAGE__->set_primary_key("id");
 
-=head1 RELATIONS
+=head1 PRIMARY KEY
 
-=head2 user
+=over 4
 
-Type: belongs_to
+=item * L</id>
 
-Related object: L<DB::Result::User>
+=back
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "user",
-  "DB::Result::User",
-  { id => "user" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
+__PACKAGE__->set_primary_key("id");
+
+=head1 RELATIONS
 
 =head2 product
 
@@ -192,14 +198,35 @@ __PACKAGE__->belongs_to(
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
+=head2 user
+
+Type: belongs_to
+
+Related object: L<DB::Result::User>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "user",
+  "DB::Result::User",
+  { id => "user" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
   },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-11-27 06:34:35
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XOm9PBKiiDsgXvYfj7tTGQ
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-08-01 15:44:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dNeMe3Kk8n2kUA8ONod0/A
+
 
 use Data::Dumper;
 use File::Copy;
@@ -209,7 +236,6 @@ use MD5;
 
 use LWP::UserAgent;
 use Business::ISBN;
-use utf8;
 
 sub cover_url {
 	my($upload) = @_;

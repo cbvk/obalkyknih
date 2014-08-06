@@ -7,7 +7,6 @@ requires 'YAML'; # This should reflect the config file format you've chosen
                  # See Catalyst::Plugin::ConfigLoader for supported formats
 
 requires 'Catalyst' => '5.7003';
-requires 'Catalyst::Plugin::Authentication::Store::DBIx::Class';
 requires 'Catalyst::Authentication::Store::DBIx::Class';
 requires 'Catalyst::Plugin::Session::Store::FastMmap';
 requires 'Catalyst::Plugin::Session::State::Cookie';
@@ -41,6 +40,7 @@ requires 'DBIx::Class::TimeStamp';
 requires 'Net::OAI::Harvester';
 requires 'XML::Simple';
 requires 'ZOOM';
+requires 'Digest::SHA1';
 
 catalyst;
 

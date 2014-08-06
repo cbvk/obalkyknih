@@ -1,0 +1,20 @@
+
+	<p class="pagination fl">
+		Stránka <strong>[%cur_page%]</strong> z <strong>[%max_page%]</strong>
+	</p>
+	<p class="pagination fr">
+		Počet položek na stránku:
+		[% FOREACH page IN [20,50,100,1000] %]
+			<a href="/[%admin_page%]?pp=[%page%][%IF order%]&o=[%order%][%END%][%IF order_dir%]&od=[%order_dir%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_va%][%END%][% IF params.i %]&i=[%params.i%][% END %]"[% IF per_page==page %] class="current"[% END %]> [%page%] </a> [% IF page != 1000 %]&nbsp;|&nbsp;[% END %]
+		[% END %]
+	</p>
+	<p class="pagination page-list">
+		[% pagination_from = cur_page>5 ? cur_page - 5 : 1 %]
+		[% pagination_until = cur_page<max_page - 5 ? cur_page + 5 : max_page %]
+		[% IF 1<pagination_from %]...&nbsp;&nbsp;[% END %]
+		[% FOREACH page IN [pagination_from..pagination_until] %]
+			<a href="/[%admin_page%]?p=[%page%][%IF order%]&o=[%order%][%END%][%IF order_dir%]&od=[%order_dir%][%END%][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%][% IF params.i %]&i=[%params.i%][% END %]"[% IF cur_page==page %] class="current"[% END %]> [%page%] </a> [% IF page<pagination_until %]&nbsp;|&nbsp;[% END %]
+		[% END %]
+		[% IF max_page>pagination_until %]&nbsp;&nbsp;...[% END %]
+	</p>
+	<p class="cl"></p>

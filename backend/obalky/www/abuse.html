@@ -10,10 +10,12 @@
 		<th><!--Schválit-->
 [% FOREACH case IN abused %]
 <tr class="[% loop.parity %]">
-	<td valign=top width="20%"><a href="[% case.cover.get_cover_url %]"><img 
-		border=0 src="[% case.cover.get_cover_url %]"></a>
 	<td valign=top width="20%">
-		[% IF case.book.cover %]<a href="[% case.book.cover.get_cover_url %]"><img border=0 src="[% case.book.cover.get_cover_url %]"></a>[% END %]
+		[% IF case.cover %]<a href="[% case.cover.get_cover_url %]"><img border=0 src="[% case.cover.get_cover_url %]"></a>[% END %]
+		[% IF case.toc %]<a href="[% case.toc.get_thumbnail_url %]"><img border=0 src="[% case.toc.get_thumbnail_url %]"></a>[% END %]
+	<td valign=top width="20%">
+		[% IF case.cover %][% IF case.book.cover %]<a href="[% case.book.cover.get_cover_url %]"><img border=0 src="[% case.book.cover.get_cover_url %]"></a>[% END %][% END %]
+		[% IF case.toc %][% IF case.book.toc %]<a href="[% case.book.toc.get_thumbnail_url %]"><img border=0 src="[% case.book.toc.get_thumbnail_url %]"></a>[% END %][% END %]
 	<td valign=top width="30%"><a 
 			href="/view?[%case.book.bibinfo.to_some_param%]"
 				>[% case.book.bibinfo.to_human_title %]</a>

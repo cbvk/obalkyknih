@@ -1,21 +1,36 @@
+use utf8;
 package DB::Result::Cover;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+DB::Result::Cover
+
+=cut
 
 use strict;
 use warnings;
 
 use Moose;
 use MooseX::NonMoose;
-use namespace::autoclean;
+use MooseX::MarkAsMethods autoclean => 1;
 extends 'DBIx::Class::Core';
+
+=head1 COMPONENTS LOADED
+
+=over 4
+
+=item * L<DBIx::Class::InflateColumn::DateTime>
+
+=back
+
+=cut
 
 __PACKAGE__->load_components("InflateColumn::DateTime");
 
-=head1 NAME
-
-DB::Result::Cover
+=head1 TABLE: C<cover>
 
 =cut
 
@@ -48,12 +63,6 @@ __PACKAGE__->table("cover");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 file_icon
-
-  data_type: 'integer'
-  is_foreign_key: 1
-  is_nullable: 0
-
 =head2 file_thumb
 
   data_type: 'integer'
@@ -61,6 +70,12 @@ __PACKAGE__->table("cover");
   is_nullable: 0
 
 =head2 file_medium
+
+  data_type: 'integer'
+  is_foreign_key: 1
+  is_nullable: 0
+
+=head2 file_icon
 
   data_type: 'integer'
   is_foreign_key: 1
@@ -122,11 +137,11 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "book",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
-  "file_icon",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "file_thumb",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "file_medium",
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
+  "file_icon",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "file_orig",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
@@ -147,9 +162,44 @@ __PACKAGE__->add_columns(
   "used_count",
   { data_type => "integer", default_value => 0, is_nullable => 1 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("id");
-__PACKAGE__->add_unique_constraint("cover_product", ["product"]);
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<cover_checksum>
+
+=over 4
+
+=item * L</checksum>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("cover_checksum", ["checksum"]);
+
+=head2 C<cover_product>
+
+=over 4
+
+=item * L</product>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("cover_product", ["product"]);
 
 =head1 RELATIONS
 
@@ -168,6 +218,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 book
+
+Type: belongs_to
+
+Related object: L<DB::Result::Book>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "book",
+  "DB::Result::Book",
+  { id => "book" },
+  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
+);
+
 =head2 books
 
 Type: has_many
@@ -183,21 +248,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 product
-
-Type: belongs_to
-
-Related object: L<DB::Result::Product>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "product",
-  "DB::Result::Product",
-  { id => "product" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
 =head2 file_icon
 
 Type: belongs_to
@@ -210,22 +260,7 @@ __PACKAGE__->belongs_to(
   "file_icon",
   "DB::Result::Fileblob",
   { id => "file_icon" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 file_thumb
-
-Type: belongs_to
-
-Related object: L<DB::Result::Fileblob>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "file_thumb",
-  "DB::Result::Fileblob",
-  { id => "file_thumb" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
 );
 
 =head2 file_medium
@@ -240,7 +275,7 @@ __PACKAGE__->belongs_to(
   "file_medium",
   "DB::Result::Fileblob",
   { id => "file_medium" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
 );
 
 =head2 file_orig
@@ -255,22 +290,37 @@ __PACKAGE__->belongs_to(
   "file_orig",
   "DB::Result::Fileblob",
   { id => "file_orig" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
 );
 
-=head2 book
+=head2 file_thumb
 
 Type: belongs_to
 
-Related object: L<DB::Result::Book>
+Related object: L<DB::Result::Fileblob>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "book",
-  "DB::Result::Book",
-  { id => "book" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  "file_thumb",
+  "DB::Result::Fileblob",
+  { id => "file_thumb" },
+  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
+);
+
+=head2 product
+
+Type: belongs_to
+
+Related object: L<DB::Result::Product>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "product",
+  "DB::Result::Product",
+  { id => "product" },
+  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
 );
 
 =head2 products
@@ -304,10 +354,11 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-11-27 11:45:33
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ODfOvlVZWIscOPc6a2abOg
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-06-19 18:45:43
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:TWcBPThdvn8Vki98wwtJSw
 
-use utf8;
+use Data::Dumper;
+use DB;
 
 sub is_generic { shift->id < 1_000_000 ? 1 : 0 }
 

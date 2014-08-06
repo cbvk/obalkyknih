@@ -1,21 +1,36 @@
+use utf8;
 package DB::Result::Book;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+DB::Result::Book
+
+=cut
 
 use strict;
 use warnings;
 
 use Moose;
 use MooseX::NonMoose;
-use namespace::autoclean;
+use MooseX::MarkAsMethods autoclean => 1;
 extends 'DBIx::Class::Core';
+
+=head1 COMPONENTS LOADED
+
+=over 4
+
+=item * L<DBIx::Class::InflateColumn::DateTime>
+
+=back
+
+=cut
 
 __PACKAGE__->load_components("InflateColumn::DateTime");
 
-=head1 NAME
-
-DB::Result::Book
+=head1 TABLE: C<book>
 
 =cut
 
@@ -52,7 +67,7 @@ __PACKAGE__->table("book");
 
   data_type: 'varchar'
   is_nullable: 1
-  size: 32
+  size: 64
 
 =head2 authors
 
@@ -100,12 +115,6 @@ __PACKAGE__->table("book");
   is_foreign_key: 1
   is_nullable: 1
 
-=head2 review
-
-  data_type: 'integer'
-  is_foreign_key: 1
-  is_nullable: 1
-
 =head2 cached_rating_sum
 
   data_type: 'integer'
@@ -114,6 +123,12 @@ __PACKAGE__->table("book");
 =head2 cached_rating_count
 
   data_type: 'integer'
+  is_nullable: 1
+
+=head2 review
+
+  data_type: 'integer'
+  is_foreign_key: 1
   is_nullable: 1
 
 =head2 work
@@ -151,7 +166,7 @@ __PACKAGE__->add_columns(
   "oclc",
   { data_type => "varchar", is_nullable => 1, size => 32 },
   "nbn",
-  { data_type => "varchar", is_nullable => 1, size => 32 },
+  { data_type => "varchar", is_nullable => 1, size => 64 },
   "authors",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "title",
@@ -172,12 +187,12 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "toc",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
-  "review",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "cached_rating_sum",
   { data_type => "integer", is_nullable => 1 },
   "cached_rating_count",
   { data_type => "integer", is_nullable => 1 },
+  "review",
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "work",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "citation",
@@ -185,6 +200,17 @@ __PACKAGE__->add_columns(
   "tips",
   { data_type => "varchar", is_nullable => 1, size => 255 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("id");
 
 =head1 RELATIONS
@@ -204,26 +230,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 review
-
-Type: belongs_to
-
-Related object: L<DB::Result::Review>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "review",
-  "DB::Result::Review",
-  { id => "review" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
 =head2 cover
 
 Type: belongs_to
@@ -239,48 +245,8 @@ __PACKAGE__->belongs_to(
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
-=head2 toc
-
-Type: belongs_to
-
-Related object: L<DB::Result::Toc>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "toc",
-  "DB::Result::Toc",
-  { id => "toc" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
-=head2 work
-
-Type: belongs_to
-
-Related object: L<DB::Result::Work>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "work",
-  "DB::Result::Work",
-  { id => "work" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
   },
 );
 
@@ -327,6 +293,86 @@ __PACKAGE__->has_many(
   "DB::Result::Product",
   { "foreign.book" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 review
+
+Type: belongs_to
+
+Related object: L<DB::Result::Review>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "review",
+  "DB::Result::Review",
+  { id => "review" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
+=head2 review_2
+
+Type: belongs_to
+
+Related object: L<DB::Result::Review>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "review_2",
+  "DB::Result::Review",
+  { id => "review" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
+=head2 review_3
+
+Type: belongs_to
+
+Related object: L<DB::Result::Review>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "review_3",
+  "DB::Result::Review",
+  { id => "review" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
+=head2 review_4
+
+Type: belongs_to
+
+Related object: L<DB::Result::Review>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "review_4",
+  "DB::Result::Review",
+  { id => "review" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
 );
 
 =head2 reviews
@@ -389,6 +435,46 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 toc
+
+Type: belongs_to
+
+Related object: L<DB::Result::Toc>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "toc",
+  "DB::Result::Toc",
+  { id => "toc" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
+=head2 toc_2
+
+Type: belongs_to
+
+Related object: L<DB::Result::Toc>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "toc_2",
+  "DB::Result::Toc",
+  { id => "toc" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
 =head2 tocs
 
 Type: has_many
@@ -404,13 +490,32 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 work
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-11-27 11:45:33
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FHR+3w8xt0qgBZoT70qULA
+Type: belongs_to
 
-# # Automatic see: DBIx::Class::InflateColumn::DateTime
+Related object: L<DB::Result::Work>
 
-use utf8;
+=cut
+
+__PACKAGE__->belongs_to(
+  "work",
+  "DB::Result::Work",
+  { id => "work" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-08-01 15:44:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:H26Xl3otuCr2AxfHRgdhtA
+
+use Data::Dumper;
+use DB;
 
 sub displayable_products {
 	my($book) = @_;
@@ -492,8 +597,10 @@ sub recalc_rating {
 	my($rs,$rc,$ers,$erc) = (0,0,0,0);
 	foreach($book->reviews) { # WHERE rating NOT NULL ?
 		if(defined $_->rating) {
-			if($_->product) { $ers += $_->rating; $erc++ }
-					   else { $rs  += $_->rating; $rc++ }
+			if ($_->rating > 0) {
+				if($_->product) { $ers += $_->rating; $erc++ }
+						   else { $rs  += $_->rating; $rc++ }
+			}
 		}
 	}
 	# logika: produktove ma 6 hlasu, pak bude postupne prevazeno
@@ -513,6 +620,18 @@ sub get_rating {
 		$rc += $_->cached_rating_count || 0;
 	}
 	return ($rs,$rc);
+}
+
+sub get_reviews {
+	my($book) = @_;
+	my @book_ids;
+	my @books = $book->work_books; # pres vsechna dila..
+	map { push @book_ids, $_->id } @books;
+	my $reviews = DB->resultset('Review')->search({ book=>@book_ids }, {
+		order_by => { '-desc' => 'created' },
+		limit => 200
+	});
+	return $reviews->all;
 }
 
 sub get_rating_count { # nutne asi jen kvuli view
@@ -568,7 +687,29 @@ sub add_review {
 			visitor_name => $info->{visitor_name}, 
 			visitor_ip => $info->{visitor_ip}, 
 			html_text => $info->{html_text},
-			visitor => $visitor, library => $library,
+			visitor => $visitor, 
+			library => $library->get_column('id'),
+			library_id_review => $info->{id},
+			impact => $info->{impact},
+	});
+	$visitor->update({ name => $info->{name} }) if($info->{name});
+	$book->recalc_rating;
+	$book->recalc_review;
+	$book->invalidate;
+	return $review;
+}
+
+sub edit_review {
+	my($book,$library,$visitor,$info) = @_;
+	die unless($visitor);
+    my $review = DB->resultset('Review')->create({
+			book => $book, rating => $info->{rating},
+			visitor_name => $info->{visitor_name},
+			visitor_ip => $info->{visitor_ip},
+			html_text => $info->{html_text},
+			visitor => $visitor,
+			library => $library->get_column('id'),
+			library_id_review => $info->{id},
 			impact => $info->{impact},
 	});
 	$visitor->update({ name => $info->{name} }) if($info->{name});
@@ -581,7 +722,7 @@ sub add_review {
 # --------------------------------------------------------------
 
 sub enrich {
-	my($book,$info,$library,$permalink,$bibinfo,$secure) = @_;
+	my($book,$info,$library,$permalink,$bibinfo,$secure,$params) = @_;
 
 	# aktualizuj book bibinfo (OCLC, title,...) (strcit to do Marc::..?)
 	my $book_bibinfo = $book->bibinfo;
@@ -590,6 +731,11 @@ sub enrich {
 		$book->invalidate;
 	}
 #	$bibinfo->save_to($book);
+
+	$info->{book_id} = $book->id;
+	$info->{ean} = $book_bibinfo->ean13 if $book_bibinfo->ean13;
+	$info->{nbn}  = $book_bibinfo->nbn if $book_bibinfo->nbn;
+	$info->{oclc} = $book_bibinfo->oclc if $book_bibinfo->oclc;
 
 	# 1. Najdi cover
 	my $cover = $book->get_cover; # pripadne najde work->cover
@@ -609,38 +755,50 @@ sub enrich {
 	if($toc) {
 		$info->{toc_pdf_url}       = $toc->get_pdf_url($secure);
 		$info->{toc_thumbnail_url} = $toc->get_thumbnail_url($secure);
-		$info->{toc_text_url}      = $toc->get_text_url($secure);
+		$info->{toc_text_url}      = $toc->get_text_url($secure) if $toc->get_column('full_text');
 		# jeste rozmery
 	}
 
-	# 3. Najdi Recenzi
+	# 3. Backlink
 
 	if($cover) { # or $toc or $review or $neco...) { # jinak nelinkuj..
 		$info->{backlink_url}  = $book->get_obalkyknih_url($secure);
 	}
 
+	# 4. Hodnoceni
+	
 	my($r_sum,$r_count) = $book->get_rating;
 	$info->{rating_sum}   = $r_sum;
 	$info->{rating_count} = $r_count;
 	if($r_count) {
 		my $avg = $r_sum / $r_count;
-		$info->{rating_avg100} = $avg;
+		$info->{rating_avg100} = sprintf("%2.0f",$avg);
 		$info->{rating_avg5} = ($avg % 20) ?
 				sprintf("%1.1f",$avg/20) : int($avg/20);
-		$info->{rating_url} = Obalky::Config->url($secure).
-										"/stars?value=$avg";
+		$info->{rating_url} = Obalky::Config->url($secure).'/stars?value='.sprintf("%2.0f",$avg);
 	}
 
+	# 5. Recenze
+
 	$info->{reviews} = [];
-#	foreach($book->reviews) {
-#		my $review = $_->to_info;
-#		push @{$info->{reviews}}, $review if($review);
-#	}
+	if ($params->{review}) {
+		my @reviews = $book->get_reviews;
+		map {
+			my $review = $_->to_info;
+			push @{$info->{reviews}}, $review if($review);
+		} @reviews;
+	}
+	
+	# 6. Toc fulltext
+	if ($params->{toc_full_text}) {
+		$info->{toc_full_text} = '';
+		$info->{toc_full_text} = $book->toc->get_column('full_text') if ($book->toc);
+	}
 
 	return $info;
 }
 
+
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 __PACKAGE__->meta->make_immutable;
-
 1;

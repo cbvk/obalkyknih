@@ -1,21 +1,36 @@
+use utf8;
 package DB::Result::Abuse;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+DB::Result::Abuse
+
+=cut
 
 use strict;
 use warnings;
 
 use Moose;
 use MooseX::NonMoose;
-use namespace::autoclean;
+use MooseX::MarkAsMethods autoclean => 1;
 extends 'DBIx::Class::Core';
+
+=head1 COMPONENTS LOADED
+
+=over 4
+
+=item * L<DBIx::Class::InflateColumn::DateTime>
+
+=back
+
+=cut
 
 __PACKAGE__->load_components("InflateColumn::DateTime");
 
-=head1 NAME
-
-DB::Result::Abuse
+=head1 TABLE: C<abuse>
 
 =cut
 
@@ -36,17 +51,17 @@ __PACKAGE__->table("abuse");
   default_value: current_timestamp
   is_nullable: 0
 
-=head2 note
-
-  data_type: 'varchar'
-  is_nullable: 1
-  size: 255
-
 =head2 cover
 
   data_type: 'integer'
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
+
+=head2 toc
+
+  data_type: 'integer'
+  is_foreign_key: 1
+  is_nullable: 1
 
 =head2 book
 
@@ -64,6 +79,12 @@ __PACKAGE__->table("abuse");
 
   data_type: 'varchar'
   is_nullable: 0
+  size: 255
+
+=head2 note
+
+  data_type: 'varchar'
+  is_nullable: 1
   size: 255
 
 =head2 approved_by
@@ -91,16 +112,18 @@ __PACKAGE__->add_columns(
     default_value => \"current_timestamp",
     is_nullable => 0,
   },
-  "note",
-  { data_type => "varchar", is_nullable => 1, size => 255 },
   "cover",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
+  "toc",
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "book",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "client_ip",
   { data_type => "varchar", is_nullable => 0, size => 16 },
   "referer",
   { data_type => "varchar", is_nullable => 0, size => 255 },
+  "note",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
   "approved_by",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "approved",
@@ -111,24 +134,20 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
 );
-__PACKAGE__->set_primary_key("id");
 
-=head1 RELATIONS
+=head1 PRIMARY KEY
 
-=head2 cover
+=over 4
 
-Type: belongs_to
+=item * L</id>
 
-Related object: L<DB::Result::Cover>
+=back
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "cover",
-  "DB::Result::Cover",
-  { id => "cover" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
+__PACKAGE__->set_primary_key("id");
+
+=head1 RELATIONS
 
 =head2 book
 
@@ -142,12 +161,52 @@ __PACKAGE__->belongs_to(
   "book",
   "DB::Result::Book",
   { id => "book" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
+);
+
+=head2 cover
+
+Type: belongs_to
+
+Related object: L<DB::Result::Cover>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "cover",
+  "DB::Result::Cover",
+  { id => "cover" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
+=head2 toc
+
+Type: belongs_to
+
+Related object: L<DB::Result::Toc>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "toc",
+  "DB::Result::Toc",
+  { id => "toc" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-11-27 06:34:35
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:yQPW2nANAZIdM7Bh0EpjnA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-07-31 23:20:47
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:IqiDKnyCLGPN45p+MHKZTg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -1,21 +1,36 @@
+use utf8;
 package DB::Result::Lastrequest;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+DB::Result::Lastrequest
+
+=cut
 
 use strict;
 use warnings;
 
 use Moose;
 use MooseX::NonMoose;
-use namespace::autoclean;
+use MooseX::MarkAsMethods autoclean => 1;
 extends 'DBIx::Class::Core';
+
+=head1 COMPONENTS LOADED
+
+=over 4
+
+=item * L<DBIx::Class::InflateColumn::DateTime>
+
+=back
+
+=cut
 
 __PACKAGE__->load_components("InflateColumn::DateTime");
 
-=head1 NAME
-
-DB::Result::Lastrequest
+=head1 TABLE: C<lastrequests>
 
 =cut
 
@@ -85,11 +100,22 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("id");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-11-27 06:34:35
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:OD+H8x9PItQe1vZGNTUw5Q
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-04-25 16:11:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5Fl648sp6MSEYZhr9CdkWA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

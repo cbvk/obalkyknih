@@ -1,0 +1,105 @@
+[% PROCESS _header_tovarna %]
+[% PROCESS _header_blue %]
+[% PROCESS _header_main %]
+
+[% PROCESS _errors %]
+
+[% IF signed %]
+
+<h1>Seznam registrovaných knihoven</h1>
+
+<p />
+[% IF library_list.size %]
+
+	[% IF filter_key %]
+		<a href="/admin_library?[%IF order%]&o=[%order%][%END%][%IF order_dir%]&od=[%order_dir%][%END%][%IF per_page%]&pp=[%per_page%][%END%]">Zrušit filtrování podle fráze: "[%filter_val%]"</a>
+	[% END %]
+
+	[% PROCESS _pagination %]
+
+	<table class="qe-table">
+	<tr>
+		<th>&nbsp;</th>
+		<th>
+			<a href="/admin_library?o=id&amp;od=[% IF order=='id' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%]">ID</a>
+		</th>
+		<th>
+			<a href="/admin_library?o=code&amp;od=[% IF order=='code' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%]">SIGLA</a>
+			<a href="#" class="f-icon" title="Vyhledat"> <img src="/img/magnifier.png" alt="Vyhledat" /></a>
+			<form action="/admin_library" method="get" class="f-form">
+				<fieldset>
+					<input type="text" name="fv" value="[% IF filter_key=='code' %][%filter_val%][% END %]" />
+					<input type="hidden" name="fk" value="code" />
+					[%IF order%]<input type="hidden" name="o" value="[%order%]" />[%END%]
+					[%IF order_dir%]<input type="hidden" name="od" value="[%order_dir%]" />[%END%]
+					[%IF per_page%]<input type="hidden" name="pp" value="[%per_page%]" />[%END%]
+					<input type="submit" name="fs" value="   OK   " />
+					<input type="button" name="fc" value=" Zrušit " class="f-cancel" />
+				</fieldset>
+			</form>
+		</th>
+		<th>
+			<a href="/admin_library?o=name&amp;od=[% IF order=='name' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%]">Název organizace</a>
+			<a href="#" class="f-icon" title="Vyhledat"> <img src="/img/magnifier.png" alt="Vyhledat" /></a>
+			<form action="/admin_library" method="get" class="f-form">
+				<fieldset>
+					<input type="text" name="fv" value="[% IF filter_key=='name' %][%filter_val%][% END %]" />
+					<input type="hidden" name="fk" value="name" />
+					[%IF order%]<input type="hidden" name="o" value="[%order%]" />[%END%]
+					[%IF order_dir%]<input type="hidden" name="od" value="[%order_dir%]" />[%END%]
+					[%IF per_page%]<input type="hidden" name="pp" value="[%per_page%]" />[%END%]
+					<input type="submit" name="fs" value="   OK   " />
+					<input type="button" name="fc" value=" Zrušit " class="f-cancel" />
+				</fieldset>
+			</form>
+		</th>
+		<th>
+			<a href="/admin_library?o=created&amp;od=[% IF order=='created' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%]">Registrace</a>
+		</th>
+		<th>Práva</th>
+	</tr>
+	
+	[% FOREACH row IN library_list %]
+	[% td_class = row.flag_active ? '' : ' class="red"' %]
+	<tr>
+		<td[%td_class%]>
+			[% IF !row.flag_active %]
+				<a href="/admin_library?a=[% row.id %]" class="confirm-common">AKTIVOVAT</a>&nbsp;|&nbsp;
+				<a href="/admin_library?d=[% row.id %]" class="confirm-common">SMAZAT</a>&nbsp;|&nbsp;
+			[% END %]
+			<a href="/account?i=[% row.id %]" title="Přejít na konto knihovny"><img src="/img/arrow.png" alt="Přejít na konto knihovny" /></a> &nbsp; 
+			<a href="/account_review?i=[% row.id %]" title="Přejít na kometáře knihovny" style="padding-left:22px;"><img src="/img/comment.gif" alt="Přejít na kometáře knihovny" style="height:12px; width:13px;" /></a>
+		</td>
+		<td[%td_class%]>[%row.id%]</td>
+		<td[%td_class%]><strong>[%row.code%]</strong></td>
+		<td[%td_class%]>[%row.name%]</td>
+		<td[%td_class%]>[%row.created.strftime('%d.%m.%Y')%]</td>
+		<td[%td_class%]>[%row.get_column('permcount')%] [% IF row.get_column('permcount')==0 %] &nbsp; <a title="Knihovna nemá nastavené práva"><img src="/img/error_small.gif"/></a>[% END %]</td>
+	</tr>
+	[% END %]
+	</table>
+	
+	<br/>
+	[% PROCESS _pagination %]
+	<br/>
+	
+	<p>
+		<img src="/img/error_small.gif" alt="Knihovna nemá nastavené práva" /> &nbsp; Označuje knihovny, které nemají přiřazené práva přístupu na frontend OKCZ. 
+	</p>
+	<span class="red"> &nbsp; Knihovna podbarvená červeně není aktivní &nbsp; </span>
+
+[% ELSE %]
+<p>Pod Vašim účtem nespravujete žádnou knihovnu</p>
+[% END %]
+
+<p style="padding: 20px" />
+
+
+[% ELSE %]
+
+[% PROCESS _form_signin %]
+
+[% END %]
+
+[% PROCESS _footer_tovarna %]
+

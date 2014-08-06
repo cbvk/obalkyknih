@@ -9,6 +9,7 @@ use Obalky::Media;
 use Data::Dumper;
 use utf8;
 
+
 #use encoding 'latin-2';
 #binmode(STDOUT,":encoding(latin-2)") or die;
 
@@ -82,14 +83,24 @@ sub abuse : Local {
 			my $abuse = DB->resultset('Abuse')->find($id) or next;
 			my $book  = $abuse->book;
 			my $cover = $abuse->cover;
+			my $toc = $abuse->toc;
 			if($book and $cover) {
 				warn "Reverting ".$cover->id." in book ".$book->id."\n";
 				$book->update({ cover => $cover });
 			}
+			if($book and $toc) {
+				warn "Reverting ".$toc->id." in book ".$book->id."\n";
+				$book->update({ toc => $toc });
+			}
 			DB->resultset('Abuse')->search({ id => $id })->delete_all;
+			
+			# synchronizuj s frontend
+			my $bibinfo = Obalky::BibInfo->new($book);
+			DB->resultset('FeSync')->request_sync_remove($bibinfo);
 		}
 	}
 	$c->stash->{abused} = [ DB->resultset('Abuse')->all ];
+	warn Dumper($c->stash->{abused});
 	$c->stash->{menu} = "index";
 }
 
@@ -158,6 +169,7 @@ sub file : Local {
 	} else {
 		die "File source $table not defined";
 	}
+	
 	my($mime,$content,$ext) = $object->get_file($method) if($object);
 	unless($content) {
 		$c->response->status(404);
@@ -181,7 +193,11 @@ sub login : Local {
 #	warn Dumper($c->models,$c->model('Obalky::AuthUser'));
 	if($user and $passwd) {
 		if($c->authenticate({ login => $user, password => $passwd })) {
-			$c->res->redirect($return || "/index");
+			if ($c->user->get('flag_library_admin') == '1') {
+				$c->res->redirect($return || "/account");
+				return;
+			}
+			$c->res->redirect($return || "/upload");
 #			warn "user ".Dumper($c->user->get('login'))." authenticated\n";
 		} else {
 			$c->stash->{error} = 
@@ -195,6 +211,171 @@ sub login : Local {
 	$c->stash->{password} = $passwd;
 	$c->stash->{'return'} = $return;
 }
+sub account : Local {
+    my($self,$c) = @_;
+    my $signed = $c->user ? 1 : 0;
+    unless ($signed) {
+    	#uzivatelsky ucet jen pro prihlasene uzivatele
+    	$c->res->redirect("index");
+    	return;
+    }
+    unless ($c->user->get('flag_library_admin')) {
+    	#presmeruj na uzivatelsky ucet ne-spravce knihovny
+		$c->res->redirect("/account_user");
+		return;
+	}
+    
+    my $username = $c->user->get_column('login');
+    if ($username eq $Obalky::ADMIN_EMAIL && !$c->req->param('i')) {
+    	#spravce ma k dispozici spravu vsech knihoven
+    	$c->res->redirect("admin_library");
+    	return;
+    }
+    
+    my $library_admin = $c->user->get_column('flag_library_admin');
+    
+    my $id = $c->user->get_column('library');
+    $id = $c->req->param('i') if ($username eq $Obalky::ADMIN_EMAIL);
+    my $library = $signed ? DB->resultset('Library')->find($id) : 0;
+    
+    if ($library) {
+    	# Pridej opravneni
+	    if($c->req->param('new')) {
+			eval { my $res = DB->resultset('LibraryPerm')->add_permission($c->req->params, $library) };
+			$c->stash->{error} = $@ if($@);
+		}
+		# Edituj opravneni
+	    if($c->req->param('e')) {
+			eval { my $res = DB->resultset('LibraryPerm')->edit_permission($c->req->param('e'), $c->req->params, $library) };
+			$c->stash->{error} = $@ if($@);
+		}
+    	# Deaktivuj opravneni
+	    if($c->req->param('d')) {
+			eval { my $res = DB->resultset('LibraryPerm')->remove_permission($c->req->param('d'), $library) };
+			$c->stash->{error} = $@ if($@);
+		}
+    	# Vypis opravneni
+    	$c->stash->{ref_list} = [ DB->resultset('LibraryPerm')->search({ library=>$id, ref=>{'!=', undef} })->all ];
+    	$c->stash->{ip_list} = [ DB->resultset('LibraryPerm')->search({ library=>$id, ip=>{'!=', undef} })->all ];
+    }
+    
+    $c->stash->{admin_page} = 'account';
+    $c->stash->{signed} = $signed;
+	$c->stash->{library} = $library;
+	$c->stash->{is_admin} = $c->req->param('i') ? 1 : 0;
+	$c->stash->{library_admin} = $library_admin;
+	$c->stash->{params} = $c->req->params;
+}
+sub account_user : Local {
+    my($self,$c) = @_;
+    my $signed = $c->user ? 1 : 0;
+    unless ($signed) {
+    	#uzivatelsky ucet jen pro prihlasene uzivatele
+    	$c->res->redirect("index");
+    	return;
+    }
+    
+    my $library_admin = $c->user->get_column('flag_library_admin');
+    my $userData = DB->resultset('User')->find($c->user->get_column('id'));
+    my $password = $userData->get_column('password');
+    my $flag_review_report = $userData->get_column('flag_review_report');
+    
+    # zmena nastaveni (hesla)
+    if ($c->req->param('submit')) {
+	    my $err = 0;
+	    if ($c->req->param('email_old') ne '') {
+		    if ($c->req->param('email_new') ne $c->req->param('email_confirm')) {
+		    	$c->stash->{error} = 'Vámi zadané nové heslo se neshoduje !';
+		    	$err = 1;
+		    }
+		    if ($c->req->param('email_old') eq '' || $c->req->param('email_new') eq '' || $c->req->param('email_confirm') eq '') {
+		    	$c->stash->{error} = 'Nutné vyplnit všechny položky formuláře !';
+		    	$err = 1;
+		    }
+		    if (!$err && length($c->req->param('email_new')) < 6) {
+		    	$c->stash->{error} = 'Minimální délka nového hesla je 6 znaků !';
+		    	$err = 1;
+		    }
+		    if (!$err && $c->req->param('email_old') ne $password) {
+		    	$c->stash->{error} = 'Vámi zadané původní heslo není platné !';
+		    	$err = 1;
+		    }
+	    }
+	    unless ($err) {
+	    	$c->user->update({ password => $c->req->param('email_new') }) if ($c->req->param('email_old') ne '');
+	    	my $flag_review_report = $c->req->param('flag_review_report') ? 1 : 0;
+	    	DB->resultset('User')->find($c->user->get_column('id'))->update({ flag_review_report => $flag_review_report }) if ($library_admin == 1);
+	    	$c->stash->{error} = 'Vaše nastavení byla uložena';
+	    }
+    }
+    
+    $c->stash->{admin_page} = 'account_user';
+    $c->stash->{signed} = $signed;
+    $c->stash->{library_admin} = $library_admin;
+    $c->stash->{flag_review_report} = $flag_review_report;
+	$c->stash->{params} = $c->req->params;
+}
+sub account_review : Local {
+    my($self,$c) = @_;
+    my $signed = $c->user ? 1 : 0;
+    unless ($signed) {
+    	#uzivatelsky ucet jen pro prihlasene uzivatele
+    	$c->res->redirect("index");
+    	return;
+    }
+    unless ($c->user->get('flag_library_admin')) {
+    	#presmeruj na uzivatelsky ucet ne-spravce knihovny
+		$c->res->redirect("/account_user");
+		return;
+	}
+    
+    my $username = $c->user->get_column('login');
+    if ($username eq $Obalky::ADMIN_EMAIL && !$c->req->param('i')) {
+    	#spravce ma k dispozici spravu vsech knihoven
+    	$c->res->redirect("admin_library");
+    	return;
+    }
+    
+    my $library_admin = $c->user->get_column('flag_library_admin');
+    
+    my $id = $c->user->get_column('library');
+    $id = $c->req->param('i') if ($username eq $Obalky::ADMIN_EMAIL);
+    my $library = $signed ? DB->resultset('Library')->find($id) : 0;
+    
+    if ($library) {
+    	# Smazani prispevku
+	    if($c->req->param('d')) {
+			eval { my $res = DB->resultset('Review')->remove_review($c->req->param('d'), $library) };
+			$c->stash->{error} = $@ if($@);
+		}
+    	# Vypis komentaru
+    	my $search_params = { library=>$library->get_column('id') };
+    	my($page, $max_page, $per_page, $order, $order_dir, $filter_val, $filter_key) = DB::pagination($c, 'Review', $search_params);
+	    $c->stash->{cur_page} = $page;
+	    $c->stash->{max_page} = $max_page;
+	    $c->stash->{per_page} = $per_page;
+	    $c->stash->{order} = $order;
+	    $c->stash->{order_dir} = $order_dir;
+	    $c->stash->{filter_val} = $filter_val;
+	    $c->stash->{filter_key} = $filter_key;
+	    $search_params->{$filter_key} = { '-like'=>"%$filter_val%" } if ($filter_key);
+	    $c->stash->{review_list} = [ DB->resultset('Review')->search($search_params, {
+	    	offset => ($page-1)*$per_page,
+	    	rows => $per_page,
+	    	order_by => { $order_dir==1 ? '-asc' : '-desc' => $order },
+	    	join => 'book',
+	    	'+select' => 'book.title',
+			'+as' => 'title'
+	    })->all ];
+    }
+    
+    $c->stash->{admin_page} = 'account_review';
+    $c->stash->{signed} = $signed;
+	$c->stash->{library} = $library;
+	$c->stash->{is_admin} = $c->req->param('i') ? 1 : 0;
+	$c->stash->{library_admin} = $library_admin;
+	$c->stash->{params} = $c->req->params;
+}
 sub logout : Local {
 	my($self,$c) = @_;
 	my $return = $c->req->param('return');
@@ -202,11 +383,62 @@ sub logout : Local {
 	$c->res->redirect($return || "/index");
 }
 
+=head2 admin_library
+
+Stranka se seznamem vsech knihoven. Spravce muze vstoupit do konta kazde z nich.
+
+=cut
+sub admin_library : Local {
+	my($self,$c) = @_;
+	
+	unless ($c->user) {
+		$c->res->redirect("index");
+    	return;
+    }
+	if ($c->user->get_column('login') ne $Obalky::ADMIN_EMAIL) {
+    	#pouze spravce ma k dispozici spravu vsech knihoven
+    	$c->res->redirect("account");
+    	return;
+    }
+    # Library activate
+    if($c->req->param('a')) {
+		eval { my $res = DB->resultset('Library')->activate_library($c->req->param('a')) };
+		$c->stash->{error} = $@ if($@);
+	}
+    # Library deactivate
+    if($c->req->param('d')) {
+		eval { my $res = DB->resultset('Library')->deactivate_library($c->req->param('d')) };
+		$c->stash->{error} = $@ if($@);
+	}
+    
+    my($page, $max_page, $per_page, $order, $order_dir, $filter_val, $filter_key) = DB::pagination($c, 'Library');
+    
+    $c->stash->{cur_page} = $page;
+    $c->stash->{max_page} = $max_page;
+    $c->stash->{per_page} = $per_page;
+    $c->stash->{order} = $order;
+    $c->stash->{order_dir} = $order_dir;
+    $c->stash->{filter_val} = $filter_val;
+    $c->stash->{filter_key} = $filter_key;
+    my $search_params = undef;
+    $search_params->{$filter_key} = { '-like'=>"%$filter_val%" } if ($filter_key);
+    $c->stash->{library_list} = [ DB->resultset('Library')->search($search_params, {
+    	offset => ($page-1)*$per_page,
+    	rows => $per_page,
+    	order_by => { $order_dir==1 ? '-asc' : '-desc' => $order },
+    	'+select' => '(SELECT COUNT(*) FROM library_perms WHERE `library`=me.`id`)',
+		'+as' => 'permcount'
+    })->all ];
+    
+    $c->stash->{admin_page} = 'admin_library';
+    $c->stash->{signed} = $c->user ? 1 : 0;
+}
+
 =head2 end
 
 Attempt to render a view, if needed.
 
-=cut 
+=cut
 
 sub browse : Local {
 	my($self,$c) = @_;
@@ -229,14 +461,10 @@ sub upload : Local {
 		license => "free",
 	};
 	if($url or $file) {
-		unless($c->req->param('free')) {
-			$c->stash->{error} = "Nutno udělit souhlas s použitím.";
-		} else {
-			my $batch = eval { 
-				DB->resultset('Upload')->upload(undef,undef,$info) };
-			return $c->res->redirect("preview?batch=$batch") unless($@);
-			$c->stash->{error} = $@;
-		}
+		my $batch = eval { 
+			DB->resultset('Upload')->upload(undef,undef,$info) };
+		return $c->res->redirect("preview?batch=$batch") unless($@);
+		$c->stash->{error} = $@;
 	}
 	$c->stash->{url} = $url ? $url : "http://";
 	$c->stash->{menu} = "upload";
@@ -319,18 +547,18 @@ sub vote : Local {
 
 sub view : Local {
 	my($self,$c) = @_;
-
 	my($library,$seance,$visitor) = Obalky->visit($c);
-
+	
 	my $referer = $c->req->param('referer') || $c->req->referer;
 	if($c->req->param('report')) {
-		my $cover = DB->resultset('Cover')->find(
-							$c->req->param("cover"));
+		my ($cover, $toc);
+		$cover = DB->resultset('Cover')->find($c->req->param("cover")) if ($c->req->param("cover"));
+		$toc = DB->resultset('Toc')->find($c->req->param("toc")) if ($c->req->param("toc"));
 		my $note = $c->req->param('note');
 		my $spamQuestion = $c->req->param('spamQuestion');
 		my $book = DB->resultset('Book')->find($c->req->param('book'));
 		my $abuse = DB->resultset('Abuse')->
-					abuse($book,$cover,$c->req->address,$referer,$note)
+					abuse($book,$cover,$toc,$c->req->address,$referer,$note)
 						if($spamQuestion eq 23);
 		$c->stash->{error} = "Děkujeme za nahlášení, chybnou obálku se ".
 					"pokusíme co nejdřív opravit." if($abuse);
@@ -360,6 +588,10 @@ sub view : Local {
 		$change->update({ cover => $cover_id }) if($cover_id);
 		my $toc_id   = $c->req->param('set_toc');
 		$change->update({ toc => $toc_id }) if($toc_id);
+		
+		# synchronizuj s frontend
+		my $bibinfo = Obalky::BibInfo->new($change);
+		DB->resultset('FeSync')->request_sync_remove($bibinfo);
 
 		# invaliduj cache
 		DB->resultset('Cache')->invalidate($change->id);
@@ -421,7 +653,7 @@ sub signup : Local {
 	}
 	$c->stash->{signed} = $signed;
 	$c->stash->{$_} = $c->req->param($_) 
-		for(qw/fullname email protirob libcode libname libaddress libcity 
+ 		for(qw/fullname email protirob libcode libname libaddress libcity libpurpose
 			   logo_url eshop_name eshop_url
 			   libemailboss libemailads libskipmember xmlfeed/);
 	$c->stash->{libopac} = $c->req->param('libopac') ?

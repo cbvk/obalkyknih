@@ -33,6 +33,7 @@
 <h1>Přihlášení</h1>
 <p>
 Přihlášený uživatel: <b>[%user%]</b><br>
+<a href="/account">Nastavení »</a> <br/>
 <a href="/logout">Odhlásit</a>
 </p>
 </div>

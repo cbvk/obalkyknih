@@ -52,31 +52,62 @@ sub add_review : Local {
 	my($self,$c) = @_;
 	my $this = from_json($c->req->param("book"));
 	# parametry: rating, visitor_name, html_text!
-	my $rating = $c->req->param("rating");
+	my $rating = $c->req->param("rating") || undef;
+	$rating *= 10 if ($rating && $rating<10);
+	my $html_text = $c->req->param("html_text") || "";
+	my $id = $c->req->param("id");
+	# pokud neni ani rating and html_text neni co hodnotit
+	return if (!$rating && $html_text eq "");
 
-	my($library,$session,$visitor) = Obalky->visit($c);
+	my ($library,$session,$visitor) = Obalky->visit($c);
+	if ($c->req->param("sigla")) {
+		#pozadavek z frontendu (APIv3.0) - pouze frontend server muze ukladat komentare timto zpusobem
+		$library = DB->resultset('Library')->search({ code=>$c->req->param("sigla") })->next;
+		my $fe = DB->resultset('FeList')->search({ ip_addr=>$c->request->address });
+		return unless($fe->count || $c->request->address eq '127.0.0.1');
+	}
 
 	my $bibinfo = Obalky::BibInfo->new_from_params($this->{bibinfo});
 	my $permalink = Obalky::Tools->fix_permalink($this->{permalink});
 
 	# v dotazu chybi minimalni udaje, ignoruj..
-	unless($library and $bibinfo and $permalink) {
+#	unless($library and $bibinfo and $permalink) {
 #		warn "Chybi minimalni udaje, ignoruju (lib=".($library?$library->code:"").")...\n";
+#	}
+	return unless($library and $bibinfo and $permalink);
+
+	my($book,$record) = DB->resultset('Marc')->get_book_record( $library, $permalink, $bibinfo );
+
+	# existuje uz zaznam v tabulce review ?
+	# pokud ano, v dalsich krocich bude se pokracovat editaci
+	my $flagEdit = 0;
+	if ($id && $library) {
+		my $retExists = DB->resultset('Review')->search({ library=>$library->id, library_id_review=>$id });
+		$flagEdit = $retExists->count;
 	}
-	return unless($library and $bibinfo and $permalink); 
+	
+	my $review_params = {
+			id => $id,
+			rating => $rating,
+			html_text => $html_text,
+			visitor => $visitor,
+			visitor_name => $visitor->name, # asi nevyplneno...
+			visitor_ip => $c->request->address,
+			impact => $html_text ne "" ? $Obalky::Media::REVIEW_COMMENT : $Obalky::Media::REVIEW_VOTE }
 
-	my($book,$record) = DB->resultset('Marc')->get_book_record(
-							$library, $permalink, $bibinfo );
+	if ($flagEdit===1) {
+		# zaznam komentare existuje, editujeme
+		$book->edit_review($library,$visitor,$review_params);
+	} else if ($flagEdit===0) {
+		# zaznam komentare neexistuje, pridavame
+		$book->add_review($library,$visitor,$review_params);
+	}
 
-	$book->add_review($library,$visitor,{ 
-		rating => $rating,
-		visitor => $visitor,
-		visitor_name => $visitor->name, # asi nevyplneno...
-		visitor_ip => $c->request->address,
-		impact => $Obalky::Media::REVIEW_COMMENT });
-
-	$book->enrich($this,$library,$permalink,$bibinfo,
-							  $c->request->secure);
+	$book->enrich($this,$library,$permalink,$bibinfo,$c->request->secure);
+	
+	# vyvolej promazani metadat ze vsech frontend serveru krome zdrojoveho
+	my $fe = DB->resultset('FeList')->search({ flag_active=>1, ip_addr=>{'!=',$c->request->address} });
+	DB->resultset('FeSync')->request_sync_remove($bibinfo, $fe);
 
 	$c->response->content_type("text/javascript;charset=UTF-8");
 #	$c->response->content_encoding("UTF-8");
@@ -99,7 +130,7 @@ sub do_book_request {
     my($book,$record) = DB->resultset('Marc')->get_book_record(
 								$library, $permalink, $bibinfo );
 
-	$book->enrich($this,$library,$permalink,$bibinfo,$c->request->secure);
+	$book->enrich($this,$library,$permalink,$bibinfo,$c->request->secure,$c->req->params);
 
 	# zapis do DB #lastrequests [ visitor_id, session?, $book->id, $record->id ]
 #	if($tip) {
@@ -513,7 +544,6 @@ sub _do_import {
     $self->_do_log("calling ->add_product(".Dumper($bibinfo).",",
                             Dumper($media).",$product_url)");
 	my $product = $eshop->add_product($bibinfo,$media,$product_url);
-	warn Dumper($bibinfo,$media,$product_url,$product->id);
 
     $self->_do_log("ok, product ".$product->id." ready");
 
@@ -564,6 +594,24 @@ sub _upload_file {
         }
     }
     return $pathname ? $size : $content;
+}
+
+# vola frontend pro nacteni jednoho, nebo casteji vsech prav (pri startu instance FE serveru)
+sub perm : Local {
+	my($self,$c) = @_;
+	my %permRefs; my %permIps; my %cond;
+	my $sigla = $c->req->param('sigla');
+	if ($sigla) {
+		$cond{flag_active} = 1;
+		$cond{code} = $sigla if ($sigla ne 'false');
+		my $res = DB->resultset('Library')->search({%cond}, { join=>'library_perms', '+select'=>['library_perms.ref', 'library_perms.ip'], '+as'=>['ref', 'ip'] });
+		foreach ($res->all) {
+			push( @{ $permRefs { $_->get_column('code') } }, $_->get_column('ref')) if ($_->get_column('ref'));
+			push( @{ $permIps { $_->get_column('code') } }, $_->get_column('ip')) if ($_->get_column('ip'));
+		}
+	}
+	$c->response->content_type("text/plain");
+	$c->response->body( to_json({ref=>\%permRefs, ip=>\%permIps}) );
 }
 
 1;

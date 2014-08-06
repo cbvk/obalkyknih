@@ -1,21 +1,36 @@
+use utf8;
 package DB::Result::User;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
+
+=head1 NAME
+
+DB::Result::User
+
+=cut
 
 use strict;
 use warnings;
 
 use Moose;
 use MooseX::NonMoose;
-use namespace::autoclean;
+use MooseX::MarkAsMethods autoclean => 1;
 extends 'DBIx::Class::Core';
+
+=head1 COMPONENTS LOADED
+
+=over 4
+
+=item * L<DBIx::Class::InflateColumn::DateTime>
+
+=back
+
+=cut
 
 __PACKAGE__->load_components("InflateColumn::DateTime");
 
-=head1 NAME
-
-DB::Result::User
+=head1 TABLE: C<user>
 
 =cut
 
@@ -66,6 +81,20 @@ __PACKAGE__->table("user");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 flag_library_admin
+
+  data_type: 'tinyint'
+  default_value: 0
+  extra: {unsigned => 1}
+  is_nullable: 0
+
+=head2 flag_review_report
+
+  data_type: 'tinyint'
+  default_value: 1
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -88,25 +117,68 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "eshop",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
+  "flag_library_admin",
+  {
+    data_type => "tinyint",
+    default_value => 0,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
+  "flag_review_report",
+  {
+    data_type => "tinyint",
+    default_value => 1,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<user_login>
+
+=over 4
+
+=item * L</login>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("user_login", ["login"]);
 
 =head1 RELATIONS
 
-=head2 uploads
+=head2 eshop
 
-Type: has_many
+Type: belongs_to
 
-Related object: L<DB::Result::Upload>
+Related object: L<DB::Result::Eshop>
 
 =cut
 
-__PACKAGE__->has_many(
-  "uploads",
-  "DB::Result::Upload",
-  { "foreign.user" => "self.id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+__PACKAGE__->belongs_to(
+  "eshop",
+  "DB::Result::Eshop",
+  { id => "eshop" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
 );
 
 =head2 library
@@ -124,37 +196,32 @@ __PACKAGE__->belongs_to(
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
   },
 );
 
-=head2 eshop
+=head2 uploads
 
-Type: belongs_to
+Type: has_many
 
-Related object: L<DB::Result::Eshop>
+Related object: L<DB::Result::Upload>
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "eshop",
-  "DB::Result::Eshop",
-  { id => "eshop" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+__PACKAGE__->has_many(
+  "uploads",
+  "DB::Result::Upload",
+  { "foreign.user" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2011-11-27 09:43:52
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jDEFPB3e2WlQlUrNRyqKJg
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-07-10 23:42:51
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+hx+bpae9copEM3c+pFAsw
+
 
 use Data::Dumper;
-use utf8;
 
 sub find_by_email {
 	my($pkg,$email) = @_;
