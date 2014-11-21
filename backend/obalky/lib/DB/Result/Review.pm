@@ -163,6 +163,20 @@ __PACKAGE__->set_primary_key("id");
 
 =head1 UNIQUE CONSTRAINTS
 
+=head2 C<library_2>
+
+=over 4
+
+=item * L</library>
+
+=item * L</library_id_review>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("library_2", ["library", "library_id_review"]);
+
 =head2 C<review_product>
 
 =over 4
@@ -323,8 +337,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-08-01 15:51:03
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5wy2plXGa1Qt6SzNdHsSfA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-08-07 16:31:03
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BrZx5ijDQ0KmIJsKorQ+lQ
 
 use Data::Dumper;
 
@@ -346,16 +360,13 @@ sub to_info {
         #'impact', $review->impact,
     );
     $res{rating} = $review->rating if ($review->rating);
-    $res{sigla} = $review->library->get_column('code') if ($review->library->get_column('code') ne '');
-    $res{id} = $review->library_id_review if ($review->library_id_review && $review->library->get_column('code') ne '');
+    if ($review->library) {
+    	$res{sigla} = $review->library->get_column('code') if ($review->library->get_column('code') ne '');
+    	$res{library_name} = $review->library->get_column('name') if ($review->library->get_column('name') ne '');
+    	$res{id} = $review->library_id_review if ($review->library_id_review && $review->library->get_column('code') ne '');
+    }
     #$res{visitor_name} = $review->visitor_name if ($review->visitor_name);
     #$res{visitor_ip} = $review->visitor_blurred_ip if ($review->visitor_name);
-    
-    my $lib;
-    $lib = DB->resultset('Library')->find($review->library) if ($review->library);
-    if ($lib) {
-    	$res{created_by_library} = $lib->get_column('name') if ($lib->get_column('name') ne '');
-    }
     
     return \%res;
 }

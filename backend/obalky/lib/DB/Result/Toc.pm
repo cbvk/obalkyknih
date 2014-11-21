@@ -243,6 +243,7 @@ sub set_pdf {
 sub to_xml {
 	my($toc) = @_;
 	my $text = $toc->full_text;
+	$text =~ s/^L//g;
 	return "" unless($text);
 	unless($toc->product) {
 		warn $toc->id." no product\n";
@@ -256,8 +257,10 @@ sub to_xml {
 	}
 	my $bibinfo = Obalky::BibInfo->new($book);
 	return "\t<book>\n".$bibinfo->to_xml.
-			"\t\t<toc>".HTML::Tiny->entity_encode($text).
-			"</toc>\n"."\t</book>\n";
+			"\t\t<book_id>".$toc->product->book->id."</book_id>\n".
+			"\t\t<toc><![CDATA[\n".
+			HTML::Tiny->entity_encode($text).
+			"\n\t\t]]></toc>\n\t</book>\n";
 }
 
 sub make_thumbnail {

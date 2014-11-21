@@ -19,7 +19,7 @@ our $SPACER_HTTP_URL  =  $WWW_URL."/img/spacer.gif"; # jen tady
 
 our $FRAME_IMG = $WWW_DIR."/img/frame.gif";
 
-our $FILEBLOB_DIR = "/opt/fileblob_export";
+our $FILEBLOB_DIR = "/opt/store/fileblob_export";
 our $TOC_DIR = "/opt/toc_export";
 
 our $ICON_WIDTH = 54;

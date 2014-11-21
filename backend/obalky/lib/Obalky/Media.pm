@@ -3,6 +3,7 @@ package Obalky::Media;
 
 use Data::Dumper;
 use Obalky::Tools;
+use LWP::UserAgent;
 use Carp;
 use utf8;
 
@@ -41,6 +42,7 @@ sub new_from_info {
 sub save_to {
 	my($media,$product) = @_; # jen product? nema teda byt v productu?
 	warn "media->save_to(product) saving ".$media->{cover_url}." to ".$product->id."\n";
+	my $feSynced = 0;
 	die ref $product unless((ref $product) =~ /Product/);
 
 	my $book = $product->book;
@@ -52,8 +54,29 @@ sub save_to {
 		my $tmp = $media->{cover_tmpfile};
 		unless($tmp) {
 			my $TMP_DIR = "/tmp/.obalky-media"; mkdir $TMP_DIR;
+			my $filename = "$TMP_DIR/cover-".$product->id;
 			$tmp = Obalky::Tools->wget_to_file(
-						$cover_url, "$TMP_DIR/cover-".$product->id);
+						$cover_url, $filename);
+			
+			unless (-e $filename) {
+				my $browser = LWP::UserAgent->new;
+				my @headers = (
+					'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+					'Accept-Encoding' => 'gzip, deflate',
+					'Accept-Language' => 'cs,en-us;q=0.7,en;q=0.3',
+					'Referer' => 'http://www.obalkyknih.cz/',
+					'User-Agent' => 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:32.0) Gecko/20100101 Firefox/32.0',
+				);
+				my $response = $browser->get($cover_url, @headers);
+				if($response->is_success) {
+					@IMG = $response->content;
+					open(W,">$filename");
+					binmode(W);
+					print W @IMG;
+					close(W);
+					$tmp = $filename;
+				}
+			}
 		}
 		my $checksum_old = $book->cover ? $book->cover->checksum : undef;
 		$cover = DB->resultset('Cover')->create_from_file($book,$product,$tmp);
@@ -65,6 +88,7 @@ sub save_to {
 		if ($checksum_old ne $checksum_new) {
 			my $bibinfo = Obalky::BibInfo->new($product);
 			DB->resultset('FeSync')->request_sync_remove($bibinfo);
+			$feSynced = 1;
 		}
 	}
 
@@ -87,6 +111,12 @@ sub save_to {
 		}
 		$product->update({ toc => $toc });
 		$book->update({ toc => $toc });
+		
+		# vyvolej synchronizacni udalost pri kazdem uploadu TOC
+		if (!$feSynced) {
+			my $bibinfo = Obalky::BibInfo->new($product);
+			DB->resultset('FeSync')->request_sync_remove($bibinfo);
+		}
 	}
 
 	# 3. Review

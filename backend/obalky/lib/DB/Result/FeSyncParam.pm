@@ -54,8 +54,20 @@ __PACKAGE__->table("fe_sync_param");
 =head2 param_value
 
   data_type: 'varchar'
+  is_nullable: 1
+  size: 1000
+
+=head2 post_data
+
+  data_type: 'text'
+  is_nullable: 1
+
+=head2 flag_post_data
+
+  data_type: 'tinyint'
+  default_value: 0
+  extra: {unsigned => 1}
   is_nullable: 0
-  size: 255
 
 =cut
 
@@ -70,7 +82,16 @@ __PACKAGE__->add_columns(
   "param_name",
   { data_type => "varchar", is_nullable => 0, size => 50 },
   "param_value",
-  { data_type => "varchar", is_nullable => 0, size => 255 },
+  { data_type => "varchar", is_nullable => 1, size => 1000 },
+  "post_data",
+  { data_type => "text", is_nullable => 1 },
+  "flag_post_data",
+  {
+    data_type => "tinyint",
+    default_value => 0,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -84,22 +105,6 @@ __PACKAGE__->add_columns(
 =cut
 
 __PACKAGE__->set_primary_key("id");
-
-=head1 UNIQUE CONSTRAINTS
-
-=head2 C<param_name>
-
-=over 4
-
-=item * L</param_name>
-
-=item * L</param_value>
-
-=back
-
-=cut
-
-__PACKAGE__->add_unique_constraint("param_name", ["param_name", "param_value"]);
 
 =head1 RELATIONS
 
@@ -129,8 +134,8 @@ Composing rels: L</fe_sync2params> -> id_sync
 __PACKAGE__->many_to_many("id_syncs", "fe_sync2params", "id_sync");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-04-25 16:11:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3BOc0X0kj6TCb7tkMLi1cw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-08-08 15:08:00
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7I12hq2jLDWxXe3ChkTnzQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

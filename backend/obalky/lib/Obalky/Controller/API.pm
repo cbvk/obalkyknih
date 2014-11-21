@@ -50,12 +50,14 @@ sub sync : Local {
 
 sub add_review : Local {
 	my($self,$c) = @_;
-	my $this = from_json($c->req->param("book"));
+	
 	# parametry: rating, visitor_name, html_text!
 	my $rating = $c->req->param("rating") || undef;
 	$rating *= 10 if ($rating && $rating<10);
 	my $html_text = $c->req->param("html_text") || "";
-	my $id = $c->req->param("id");
+	my $id = $c->req->param("id") || undef;
+	my $book_id = $c->req->param("book_id") || undef;
+	my $sigla = $c->req->param("sigla") || "";
 	# pokud neni ani rating and html_text neni co hodnotit
 	return if (!$rating && $html_text eq "");
 
@@ -67,13 +69,22 @@ sub add_review : Local {
 		return unless($fe->count || $c->request->address eq '127.0.0.1');
 	}
 
-	my $bibinfo = Obalky::BibInfo->new_from_params($this->{bibinfo});
-	my $permalink = Obalky::Tools->fix_permalink($this->{permalink});
+	my($this,$bibinfo,$permalink) = (undef,undef,undef);
+	if ($book_id) {
+		my $book = DB->resultset('Book')->find($book_id);
+		$bibinfo = Obalky::BibInfo->new($book);
+		$permalink = Obalky::Tools->fix_permalink('a');
+	} else {
+		$this = from_json($c->req->param("book"));
+		$bibinfo = Obalky::BibInfo->new_from_params($this->{bibinfo});
+		$permalink = Obalky::Tools->fix_permalink($this->{permalink});
+	}
 
 	# v dotazu chybi minimalni udaje, ignoruj..
 #	unless($library and $bibinfo and $permalink) {
 #		warn "Chybi minimalni udaje, ignoruju (lib=".($library?$library->code:"").")...\n";
 #	}
+
 	return unless($library and $bibinfo and $permalink);
 
 	my($book,$record) = DB->resultset('Marc')->get_book_record( $library, $permalink, $bibinfo );
@@ -81,36 +92,90 @@ sub add_review : Local {
 	# existuje uz zaznam v tabulce review ?
 	# pokud ano, v dalsich krocich bude se pokracovat editaci
 	my $flagEdit = 0;
+	my $retExists;
 	if ($id && $library) {
-		my $retExists = DB->resultset('Review')->search({ library=>$library->id, library_id_review=>$id });
+		$retExists = DB->resultset('Review')->search({ library=>$library->id, library_id_review=>$id });
 		$flagEdit = $retExists->count;
 	}
-	
-	my $review_params = {
-			id => $id,
-			rating => $rating,
-			html_text => $html_text,
-			visitor => $visitor,
-			visitor_name => $visitor->name, # asi nevyplneno...
-			visitor_ip => $c->request->address,
-			impact => $html_text ne "" ? $Obalky::Media::REVIEW_COMMENT : $Obalky::Media::REVIEW_VOTE }
 
-	if ($flagEdit===1) {
-		# zaznam komentare existuje, editujeme
-		$book->edit_review($library,$visitor,$review_params);
-	} else if ($flagEdit===0) {
-		# zaznam komentare neexistuje, pridavame
+	my $review_params = {
+		id => $id,
+		rating => $rating,
+		html_text => $html_text,
+		visitor => $visitor,
+		visitor_name => $visitor->name, # asi nevyplneno...
+		visitor_ip => $c->request->address,
+		sigla => $sigla,
+		impact => $html_text ne "" ? $Obalky::Media::REVIEW_COMMENT : $Obalky::Media::REVIEW_VOTE
+	};
+
+	unless ($flagEdit) {
+		# zaznam komentare neexistuje, vytvarime
 		$book->add_review($library,$visitor,$review_params);
+	} else {
+		# zaznam komentare existuje, editujeme
+		$retExists = $retExists->next;
+		$book = $retExists->book;
+		$book->edit_review($retExists,$library,$visitor,$review_params);
 	}
 
 	$book->enrich($this,$library,$permalink,$bibinfo,$c->request->secure);
 	
-	# vyvolej promazani metadat ze vsech frontend serveru krome zdrojoveho
-	my $fe = DB->resultset('FeList')->search({ flag_active=>1, ip_addr=>{'!=',$c->request->address} });
-	DB->resultset('FeSync')->request_sync_remove($bibinfo, $fe);
+	# vyvolej promazani metadat ze vsech frontend serveru
+	DB->resultset('FeSync')->request_sync_review($book,$c->request->secure);
 
 	$c->response->content_type("text/javascript;charset=UTF-8");
 #	$c->response->content_encoding("UTF-8");
+	$c->response->body("obalky.callback(".to_json([$this]).");\n");
+}
+
+sub del_review : Local {
+	my($self,$c) = @_;
+	
+	# parametry: id a sigla!
+	my $id = $c->req->param("id") || undef;
+	my $sigla = $c->req->param("sigla") || "";
+	# pokud neni ani id ani sigla neni co mazat
+	return if (!$id && $sigla eq "");
+
+	my ($library,$session,$visitor) = Obalky->visit($c);
+	if ($sigla ne "") {
+		#pozadavek z frontendu (APIv3.0) - pouze frontend server muze ukladat komentare timto zpusobem
+		$library = DB->resultset('Library')->search({ code=>$c->req->param("sigla") })->next;
+		my $fe = DB->resultset('FeList')->search({ ip_addr=>$c->request->address });
+		return unless($fe->count || $c->request->address eq '127.0.0.1');
+	}
+
+	my($this,$bibinfo,$permalink,$book,$book_id) = (undef,undef,undef,undef,undef);
+	my $review = DB->resultset('Review')->search({ library=>$library->id, library_id_review=>$id })->next;
+	$book_id = $review->book->id if ($review);
+	if ($book_id) {
+		$book = DB->resultset('Book')->find($book_id);
+		$bibinfo = Obalky::BibInfo->new($book);
+		$permalink = Obalky::Tools->fix_permalink('a');
+		$this->{ean} = $book->ean13 if $book->ean13;
+		$this->{nbn}  = $book->nbn if $book->nbn;
+		$this->{oclc} = $book->oclc if $book->oclc;
+	} else {
+		return;
+	}
+
+	return unless($library and $bibinfo and $permalink);
+
+	my $review_params = {
+		id => $id,
+		sigla => $sigla
+	};
+
+	# zaznam komentare neexistuje, vytvarime
+	$book->del_review($review,$library,$visitor,$review_params);
+
+	$book->enrich($this,$library,$permalink,$bibinfo,$c->request->secure);
+	
+	# vyvolej promazani metadat ze vsech frontend serveru
+	DB->resultset('FeSync')->request_sync_review($book,$c->request->secure);
+
+	$c->response->content_type("text/javascript;charset=UTF-8");
 	$c->response->body("obalky.callback(".to_json([$this]).");\n");
 }
 
@@ -571,7 +636,7 @@ sub _do_import {
 	$c->response->body("OK");
 #	die Dumper($dir,$bibinfo,$info,$media,"$eshop",$product_url);
 }
-
+ 
 # jen pomocna funkce pro ulozeni uploadovaneho souboru do FS
 sub _upload_file {
     my($pkg,$c,$formname,$pathname) = @_;
@@ -596,22 +661,21 @@ sub _upload_file {
     return $pathname ? $size : $content;
 }
 
-# vola frontend pro nacteni jednoho, nebo casteji vsech prav (pri startu instance FE serveru)
-sub perm : Local {
+# vola frontend pro nacteni vsech prav (pri startu instance FE serveru)
+sub get_perms : Local {
 	my($self,$c) = @_;
-	my %permRefs; my %permIps; my %cond;
-	my $sigla = $c->req->param('sigla');
-	if ($sigla) {
-		$cond{flag_active} = 1;
-		$cond{code} = $sigla if ($sigla ne 'false');
-		my $res = DB->resultset('Library')->search({%cond}, { join=>'library_perms', '+select'=>['library_perms.ref', 'library_perms.ip'], '+as'=>['ref', 'ip'] });
-		foreach ($res->all) {
-			push( @{ $permRefs { $_->get_column('code') } }, $_->get_column('ref')) if ($_->get_column('ref'));
-			push( @{ $permIps { $_->get_column('code') } }, $_->get_column('ip')) if ($_->get_column('ip'));
-		}
+	my $fe = DB->resultset('FeList')->search({ ip_addr=>$c->request->address });
+	#return unless($fe->count || $c->request->address eq '127.0.0.1');
+	my @perms;
+	my $resPerms = DB->resultset('LibraryPerm')->search(undef,{
+		join => 'library',
+		'+select' => 'library.code',
+		'+as' => 'sigla'});
+	foreach ($resPerms->all) {
+		push @perms, ($_->ref ? {'sigla'=>$_->get_column('sigla'), 'ref'=>$_->ref} : {'sigla'=>$_->get_column('sigla'), 'ip'=>$_->ip});
 	}
 	$c->response->content_type("text/plain");
-	$c->response->body( to_json({ref=>\%permRefs, ip=>\%permIps}) );
+	$c->response->body( to_json({ 'count'=>$resPerms->count, 'perms'=>\@perms }) );
 }
 
 1;

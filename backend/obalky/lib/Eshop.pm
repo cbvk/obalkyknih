@@ -50,6 +50,8 @@ use Eshop::SCKN;
 use Eshop::Legacy;
 use Eshop::SimpleURL;
 use Eshop::OpenLibrary;
+use Eshop::GoogleBooks;
+use Eshop::LibraryThing;
 use Eshop::Static;
 use Eshop::Upload;
 

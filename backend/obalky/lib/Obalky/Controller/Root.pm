@@ -275,38 +275,16 @@ sub account_user : Local {
     	return;
     }
     
-    my $library_admin = $c->user->get_column('flag_library_admin');
-    my $userData = DB->resultset('User')->find($c->user->get_column('id'));
-    my $password = $userData->get_column('password');
-    my $flag_review_report = $userData->get_column('flag_review_report');
+    my $user = DB->resultset('User')->find($c->user);
+    my $library_admin = $user->get_column('flag_library_admin');
+    my $flag_review_report = $user->get_column('flag_review_report');
     
     # zmena nastaveni (hesla)
     if ($c->req->param('submit')) {
-	    my $err = 0;
-	    if ($c->req->param('email_old') ne '') {
-		    if ($c->req->param('email_new') ne $c->req->param('email_confirm')) {
-		    	$c->stash->{error} = 'Vámi zadané nové heslo se neshoduje !';
-		    	$err = 1;
-		    }
-		    if ($c->req->param('email_old') eq '' || $c->req->param('email_new') eq '' || $c->req->param('email_confirm') eq '') {
-		    	$c->stash->{error} = 'Nutné vyplnit všechny položky formuláře !';
-		    	$err = 1;
-		    }
-		    if (!$err && length($c->req->param('email_new')) < 6) {
-		    	$c->stash->{error} = 'Minimální délka nového hesla je 6 znaků !';
-		    	$err = 1;
-		    }
-		    if (!$err && $c->req->param('email_old') ne $password) {
-		    	$c->stash->{error} = 'Vámi zadané původní heslo není platné !';
-		    	$err = 1;
-		    }
-	    }
-	    unless ($err) {
-	    	$c->user->update({ password => $c->req->param('email_new') }) if ($c->req->param('email_old') ne '');
-	    	my $flag_review_report = $c->req->param('flag_review_report') ? 1 : 0;
-	    	DB->resultset('User')->find($c->user->get_column('id'))->update({ flag_review_report => $flag_review_report }) if ($library_admin == 1);
-	    	$c->stash->{error} = 'Vaše nastavení byla uložena';
-	    }
+    	$flag_review_report = $c->req->param('flag_review_report') ? 1 : 0;
+    	$c->stash->{error} = DB->resultset('User')->change_password($c->user, $c->req->param('email_old'), $c->req->param('email_new'), $c->req->param('email_confirm'), $flag_review_report);
+    	# mozna zmena checkboxu "Zasilat tydenni report nove publikovanych hodnoceni"
+    	DB->resultset('User')->find($c->user->id)->update({ flag_review_report => $flag_review_report }) if ($library_admin == 1);
     }
     
     $c->stash->{admin_page} = 'account_user';
@@ -375,6 +353,56 @@ sub account_review : Local {
 	$c->stash->{is_admin} = $c->req->param('i') ? 1 : 0;
 	$c->stash->{library_admin} = $library_admin;
 	$c->stash->{params} = $c->req->params;
+}
+sub account_stats : Local {
+    my($self,$c) = @_;
+    my $signed = $c->user ? 1 : 0;
+    unless ($signed) {
+    	$c->res->redirect("index");
+    	return;
+    }
+    my $username = $c->user->get_column('login');
+    my $library = $signed ? $c->user->get_column('library') : 0;
+    my $library_admin = $c->user->get_column('flag_library_admin');
+    $library = $c->req->param('i') if ($username eq $Obalky::ADMIN_EMAIL);
+    
+    if ($library == 50000) {
+    	$c->res->redirect("admin_stats");
+    	return;
+    }
+    
+    $c->stash->{stat1} = [ DB->resultset('FeStat')->req_stats_daily($library)->all ];    
+    $c->stash->{stat2} = [ DB->resultset('FeStat')->req_stats_monthly($library)->all ];
+    
+    $c->stash->{admin_page} = 'account_stats';
+    $c->stash->{signed} = $signed;
+    $c->stash->{library_admin} = $library_admin;
+}
+sub admin_stats : Local {
+    my($self,$c) = @_;
+    my $signed = $c->user ? 1 : 0;
+    unless ($signed) {
+    	$c->res->redirect("index");
+    	return;
+    }
+    my $username = $c->user->get_column('login');
+    unless ($username eq $Obalky::ADMIN_EMAIL) {
+    	$c->res->redirect("account_stats");
+    	return;
+    }
+    my $library = $signed ? $c->user->get_column('library') : 0;
+    my $library_admin = $c->user->get_column('flag_library_admin');
+    $library = $c->req->param('i') if ($username eq $Obalky::ADMIN_EMAIL);
+    
+    $c->stash->{stat1} = [ DB->resultset('FeStat')->req_stats_daily(50000)->all ];    
+    $c->stash->{stat2} = [ DB->resultset('FeStat')->req_stats_monthly(50000)->all ];
+    $c->stash->{stat3} = [ DB->resultset('FeStat')->fe_stats_daily(50000)->all ];
+    $c->stash->{stat4} = [ DB->resultset('FeStat')->fe_stats_monthly(50000)->all ];
+    $c->stash->{stat5} = DB->resultset('FeStat')->top_sigla_by_requests(10);
+    
+    $c->stash->{admin_page} = 'account_stats';
+    $c->stash->{signed} = $signed;
+    $c->stash->{library_admin} = $library_admin;
 }
 sub logout : Local {
 	my($self,$c) = @_;
@@ -653,7 +681,7 @@ sub signup : Local {
 	}
 	$c->stash->{signed} = $signed;
 	$c->stash->{$_} = $c->req->param($_) 
- 		for(qw/fullname email protirob libcode libname libaddress libcity libpurpose
+ 		for(qw/fullname email libcode libname libaddress libcity libpurpose
 			   logo_url eshop_name eshop_url
 			   libemailboss libemailads libskipmember xmlfeed/);
 	$c->stash->{libopac} = $c->req->param('libopac') ?
@@ -734,6 +762,7 @@ sub end : Private {
 #	warn "end() user: ".($c->user ? "ok: ".$c->user->get('login'):"fail")."\n";
 	$self->blue_stash($c);
 	$c->stash->{user} = $c->user ? $c->user->get('login') : undef;
+	$c->stash->{user_is_admin} = $c->stash->{user} eq $Obalky::ADMIN_EMAIL ? 1 : 0;
 	$c->forward('Obalky::View::TT');	
 }
 

@@ -514,6 +514,7 @@ __PACKAGE__->belongs_to(
 # Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-08-01 15:44:06
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:H26Xl3otuCr2AxfHRgdhtA
 
+use Obalky::Media;
 use Data::Dumper;
 use DB;
 
@@ -606,6 +607,8 @@ sub recalc_rating {
 	# logika: produktove ma 6 hlasu, pak bude postupne prevazeno
 	if($erc) { $rs += int(6*$ers/$erc); $rc += 6; }
 
+	$rc = undef unless($rc);
+	$rs = undef unless($rs);
 	$book->update({ cached_rating_sum => $rs, cached_rating_count => $rc });
 	# $book->invalidate(); # musi volat volajici!
 }
@@ -700,19 +703,52 @@ sub add_review {
 }
 
 sub edit_review {
-	my($book,$library,$visitor,$info) = @_;
-	die unless($visitor);
-    my $review = DB->resultset('Review')->create({
-			book => $book, rating => $info->{rating},
-			visitor_name => $info->{visitor_name},
-			visitor_ip => $info->{visitor_ip},
-			html_text => $info->{html_text},
-			visitor => $visitor,
-			library => $library->get_column('id'),
-			library_id_review => $info->{id},
-			impact => $info->{impact},
+	my($book,$review,$library,$visitor,$info) = @_;
+	die unless($visitor || $review || $library);
+	die unless($info->{sigla} eq $library->get_column('code'));
+	my $flag_change = 0;
+	
+	# zmena ciselneho honoceni
+	my $old_rating = $review->get_column('rating');
+	my $new_rating = $info->{rating};
+	# pokud mazeme ciselne hodnoceni je nutne odpocitat v zazname book
+	# protoze pokud mazeme posledni ciselne hodnoceni neaktualizuje se book, protoze vsechny reviews budou NULL (a NULL se v prepocitavani hodnoceni ignoruje)
+	if ($old_rating && !$new_rating) {
+		my $cached_rating_sum = $book->get_column('cached_rating_sum') - $old_rating;
+		my $cached_rating_count = $book->get_column('cached_rating_count') - 1;
+		$cached_rating_sum = undef unless ($cached_rating_sum);
+		$cached_rating_count = undef unless ($cached_rating_count);
+		$book->update({ cached_rating_sum => $cached_rating_sum, cached_rating_count => $cached_rating_count });
+	}
+	
+	# zmena textoveho komentare
+	my $new_comment = $info->{html_text};
+	
+	# zmena impactu
+	my $impact = 0;
+	$impact = $Obalky::Media::REVIEW_VOTE if ($new_rating);
+	$impact = $Obalky::Media::REVIEW_COMMENT if ($new_comment);
+	
+    $review->update({
+		rating => $new_rating,
+		visitor_name => $info->{visitor_name},
+		visitor_ip => $info->{visitor_ip},
+		html_text => $new_comment,
+		visitor => $visitor,
+		impact => $impact,
 	});
-	$visitor->update({ name => $info->{name} }) if($info->{name});
+	$book->recalc_rating;
+	$book->recalc_review;
+	$book->invalidate;
+	return $review;
+}
+
+sub del_review {
+	my($book,$review,$library,$visitor,$info) = @_;
+	die unless($visitor || $review || $library);
+	die unless($info->{sigla} eq $library->get_column('code'));
+	
+    $review->delete;
 	$book->recalc_rating;
 	$book->recalc_review;
 	$book->invalidate;
@@ -760,13 +796,11 @@ sub enrich {
 	}
 
 	# 3. Backlink
-
 	if($cover) { # or $toc or $review or $neco...) { # jinak nelinkuj..
 		$info->{backlink_url}  = $book->get_obalkyknih_url($secure);
 	}
 
 	# 4. Hodnoceni
-	
 	my($r_sum,$r_count) = $book->get_rating;
 	$info->{rating_sum}   = $r_sum;
 	$info->{rating_count} = $r_count;
@@ -779,7 +813,6 @@ sub enrich {
 	}
 
 	# 5. Recenze
-
 	$info->{reviews} = [];
 	if ($params->{review}) {
 		my @reviews = $book->get_reviews;
@@ -791,8 +824,8 @@ sub enrich {
 	
 	# 6. Toc fulltext
 	if ($params->{toc_full_text}) {
-		$info->{toc_full_text} = '';
-		$info->{toc_full_text} = $book->toc->get_column('full_text') if ($book->toc);
+		my $toc_full_text = $book->toc->get_column('full_text') if ($book->toc);
+		$info->{toc_full_text} = $toc_full_text if (defined $toc_full_text);
 	}
 
 	return $info;

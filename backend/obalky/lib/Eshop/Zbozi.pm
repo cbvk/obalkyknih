@@ -130,17 +130,18 @@ sub crawl {
 
 	# maji blbe psane kodovani
 #	$xml_content =~ s/windows-1250/utf-8/ if($feed_url =~ /fragment/); 
-#	$xml_content =~ s/iso-8859-2/utf-8/ if($feed_url =~ /knihy.abz.cz/); 
-	if($feed_url =~ /mlp.cz/) { # tito jsou uplne mimo, upravime pres enca
-		system("enconv -L cs -x utf8 $tmp_dir/feed.xml") and die;
-		open(TMP,"<utf8","$tmp_dir/feed.xml");
-		my $xml_content = join("",<TMP>);
-		close(TMP);
-		$xml_content =~ s/windows-1250/utf-8/;
-		open(TMP,">utf8","$tmp_dir/feed.xml");
-		print TMP $xml_content;
-		close(TMP);
-	}
+#	$xml_content =~ s/iso-8859-2/utf-8/ if($feed_url =~ /knihy.abz.cz/);
+	my $xml_content =~ s/windows-1250/utf-8/ if($feed_url =~ /mlp.cz/);
+#	if($feed_url =~ /mlp.cz/) { # tito jsou uplne mimo, upravime pres enca
+#		system("enconv -L cs -x utf8 $tmp_dir/feed.xml") and die;
+#		open(TMP,"<utf8","$tmp_dir/feed.xml");
+#		my $xml_content = join("",<TMP>);
+#		close(TMP);
+#		$xml_content =~ s/windows-1250/utf-8/;
+#		open(TMP,">utf8","$tmp_dir/feed.xml");
+#		print TMP $xml_content;
+#		close(TMP);
+#	}
 	my $err;
 
 	my $xml = eval { XMLin("$tmp_dir/feed.xml",

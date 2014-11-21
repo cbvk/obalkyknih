@@ -94,7 +94,7 @@ sub signup {
 	push @errors, "Zadaná hesla se liší." 
 		if($hash->{password1} ne $hash->{password2});
 
-	if ($hash->{protirob} != 2) {
+	if ($hash->{protirob}) {
 		push @errors, "Ochrana proti robotům - nesprávný výsledek!\n";
 	}
 
@@ -200,7 +200,7 @@ sub signup {
 						if($eshop and not $test->eshop);
 				
 				# Info email knihovni a info email spravci
-				if ($library and $test->library) {
+				if ($library and $test->library and $flagadmin) {
 					my $admin_email = $Obalky::ADMIN_EMAIL;
 					open(MUTT,"|mutt -b '$admin_email' -s 'obalkyknih.cz -- registrace knihovny' '$login'");
 					print MUTT <<EOF;
@@ -254,6 +254,42 @@ sub get_xmlfeeds {
 	return \@feeds;
 }
 
+
+sub change_password {
+	my($pkg,$userData,$emailOld,$emailNew,$emailConfirm,$flagReviewReport) = @_;
+	my $err = 0;
+	my $errMsg = 'Chyba !';
+	
+	return unless ($emailOld and $emailNew and $emailConfirm and $userData);
+	my $user = DB->resultset('User')->find($userData->id);
+	my $password = $user->get_column('password');
+	my $library_admin = $user->get_column('flag_library_admin');
+	
+    if ($emailOld ne '') {
+	    if ($emailNew ne $emailConfirm) {
+	    	$errMsg = 'Vámi zadané nové heslo se neshoduje !';
+	    	$err = 1;
+	    }
+	    if ($emailOld eq '' || $emailNew eq '' || $emailConfirm eq '') {
+	    	$errMsg = 'Nutné vyplnit všechny položky formuláře !';
+	    	$err = 1;
+	    }
+	    if (!$err && length($emailNew) < 6) {
+	    	$errMsg = 'Minimální délka nového hesla je 6 znaků !';
+	    	$err = 1;
+	    }
+	    if (!$err && $emailOld ne $password) {
+	    	$errMsg = 'Vámi zadané původní heslo není platné !';
+	    	$err = 1;
+	    }
+    }
+    unless ($err) {
+    	$user->update({ password => $emailNew }) if ($emailOld ne '');
+    	return 'Vaše nastavení bylo uloženo';
+    }
+    
+    return $errMsg;
+}
 
 
 1;

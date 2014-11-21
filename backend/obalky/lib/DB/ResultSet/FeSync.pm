@@ -10,6 +10,9 @@ use LWP::UserAgent;
 use DateTime::Format::MySQL;
 use JSON;
 use URI::Escape;
+use Scalar::Util qw(reftype);
+use HTML::Entities;
+use Obalky::Config;
 
 our $RETRY_TIMEOUT_LONG = 24; # [hodiny] pokud FE neodpovi zkusit az dalsi den (6. a dalsi pokus)
 our $RETRY_TIMEOUT_SHORT = 3; # [minuty] pokud FE neodpovi zkusit az dalsich par minut (1.-5. pokus)
@@ -58,10 +61,22 @@ sub set_sync {
 	
 	# pozadujeme na FE vykonat tyto parametry
 	foreach (keys %$param) {
-		my $id_param = DB->resultset('FeSyncParam')->find_or_create({
-			param_name => $_,
-			param_value => $param->{$_}
-		});
+		my $id_param;
+		my $curParam = $param->{$_};
+		if (reftype($curParam) eq 'HASH') {
+			if ($curParam->{type} eq 'post') {
+				$id_param = DB->resultset('FeSyncParam')->create({
+					param_name => $_,
+					post_data => $curParam->{value},
+					flag_post_data => 1
+				});
+			}
+		} else {
+			$id_param = DB->resultset('FeSyncParam')->find_or_create({
+				param_name => $_,
+				param_value => $curParam
+			});
+		}
 		push @params, $id_param->id;
 	}
 	return 0 unless(@params);
@@ -71,11 +86,13 @@ sub set_sync {
 	
 	# create sync event
 	# loop over all FE instances
+	my $dt = DateTime->now(time_zone=>'local');
 	foreach (@insts) {
 		# FE sync header
 		my $sync = DB->resultset('FeSync')->create({
 			fe_instance => $_->id,
 			fe_sync_type => $sync_type->id,
+			retry_date => $dt->datetime()
 		});
 		
 		# M:N vazba mezi sync hlavickou a parametrem
@@ -106,34 +123,44 @@ sub do_sync {
 		'+select' => [
 			'id_sync_param.param_name',
 			'id_sync_param.param_value',
+			'id_sync_param.flag_post_data',
+			'id_sync_param.post_data',
 			'fe_sync_type.sync_type_code',
 			'fe_instance.ip_addr',
 			'fe_instance.port'],
 		'+as' => [
-			'param_name', 'param_value', 'sync_type_code', 'ip_addr', 'port'],
+			'param_name', 'param_value', 'flag_post_data', 'post_data', 'sync_type_code', 'ip_addr', 'port'],
 		order => 'fe_instance'
 	});
-	
 	# Posli vsechny nevyrizene pozadavky
 	# prochazi cele pole ziskane z DB, sezarene podle id_instance
 	# DB dotaz je joinovany na urovni parametru
 	# cyklus postupne prochazi vsechny radky (parametry) a zmena id_instance znamena ze je vypis parametru
 	# u jedne instance hotovy a muzeme poslat jako na FE
 	my @params = ();
+	my @post_data = ();
 	my $last_id = 0; # posledni prochazene ID FE (toto je inicializace)
 	my $sync_last = undef;
 	foreach ($sync->all) {
 		# pokud se zjisti zmena id_sync znamena to ze parametry mame seskladane a je mozne poslat na FE
 		if ($last_id != $_->id && $last_id != 0) {
-			__PACKAGE__->send_fe_request($sync_last, @params);
+			__PACKAGE__->send_fe_request($sync_last, \@params, \@post_data);
 			@params = ();
+			@post_data = ();
 		}
 		
-		push @params, $_->get_column('param_name').'='.uri_escape($_->get_column('param_value'));
+		if ($_->get_column('flag_post_data') == 0) {
+			push @params, $_->get_column('param_name').'='.uri_escape_utf8($_->get_column('param_value'));
+		} else {
+			my $first_char = substr($_->get_column('post_data'), 0, 1);
+			my $is_json = ($first_char eq '[' || $first_char eq '{') ? 1 : 0;
+			push @post_data, '"'.$_->get_column('param_name').'":'.($is_json?'':'"').$_->get_column('post_data').($is_json?'':'"');
+			my $post_data = $_->get_column('post_data');
+		}
 		$sync_last = $_;
 		$last_id = $_->id;
 	}
-	__PACKAGE__->send_fe_request($sync_last, @params);
+	__PACKAGE__->send_fe_request($sync_last, \@params, \@post_data);
 	
 	return 1;
 }
@@ -144,47 +171,43 @@ sub do_sync {
 Vykonava synchronizacni udalost. Posila na definovane FE parametry.
 =cut
 sub send_fe_request {
-	my($pkg,$sync,@params) = @_;
-	return 0 unless(@params);
-	
-	# sync types which sends FE requests by HTTP GET
-	my @types_GET = qw/metadata_changed perm_changed review_add/;
+	my($pkg,$sync,$params,$post_data) = @_;
+	return 0 unless($params && $sync);
 	
 	# Podle typu synchronizace rozhodne jak a kam poslat pozadavek na FE
 	# budeme kontaktovat FE pomoci GET data
 	my $ua = LWP::UserAgent->new;
 	$ua->timeout(10);
-	if (grep $_ eq $sync->get_column('sync_type_code'), @types_GET) {
-		my $params = '';
-		map { $params .= $_ } $_;
-		my $req = HTTP::Request->new(GET => 'http://'.$sync->get_column('ip_addr').':'.$sync->get_column('port').'/?'.join('&', @params));
-		warn Dumper('http://'.$sync->get_column('ip_addr').':'.$sync->get_column('port').'/?'.join('&', @params));#debug
-		
-		$req->header('content-type' => 'application/json');
-		my $resp = $ua->request($req);
-		if ($resp->is_success) {
-			# synchronizace probehla, poznacit jako ukoncenou aby se uz nikdy neprovedla
-			my $ret = DB->resultset('FeSync')->find($sync->id);
-			$ret->update({flag_synced => 1, retry_date => undef});
-		}
-		else {
-			# chyba pri kontaktovani FE instance, zaznacit nejblissi termin dalsiho pokusu o kontakt
-			my $ret = DB->resultset('FeSync')->find($sync->id);
-			my $retry_count = $sync->get_column('retry_count');
-			my $dt   = DateTime->now(time_zone=>'local');
-			$dt->add(minutes => $RETRY_TIMEOUT_SHORT);
-			$dt->add(hours => $RETRY_TIMEOUT_LONG) if ($retry_count>5);
-			my $date = $dt->ymd; # yyyy-mm-dd
-			my $time = $dt->hms; # hh:mm:ss
-			# zaznac dalsi pokus o synchronizaci
-			# pokud prekrocen pocet RETRY_COUNT zmen stav na vyrizene
-			$ret->update({ retry_date => "$date $time", retry_count => int($retry_count+1), flag_synced => ($retry_count<$RETRY_COUNT?0:1) });
-		}
+	
+	my $req;
+	my $url = 'http://'.$sync->get_column('ip_addr').':'.$sync->get_column('port').'/?'.join('&', @$params);
+
+	if (!$post_data) {
+		$req = HTTP::Request->new(GET => $url);
+	} else {
+		$req = HTTP::Request->new(POST => $url);
+		$req->content('{'.join(',', @$post_data).'}');
 	}
-	# nedefinovany typ
-	# je nutne mit pro vsechny typy definovane v DB reprezentaci v teto funkci send_fe_request
+
+	$req->header('content-type' => 'application/json');
+	my $resp = $ua->request($req);
+	if ($resp->is_success) {
+		# synchronizace probehla, poznacit jako ukoncenou aby se uz nikdy neprovedla
+		my $ret = DB->resultset('FeSync')->find($sync->id);
+		$ret->update({flag_synced => 1, retry_date => undef});
+	}
 	else {
-		warn "package DB::ResultSet::FeSync - Unknown sync type '".$sync->get_column('sync_type_code')."'";
+		# chyba pri kontaktovani FE instance, zaznacit nejblissi termin dalsiho pokusu o kontakt
+		my $ret = DB->resultset('FeSync')->find($sync->id);
+		my $retry_count = $sync->get_column('retry_count');
+		my $dt   = DateTime->now(time_zone=>'local');
+		$dt->add(minutes => $RETRY_TIMEOUT_SHORT);
+		$dt->add(hours => $RETRY_TIMEOUT_LONG) if ($retry_count>5);
+		my $date = $dt->ymd; # yyyy-mm-dd
+		my $time = $dt->hms; # hh:mm:ss
+		# zaznac dalsi pokus o synchronizaci
+		# pokud prekrocen pocet RETRY_COUNT zmen stav na vyrizene
+		$ret->update({ retry_date => "$date $time", retry_count => int($retry_count+1), flag_synced => ($retry_count<$RETRY_COUNT?0:1) });
 	}
 }
 
@@ -217,6 +240,41 @@ sub request_sync_perm {
 		$type => $value
 	};
 	DB->resultset('FeSync')->set_sync($sync_params, 'perm_changed');
+}
+
+
+=head2 request_sync_perm
+
+Pridej nove prava pristupu na vsechny frontendy
+
+=cut
+sub request_sync_review {
+	my($pkg,$book,$secure) = @_;
+	
+	my($r_sum,$r_count) = $book->get_rating;
+	my $avg = $r_sum / $r_count;
+	
+	my @reviews;
+	my @book_reviews = $book->get_reviews;
+	map {
+		my $review = $_->to_info;
+		$review->{library_name} = encode_entities($review->{library_name}) if ($review->{library_name});
+		$review->{html_text} = encode_entities($review->{html_text}) if ($review->{html_text});
+		push @reviews, $review if($review->{created});
+	} @book_reviews;
+
+	my $sync_params = {
+		reviewupdate => 'true',
+		book_id => $book->get_column('id'),
+		rating_count => $r_count,
+		rating_sum => $r_sum,
+		rating_avg100 => sprintf("%2.0f",$avg),
+		rating_avg5 => ($avg % 20) ? sprintf("%1.1f",$avg/20) : int($avg/20),
+		review_count => scalar @reviews,
+		rating_url => Obalky::Config->url($secure).'/stars?value='.sprintf("%2.0f",$avg),
+		review => { type=>'post', value=>to_json(\@reviews) },
+	};
+	DB->resultset('FeSync')->set_sync($sync_params, 'review_changed');
 }
 
 1;
