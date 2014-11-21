@@ -9,7 +9,7 @@ use DB;
 use DBI;
 use Data::Dumper;
 
-our $DIR = '/opt/fileblob_export';
+our $DIR = '/opt/store/fileblob_export';
 our $SCRIPT_DIR = '/opt/obalky/bin';
 our $TMP_TABLE = 'fileblob_orig_20140318h';
 

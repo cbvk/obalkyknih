@@ -37,15 +37,28 @@ my $last_month = DateTime->today()->subtract(days => 30);
 my $max_eshop_id = DB->resultset('Eshop')->max_id;
 
 my $books_count = DB->resultset('Book')->count;
-my $books = ($mode ne 'all') ? 
-		DB->resultset('Book')->search([ { harvest_last_time => undef },
+my $books;
+if ($mode ne 'LibraryThing') {
+	$books = ($mode ne 'all')
+		? DB->resultset('Book')->search([ { harvest_last_time => undef },
 			{ harvest_last_time => { '<', $last_month } },
-			{ harvest_max_eshop => { '<', $max_eshop_id } },
-		] ) : DB->resultset('Book');
+			{ harvest_max_eshop => { '<', $max_eshop_id } } ])
+		: DB->resultset('Book');
+} else {
+	my $titleOwn = 'NOT LIKE "%ě%" COLLATE utf8_bin AND title NOT LIKE "%č%" COLLATE utf8_bin AND title NOT LIKE "%š%" COLLATE utf8_bin AND title NOT LIKE "%ř%" COLLATE utf8_bin AND title NOT LIKE "%ž%" COLLATE utf8_bin AND title NOT LIKE "%ý%" COLLATE utf8_bin AND title NOT LIKE "%á%" COLLATE utf8_bin AND title NOT LIKE "%í%" COLLATE utf8_bin AND title NOT LIKE "%é%" COLLATE utf8_bin AND title NOT LIKE "%ú%" COLLATE utf8_bin AND title NOT LIKE "%ů%" COLLATE utf8_bin AND title NOT LIKE "%ó%" COLLATE utf8_bin AND title NOT LIKE "%ň%" COLLATE utf8_bin AND title NOT LIKE "%ľ%" COLLATE utf8_bin
+		AND (harvest_last_time IS NULL OR harvest_last_time < "'.$last_month.'" OR harvest_max_eshop < "'.$max_eshop_id.'") AND ean13 IS NOT NULL AND ean13 NOT LIKE "977%" AND eshop IS NULL';
+	$books = DB->resultset('Book')->search([ { title => \$titleOwn } ])
+}
 
-$books = DB->resultset('Book')->search([ { ean13 => '978802471156'} ]) if($ENV{DEBUG});
+$books = DB->resultset('Book')->search([ { ean13 => '9780070359185'} ]) if($ENV{DEBUG});
+#$books = DB->resultset('Book')->search([ { ean13 => '9789148517717'} ]);
 
-my %hits; my %try; my %errors; my $hits = 0;
+
+my %hits; my %try; my %errors; my $hits = 0; my $hitsLibraryThing = 0;
+
+my $hitsLibraryThingMax = 2000000;
+my $idLibraryThingRet = DB->resultset('Eshop')->search({ name => 'LibraryThing' })->next; # ID LibraryThing eshopu budeme potrebovat v pripade vycerpani poctu dotazu na API (nastavi se harvest_max_eshop na toto ID-1)
+my $idLibraryThing = $idLibraryThingRet->get_column('id');
 
 while(my $book = $books->next) {
 	my $id = $book->bibinfo->to_some_id;
@@ -58,12 +71,17 @@ while(my $book = $books->next) {
 	my $found = 0;
 	foreach my $factory (@eshops) {
 		my $bibinfo = $book->bibinfo;
+warn Dumper($bibinfo->ean13) if ($factory->name eq 'LibraryThing');
 		my $name = $factory->name;
 		my $eshop = DB->resultset('Eshop')->find_by_name($name);
 		next unless($ENV{DEBUG} or $factory->can_harvest);
 		next unless($ENV{DEBUG} or $factory->might_cover_bibinfo($bibinfo));
 		next if(not $ENV{DEBUG} and $last_harvest and ($last_harvest > $last_month) and
 				$last_max_eshop and ($last_max_eshop >= $max_eshop_id));
+		
+		# zdroje s omezenim na pocet requestu
+		next if ($hitsLibraryThing > $hitsLibraryThingMax);
+		next if ($factory->name eq 'LibraryThing' and $mode ne 'LibraryThing'); # LibraryThing ma vlastni prepinac a nezpracuva se v modu ALL
 
 		$eshop->update({ try_count => $eshop->try_count + 1 });
 
@@ -75,10 +93,12 @@ while(my $book = $books->next) {
 
 		$| = 1;
 		print "$id: ".$eshop->name."..." if($DEBUG);
-		my($product_bibinfo,$product_media,$product_url) = 
-					$factory->harvest($bibinfo,$TMP_DIR);
+
+		my($product_bibinfo,$product_media,$product_url) = $factory->harvest($bibinfo,$TMP_DIR) if ($hitsLibraryThing < $hitsLibraryThingMax);
 		$try{$eshop->name}++;
 		$errors{$eshop->name}++ if($@);
+		$hitsLibraryThing++ if ($factory->name eq 'LibraryThing' and $product_url);
+warn Dumper("\n\n\n*******************".$product_url."*******************\n\n\n") if ($factory->name eq 'LibraryThing' and $product_media);
 
 		#my $res = defined $product_media ? Dumper($product_media) : "NULL";
 		#my $result = defined $product_media ? "Found!" : "NULL";
@@ -97,8 +117,14 @@ while(my $book = $books->next) {
 		last;
 	}
 
-	$book->update({ harvest_last_time => DateTime->now(), 
-					harvest_max_eshop => $max_eshop_id });
+	if ($hitsLibraryThing < $hitsLibraryThingMax) {
+		# oznac zaznam jako crawlovany
+		$book->update({ harvest_last_time => DateTime->now(), 
+						harvest_max_eshop => $max_eshop_id });
+	} else {
+		# zaznam je mozne projit opakovane, protoze byl vycerpan pocet pokusu o kontakt API
+		$book->update({ harvest_max_eshop => $idLibraryThing-1 });
+	}
 
 	my $time_elapsed = tv_interval ( $time_start, [gettimeofday]);
 	sleep 1 if($time_elapsed < 1);
