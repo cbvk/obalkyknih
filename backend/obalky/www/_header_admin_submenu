@@ -3,6 +3,7 @@
 		<li[% IF admin_page=='account' %] class="active"[% END %]><a href="/account[% IF params.i %]?i=[%params.i%][% END %]">Administrace oprávnění</a></li>
 		<li[% IF admin_page=='account_review' %] class="active"[% END %]><a href="/account_review[% IF params.i %]?i=[%params.i%][% END %]">Komentáře čtenářů</a></li>
 		<li[% IF admin_page=='account_user' %] class="active"[% END %]><a href="/account_user[% IF params.i %]?i=[%params.i%][% END %]">Uživatelská nastavení</a></li>
+		<li[% IF admin_page=='account_stats' %] class="active"[% END %]><a href="/account_stats[% IF params.i %]?i=[%params.i%][% END %]">Statistiky</a></li>
 	</ul>
 </div>
 <div class="cl"></div>

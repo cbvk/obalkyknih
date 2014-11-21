@@ -18,7 +18,11 @@
 				<p class="small">
 					<!-- <a href="/">Nastavení»</a> 
 					&nbsp;&nbsp; --> 
+					[% IF user_is_admin %]
+					<a href="/account">Seznam knihoven »</a> &nbsp; <a href="/admin_stats">Statistiky »</a><br/>
+					[% ELSE %]
 					<a href="/account">Nastavení »</a> <br/>
+					[% END %]
 					<a href="/logout">Odhlásit</a> </p>
 			
 				[% ELSE %]

@@ -1,0 +1,76 @@
+[% USE date %]
+[% PROCESS _header %]
+
+[% IF library_admin %]
+[% PROCESS _header_admin_submenu %]<p>&nbsp;</p>
+[% ELSE %]
+<h1>Statistiky dotazů na API</h1>
+[% END %]
+
+[% PROCESS _errors %]
+
+<h3>Počet dotazů na API - denní přehled</h3>
+<div id="chart1" style="height:300px; width:900px;"></div>
+
+<script type="text/javascript">
+  var labels1 = [ {label: 'Dotazy na náhledy obálek'}, {label: 'Dotazy na náhledy TOC'}, {label: 'Dotazy na stažení TOC'}, {label: 'Dotazy na statické soubory'}, ];
+  var line11 = [ [% FOREACH row IN stat1 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('cover_requests')%]],[% END %] ];
+  var line12 = [ [% FOREACH row IN stat1 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('toc_thumbnail_requests')%]],[% END %] ];
+  var line13 = [ [% FOREACH row IN stat1 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('toc_pdf_requests')%]],[% END %] ];
+  var line14 = [ [% FOREACH row IN stat1 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('file_requests')%]],[% END %] ];
+  var line15 = [ [% FOREACH row IN stat1 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('meta_requests')%]],[% END %] ];
+  var lines1 = [line11,line12,line13,line14,line15];
+  
+  var plot1 = $.jqplot('chart1', lines1, {
+	  series:[
+        {yaxis:'yaxis', label:'Náhledy obálek (osa vlevo)'},
+        {yaxis:'y2axis', label:'Náhledy TOC (osa vpravo)'},
+        {yaxis:'y2axis', label:'Stažení TOC (osa vpravo)'},
+        {yaxis:'y2axis', label:'Statické soubory (osa vpravo)'},
+        {yaxis:'y2axis', label:'Metadata (osa vpravo)'}
+      ],
+      axes:{
+        xaxis:{ renderer:$.jqplot.DateAxisRenderer, tickOptions:{ formatString:'%#d.%#m.' } },
+        yaxis:{ tickOptions:{ formatString:'%.0f' }, min: 0 },
+        y2axis:{ tickOptions:{ formatString:'%.0f' }, min: 0 }
+      },
+      highlighter: { show: true, sizeAdjust: 7.5 },
+      legend: { show: true, placement: 'outsideGrid' },
+      cursor: { show: false }
+  });
+</script>
+
+<br/><br/>
+<h3>Počet dotazů na API - měsíční přehled</h3>
+<div id="chart2" style="height:300px; width:900px;"></div>
+
+<script type="text/javascript">
+  var labels2 = [ {label: 'Dotazy na náhledy obálek'}, {label: 'Dotazy na náhledy TOC'}, {label: 'Dotazy na stažení TOC'}, {label: 'Dotazy na statické soubory'}, ];
+  var line21 = [ [% FOREACH row IN stat2 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('cover_requests')%]],[% END %] ];
+  var line22 = [ [% FOREACH row IN stat2 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('toc_thumbnail_requests')%]],[% END %] ];
+  var line23 = [ [% FOREACH row IN stat2 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('toc_pdf_requests')%]],[% END %] ];
+  var line24 = [ [% FOREACH row IN stat2 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('file_requests')%]],[% END %] ];
+  var line25 = [ [% FOREACH row IN stat2 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('meta_requests')%]],[% END %] ];
+  var lines2 = [line21,line22,line23,line24,line25];
+  
+  var plot2 = $.jqplot('chart2', lines2, {
+	  series:[
+        {yaxis:'yaxis', label:'Náhledy obálek (osa vlevo)'},
+        {yaxis:'y2axis', label:'Náhledy TOC (osa vpravo)'},
+        {yaxis:'y2axis', label:'Stažení TOC (osa vpravo)'},
+        {yaxis:'y2axis', label:'Statické soubory (osa vpravo)'},
+        {yaxis:'y2axis', label:'Metadata (osa vpravo)'}
+      ],
+      axes:{
+        xaxis:{ renderer:$.jqplot.DateAxisRenderer, tickOptions:{ formatString:'%b %y' } },
+        yaxis:{ tickOptions:{ formatString:'%.0f' }, min: 0 },
+        y2axis:{ tickOptions:{ formatString:'%.0f' }, min: 0 }
+      },
+      highlighter: { show: true, sizeAdjust: 7.5 },
+      legend: { show: true, placement: 'outsideGrid' },
+      cursor: { show: false }
+  });
+</script>
+
+<br/>
+[% PROCESS _footer %]

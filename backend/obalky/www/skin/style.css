@@ -53,7 +53,6 @@ input[type=text],input[type=password] {padding:4px 4px;}
 p {margin:0 0 1.5em 0;}
 
 
-
 #page {}
 	#page .in {width:940px;position:relative;margin:0 auto;}
 
@@ -243,6 +242,7 @@ table.qe-table a.f-icon img {background:none !important; border:0 !important; pa
 
 /* Account */
 .label-wide {width:400px !important;}
+.protirob {display:none;}
 #admin-submenu {width:100%;}
 	#admin-submenu ul {height:45px; background-color:#fdfdfd; border-radius:6px; box-shadow:0 0 10px 5px #cdcdcd inset;}
 	#admin-submenu ul li {padding:13px 25px; border-right:1px dashed #cdcdcd; display:inline; float:left; list-style-type:none; text-transform:uppercase; background-image:none !important;}

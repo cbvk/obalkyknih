@@ -11,11 +11,10 @@
 <link rel="stylesheet" type="text/css" href="/indigo.css" media="screen"/>
 <link rel="stylesheet" type="text/css" href="/local.css" media="screen"/>
 
-<script type="text/javascript" src="/system.js"></script>
-<script type="text/javascript" src="/jquery.js"></script>
-
-<script type="text/javascript" src="api/functions.js"></script>
-<script type="text/javascript" src="api/custom.js"></script>
+<script type="text/javascript" src="/js/jquery-1.11.1.js"></script>
+<script type="text/javascript" src="/js/system.js"></script>
+<script type="text/javascript" src="/api/functions.js"></script>
+<script type="text/javascript" src="/api/custom.js"></script>
 
 [% DEFAULT header_title = "Obálky knih" %]
 <title>[% header_title %]</title>

@@ -7,7 +7,7 @@
 	<a class="[%menu_index%]" href="/index">úvod</a>
 	<a class="[%menu_upload%]" href="/upload">vložit</a>
 <!--	<a class="[%menu_doc%]" href="/doc/index">dokumentace</a>-->
-	<a class="[%menu_doc%]" href="http://docs.google.com/View?docID=0Ac2A7CGzH5t9ZGZtM3gyNGZfNjhjcmZ3amhjZg">dokumentace</a>
+	<a class="[%menu_doc%]" href="/doc/Dokumentace_API_OKCZ_3.0.pdf">dokumentace</a>
 	<a class="[%menu_about%]" href="/about">o projektu</a>
 <!--
 [% IF user %]
