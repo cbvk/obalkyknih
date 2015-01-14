@@ -219,14 +219,18 @@ Tuto knihu ještě nemáme v databázi!
 	[% IF toc.product %]
 		<a href="[% toc.product.product_url %]"
 			>[% toc.product.eshop.fullname %]</a><br>
-	[% END %]
+	[% END %]book.toc
 	<a href="?[% book.bibinfo.to_some_param 
 			%]&book_id=[% book.id %]&set_toc=[% toc.id %]">
 	<img class="[% IF book.toc AND book.toc.id == toc.id 
 					%]img_selected[% ELSE %]img_not_selected[% END %]"
 			src="[% book.toc.get_thumbnail_url %]"></a>
-	
-	[% IF book.toc %]
+
+	[% END %]
+
+  [% END %]
+  
+  [% IF book.toc %]
 	<div style="clear: both"></div>
 	<form onsubmit="return view_abuse_toc_onsubmit();" method="post">
 		<textarea name=note id=abuse_toc_comment style="display: none; width: 178px;"></textarea>
@@ -251,9 +255,6 @@ Tuto knihu ještě nemáme v databázi!
 	[% END %]
 	
 	<br><br>
-	[% END %]
-
-  [% END %]
 
 </td></tr>
 

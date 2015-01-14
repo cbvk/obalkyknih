@@ -49,9 +49,11 @@ isbn_1234, ean_123, oclc_123, nbn_123, isbn1234_nbn123
 =cut
 
 
-my @keys = qw/ean13 oclc nbn title authors year/;
+my @keys = qw/ean13 oclc nbn title authors year part_year part_volume part_no part_note/;
 
 sub param_keys { qw/ean isbn issn oclc nbn title authors year/ }
+sub param_keys_part { qw/part_ean part_isbn part_issn part_oclc part_nbn part_title part_authors/ }
+sub extended_keys_part { qw/part_year part_volume part_no part_note/ }
 
 sub new {
 	my($pkg,$object) = @_;
@@ -65,6 +67,17 @@ sub new {
 	my $authors = $object->authors;
 	$bibinfo->{authors} = [split(/\;/,$authors)] if(defined $authors);
 	$bibinfo->{year} = $object->year if(defined $object->year);
+	
+	if (ref $object eq 'DB::Result::Book') { # tyto parametry ma pouze book
+		$bibinfo->{part_year} = $object->part_year if(defined $object->part_year);
+		$bibinfo->{part_year_orig} = $object->part_year_orig if(defined $object->part_year_orig);
+		$bibinfo->{part_volume} = $object->part_volume if(defined $object->part_volume);
+		$bibinfo->{part_volume_orig} = $object->part_volume_orig if(defined $object->part_volume_orig);
+		$bibinfo->{part_no} = $object->part_no if(defined $object->part_no);
+		$bibinfo->{part_no_orig} = $object->part_no_orig if(defined $object->part_no_orig);
+		$bibinfo->{part_note} = $object->part_note if(defined $object->part_note);
+		$bibinfo->{part_note_orig} = $object->part_note_orig if(defined $object->part_note_orig);
+	}
 
 	return $bibinfo;
 }
@@ -92,6 +105,10 @@ sub differs {
 	return $a->ean13 ne $b->ean13 if($a->ean13 and $b->ean13);
 	return $a->oclc  ne $b->oclc  if($a->oclc  and $b->oclc );
 	return $a->nbn   ne $b->nbn   if($a->nbn   and $b->nbn  );
+	return $a->part_year    ne $b->part_year   if($a->part_year   and $b->part_year );
+	return $a->part_volumer ne $b->part_volume if($a->part_volume and $b->part_volume );
+	return $a->part_no      ne $b->part_no     if($a->part_no     and $b->part_no );
+	return $a->part_note    ne $b->part_note   if($a->part_note   and $b->part_note );
 	return undef; # nevime..
 }
 
@@ -223,14 +240,26 @@ sub new_from_params {
 				  $param->{nbn} or $param->{title}); 
 
 	# todo: normalize oclc, nbn
+	my $nbn;
+	$nbn = lc($param->{nbn}) if (defined $param->{nbn});
 	return bless {
 		ean13 => $ean13,
 		oclc => $param->{oclc},
-		nbn => lc($param->{nbn}),
+		nbn => $nbn,
 		title => $param->{title},
 		authors => $param->{authors}, # ujistit se, ze to je pole?
 		# isbns => ?
 		year => $year,
+		part_year => $param->{part_year},
+		part_volume => $param->{part_volume},
+		part_no => $param->{part_no},
+		part_note => $param->{part_note},
+		part_year_orig => $param->{part_year_orig},
+		part_volume_orig => $param->{part_volume_orig},
+		part_no_orig => $param->{part_no_orig},
+		part_note_orig => $param->{part_note_orig},
+		part_type => $param->{part_type},
+		id_parent => $param->{id_parent}
 	}, $pkg;
 }
 
@@ -238,7 +267,9 @@ sub save_to {
 	my($id,$object) = @_;
 	warn "Updating ".$object->id." with ".Dumper($id->save_to_hash())
 						if($ENV{DEBUG} and $ENV{DEBUG} > 2);
-	$object->update($id->save_to_hash());
+	my $hash = $id->save_to_hash();
+	$hash = $id->save_to_hash_part($hash) if (ref $object eq 'DB::Result::Book'); # book ma vic parametru k ulozeni (dily monografii a periodik)
+	$object->update($hash);
 }
 sub save_to_hash {
 	my($id,$hash) = @_;
@@ -248,11 +279,17 @@ sub save_to_hash {
 						join(";",@{$id->{authors}}) : $id->{authors} || '';
 	return $hash;
 }
+sub save_to_hash_part {
+	my($id,$hash) = @_;
+	$hash ||= {};
+	map $hash->{$_} = $id->{$_}, grep $id->{$_}, qw/part_year part_volume part_no part_note id_parent part_year_orig part_volume_orig part_no_orig part_note_orig part_type/;
+	return $hash;
+}
 
 sub to_params {
 	my($id) = @_;
 	my @out;
-	foreach(qw/ean13 oclc nbn/) {
+	foreach(qw/ean13 oclc nbn part_year part_volume part_no part_note/) {
 		push @out, $_."=".$id->{$_} if($id->{$_});
 	}
 	return join("&",@out);
@@ -390,6 +427,51 @@ sub authors_human {
 	return $last || '' unless($bibinfo->{authors});
 	my $first = join(", ",@{$bibinfo->{authors}});
 	return $first ? "$first a $last" : $last;
+}
+
+sub find_missing_year_or_volume {
+	my($bibinfo) = @_;
+	if ($bibinfo->{part_year}) {
+		my $res;
+		$res = DB->resultset('Book')->search(
+			{ ean13 => $bibinfo->{ean13}, part_year => $bibinfo->{part_year}, part_volume => { -not => undef } },
+			{ -group_by => 'part_volume', -order_by => \'COUNT(*) DESC' })->next if ($bibinfo->{ean13});
+		$bibinfo->{part_volume} = $res->get_column('part_volume') if ($res);
+		return $bibinfo if ($res);
+		
+		$res = DB->resultset('Book')->search(
+			{ oclc => $bibinfo->{oclc}, part_year => $bibinfo->{part_year}, part_volume => { -not => undef } },
+			{ -group_by => 'part_volume', -order_by => \'COUNT(*) DESC' })->next if ($bibinfo->{oclc});
+		$bibinfo->{part_volume} = $res->get_column('part_volume') if ($res);
+		return $bibinfo if ($res);
+		
+		$res = DB->resultset('Book')->search(
+			{ nbn => $bibinfo->{nbn}, part_year => $bibinfo->{part_year}, part_volume => { -not => undef } },
+			{ -group_by => 'part_volume', -order_by => \'COUNT(*) DESC' })->next if ($bibinfo->{nbn});
+		$bibinfo->{part_volume} = $res->get_column('part_volume') if ($res);
+		return $bibinfo if ($res);
+	}
+	if ($bibinfo->{part_volume}) {
+		my $res;
+		$res = DB->resultset('Book')->search(
+			{ ean13 => $bibinfo->{ean13}, part_volume => $bibinfo->{part_volume}, part_year => { -not => undef } },
+			{ -group_by => 'part_year', -order_by => \'COUNT(*) DESC' })->next if ($bibinfo->{ean13});
+		$bibinfo->{part_year} = $res->get_column('part_year') if ($res);
+		return $bibinfo if ($res);
+		
+		$res = DB->resultset('Book')->search(
+			{ oclc => $bibinfo->{oclc}, part_volume => $bibinfo->{part_volume}, part_year => { -not => undef } },
+			{ -group_by => 'part_year', -order_by => \'COUNT(*) DESC' })->next if ($bibinfo->{oclc});
+		$bibinfo->{part_year} = $res->get_column('part_year') if ($res);
+		return $bibinfo if ($res);
+		
+		$res = DB->resultset('Book')->search(
+			{ nbn => $bibinfo->{nbn}, part_volume => $bibinfo->{part_volume}, part_year => { -not => undef } },
+			{ -group_by => 'part_year', -order_by => \'COUNT(*) DESC' })->next if ($bibinfo->{nbn});
+		$bibinfo->{part_year} = $res->get_column('part_year') if ($res);
+		return $bibinfo if ($res);
+	}
+	return $bibinfo;
 }
 
 

@@ -44,6 +44,12 @@ __PACKAGE__->table("book");
   is_auto_increment: 1
   is_nullable: 0
 
+=head2 id_parent
+
+  data_type: 'integer'
+  is_foreign_key: 1
+  is_nullable: 1
+
 =head2 created
 
   data_type: 'timestamp'
@@ -83,7 +89,39 @@ __PACKAGE__->table("book");
 
 =head2 year
 
-  data_type: 'integer'
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 20
+
+=head2 part_year
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
+=head2 part_volume
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
+=head2 part_no
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
+=head2 part_note
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
+=head2 part_type
+
+  data_type: 'tinyint'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 1
 
 =head2 search_count
@@ -149,11 +187,37 @@ __PACKAGE__->table("book");
   is_nullable: 1
   size: 255
 
+=head2 part_year_orig
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
+=head2 part_volume_orig
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
+=head2 part_no_orig
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
+=head2 part_note_orig
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
 =cut
 
 __PACKAGE__->add_columns(
   "id",
   { data_type => "integer", is_auto_increment => 1, is_nullable => 0 },
+  "id_parent",
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "created",
   {
     data_type => "timestamp",
@@ -172,7 +236,22 @@ __PACKAGE__->add_columns(
   "title",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "year",
-  { data_type => "integer", is_nullable => 1 },
+  { data_type => "varchar", is_nullable => 1, size => 20 },
+  "part_year",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
+  "part_volume",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
+  "part_no",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
+  "part_note",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
+  "part_type",
+  {
+    data_type => "tinyint",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
   "search_count",
   { data_type => "integer", default_value => 0, is_nullable => 1 },
   "harvest_max_eshop",
@@ -198,6 +277,14 @@ __PACKAGE__->add_columns(
   "citation",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "tips",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
+  "part_year_orig",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
+  "part_volume_orig",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
+  "part_no_orig",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
+  "part_note_orig",
   { data_type => "varchar", is_nullable => 1, size => 255 },
 );
 
@@ -227,6 +314,21 @@ __PACKAGE__->has_many(
   "abuses",
   "DB::Result::Abuse",
   { "foreign.book" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 books
+
+Type: has_many
+
+Related object: L<DB::Result::Book>
+
+=cut
+
+__PACKAGE__->has_many(
+  "books",
+  "DB::Result::Book",
+  { "foreign.id_parent" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -265,6 +367,26 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 id_parent
+
+Type: belongs_to
+
+Related object: L<DB::Result::Book>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "id_parent",
+  "DB::Result::Book",
+  { id => "id_parent" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
 =head2 marcs
 
 Type: has_many
@@ -278,6 +400,26 @@ __PACKAGE__->has_many(
   "DB::Result::Marc",
   { "foreign.book" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 part_type
+
+Type: belongs_to
+
+Related object: L<DB::Result::CPartType>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "part_type",
+  "DB::Result::CPartType",
+  { id => "part_type" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
 );
 
 =head2 products
@@ -511,8 +653,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-08-01 15:44:06
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:H26Xl3otuCr2AxfHRgdhtA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-12-23 00:13:00
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oo9ugD88kDARqsejk55I3g
 
 use Obalky::Media;
 use Data::Dumper;
@@ -590,6 +732,7 @@ sub recalc_review {
 sub invalidate { # nutno volat po kazde zmene knizky
 	my($book) = @_;
 	DB->resultset('Cache')->invalidate($book);
+	DB->resultset('FeSync')->request_sync_remove($book->bibinfo);
 }
 
 sub recalc_rating {
@@ -755,14 +898,69 @@ sub del_review {
 	return $review;
 }
 
+sub get_most_recent {
+	my($book) = @_;
+	return $book unless ($book->id);
+	my $parts = DB->resultset('Book')->search({ id_parent => $book->id }, { order_by => {-desc=>[qw/part_year part_volume/]} });
+	if ($parts->count) {
+		my ($max_year,$max_volume,$eq_year,$eq_volume) = (undef,undef,undef,undef);
+		
+		# vyhledani nejnovejsiho zaznamu podle roku
+		foreach ($parts->all) {
+			my $cur_year = $_->get_column('part_year');
+			my $cur_volume = $_->get_column('part_volume');
+			$max_year = $cur_year unless($max_year);
+			$max_volume = $cur_volume unless($max_volume);
+			if ($cur_year && $cur_volume && !$eq_year) { # nasly jsme zaznam s parem rok/rocnik
+				$eq_year = $cur_year;
+				$eq_volume = $cur_volume;
+			}
+			$max_volume = $max_volume<$cur_volume ? $cur_volume : $max_volume if ($max_volume and $cur_volume);
+		}
+		
+		# nemame se ceho chytit, rok znamy, rocnik neznamy, tj. vyhledame nejnovejsi podle roku
+		if (($max_year && !$max_volume) || ()) {
+			return DB->resultset('Book')->search({ id_parent=>$book->id, part_year=>$max_year }, { order_by=>{-desc=>'part_no'}, limit=>1 })->next;
+		}
+		# nemame se ceho chytit, rocnik znamy, rok neznamy, tj. vyhledame nejnovejsi podle rocniku
+		if (!$max_year && $max_volume) {
+			return DB->resultset('Book')->search({ id_parent=>$book->id, part_volume=>$max_volume }, { order_by=>{-desc=>'part_no'}, limit=>1 })->next;
+		}
+		# oba parametry jsou zname, ale nemame k cemu prirovnat (nemame zaznam co obsahuje rok i rocnik zaroven), uprednostnime rok
+		if (!$eq_year) {
+			return DB->resultset('Book')->search({ id_parent=>$book->id, part_year=>$max_year }, { order_by=>{-desc=>'part_no'}, limit=>1 })->next;
+		}
+		# zname vsechno (nejnovejsi rok, nejnovejsi rocnik a vime je k sobe srovnat)
+		if ($eq_year && $eq_volume) {
+			my $vol_diff = $max_volume - $eq_volume;
+			my $vol_to_year = $eq_year + $vol_diff;
+			my $max_year_calculated = $max_year>=$vol_to_year ? $max_year : $vol_to_year;
+			$max_volume = $max_volume + ($max_year_calculated - $max_year);
+			return DB->resultset('Book')->search({ id_parent=>$book->id, -or=>{part_year=>$max_year_calculated, part_volume=>$max_volume} }, { order_by=>{-desc=>'part_no'}, limit=>1 })->next;
+		}
+	}
+	return $book;
+}
+
 # --------------------------------------------------------------
 
 sub enrich {
 	my($book,$info,$library,$permalink,$bibinfo,$secure,$params) = @_;
+	
+	# vyzadujeme/nevyzadujeme, aby se vyhledaval zaznam s presnou shodou
+	# strict_match = 1  pokud vyhledavame souborny zaznam, poskytne se souborny zaznam a je jedno jestli ma novejsi naskenovana cisla
+	# strict_match = 0  pokud vyhledavame souborny zaznam, poskytne se nejnovejsi cislo
+	my $strict_match = 0;
+	$strict_match = ($params->{strict_match} eq 'true' or $params->{strict_match} eq '1') ? 1 : 0 if ($params->{strict_match});
+	
+	# vyhledani nejnovejsiho cisla k soubornemu zaznamu
+	my $book_req = $book;
+	$book = $book->get_most_recent unless ($strict_match);
+	warn 'Found most recent child '.$book->id.' of requested book '.$book_req->id."\n" if ($ENV{DEBUG} and $book->id!=$book_req->id);
 
 	# aktualizuj book bibinfo (OCLC, title,...) (strcit to do Marc::..?)
 	my $book_bibinfo = $book->bibinfo;
-	if($book_bibinfo->merge($bibinfo)) {
+	if($book_bibinfo->merge($bibinfo) and $book->id == $book_req->id) {
 		$book_bibinfo->save_to($book);
 		$book->invalidate;
 	}
@@ -772,6 +970,10 @@ sub enrich {
 	$info->{ean} = $book_bibinfo->ean13 if $book_bibinfo->ean13;
 	$info->{nbn}  = $book_bibinfo->nbn if $book_bibinfo->nbn;
 	$info->{oclc} = $book_bibinfo->oclc if $book_bibinfo->oclc;
+	$info->{part_year} = $book_bibinfo->{part_year} if $book_bibinfo->{part_year};
+	$info->{part_volume} = $book_bibinfo->{part_volume} if $book_bibinfo->{part_volume};
+	$info->{part_no} = $book_bibinfo->{part_no} if $book_bibinfo->{part_no};
+	$info->{part_most_recent} = 1 if ($book->id != $book_req->id);
 
 	# 1. Najdi cover
 	my $cover = $book->get_cover; # pripadne najde work->cover

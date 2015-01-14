@@ -32,7 +32,9 @@ sub get_book_record {
 
 	# jinak vytvor novy knihovni record
 	$book = DB->resultset('Book')->find_by_bibinfo_or_create($bibinfo);
-	die "no book??" unless($book); # FIX: remove sanity check
+	# pokud se zaznam nenasel, a neni vytvoren novy (napr. v pripade dotazu na periodikum, nebo vicesvazkovou monografii) vrati se prazdna odpoved
+	return (undef,undef) unless($book);
+	#die "no book??" unless($book); # FIX: remove sanity check
 	my $hash = {
 		library   => $library,
 		book      => $book,
@@ -46,6 +48,7 @@ sub get_book_record {
 		$marc = $pkg->find({ permalink => $permalink }) if($permalink);
 	}
 	# die "no record??" unless($marc); # FIX: remove sanity check
+	
 	return ($book,$marc);
 }
 

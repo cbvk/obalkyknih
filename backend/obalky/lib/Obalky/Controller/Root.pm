@@ -100,7 +100,6 @@ sub abuse : Local {
 		}
 	}
 	$c->stash->{abused} = [ DB->resultset('Abuse')->all ];
-	warn Dumper($c->stash->{abused});
 	$c->stash->{menu} = "index";
 }
 
@@ -275,7 +274,7 @@ sub account_user : Local {
     	return;
     }
     
-    my $user = DB->resultset('User')->find($c->user);
+    my $user = DB->resultset('User')->find($c->user->id);
     my $library_admin = $user->get_column('flag_library_admin');
     my $flag_review_report = $user->get_column('flag_review_report');
     
@@ -762,7 +761,8 @@ sub end : Private {
 #	warn "end() user: ".($c->user ? "ok: ".$c->user->get('login'):"fail")."\n";
 	$self->blue_stash($c);
 	$c->stash->{user} = $c->user ? $c->user->get('login') : undef;
-	$c->stash->{user_is_admin} = $c->stash->{user} eq $Obalky::ADMIN_EMAIL ? 1 : 0;
+	$c->stash->{user_is_admin} = 0;
+	$c->stash->{user_is_admin} = $c->stash->{user} eq $Obalky::ADMIN_EMAIL ? 1 : 0 if (defined $c->stash->{user});
 	$c->forward('Obalky::View::TT');	
 }
 

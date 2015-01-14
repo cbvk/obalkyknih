@@ -198,7 +198,15 @@ sub add_product {
 
 	# najdi nebo vytvor odpovidajici book
 	# warn "Looking for ".Dumper($bibinfo)."\n" if($ENV{DEBUG});
-	my $book = DB->resultset('Book')->find_by_bibinfo_or_create($bibinfo);
+	my $book = DB->resultset('Book')->find_by_bibinfo($bibinfo);
+	# zaznam book neexistuje, vytvarime
+	unless ($book) {
+		my $hash = {};
+		$bibinfo->save_to_hash($hash);
+		warn "Creating book... EAN ".$hash->{ean13}."\n" if($ENV{DEBUG});
+		$book = DB->resultset('Book')->create($hash);
+	};
+	
 	$bibinfo->save_to($book); # aktualizuj dle produktu -- jen docasne pro opravu TOC!
 
 	# dle #book a #eshop najdi nebo vytvor product (s permalinkem)

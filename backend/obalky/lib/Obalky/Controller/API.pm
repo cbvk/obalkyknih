@@ -186,25 +186,27 @@ sub do_book_request {
 	my $permalink = Obalky::Tools->fix_permalink($this->{permalink});
 
 	# v dotazu chybi minimalni udaje, ignoruj..
-	unless($library and $bibinfo and $permalink) {
+	#unless($library and $bibinfo and $permalink) {
 		# ale nevypisuj, je toho hodne..
-#		warn "Chybi minimalni udaje, ignoruju (lib=".($library?$library->code:"").",permalink=".($permalink||'').",bibinfo=".($bibinfo||'').")...\n";
-	}
-	return unless($library and $bibinfo and $permalink); 
+	#	warn "Chybi minimalni udaje, ignoruju (lib=".($library?$library->code:"").",permalink=".($permalink||'').",bibinfo=".($bibinfo||'').")...\n";
+	#}
+	return unless($library and $bibinfo and $permalink);
 
     my($book,$record) = DB->resultset('Marc')->get_book_record(
 								$library, $permalink, $bibinfo );
+	
+	# pokud se zaznam nenasel, a neni vytvoren novy (napr. v pripade dotazu na periodikum, nebo vicesvazkovou monografii) vrati se prazdna odpoved
+	return (undef,undef) unless($book);
 
 	$book->enrich($this,$library,$permalink,$bibinfo,$c->request->secure,$c->req->params);
 
 	# zapis do DB #lastrequests [ visitor_id, session?, $book->id, $record->id ]
-#	if($tip) {
-	if(0) { ## nelogujeme, pretikaji disky
-		DB->resultset('Lastrequests')->create({ 
-			library => $library->id, book => $book->id, 
-			visitor => $visitor->id, marc => $record ? $record->id : undef, 
-			session_info => $session});
-	}
+	#if($tip) { nelogujeme, pretikaji disky
+	#	DB->resultset('Lastrequests')->create({ 
+	#		library => $library->id, book => $book->id, 
+	#		visitor => $visitor->id, marc => $record ? $record->id : undef, 
+	#		session_info => $session});
+	#}
 
 	# jen docasne - zkratime debug vypisy..
 	# delete $this->{bibinfo} if($this); 
@@ -223,13 +225,13 @@ sub do_books_request {
 
 	my @book;
 	foreach my $this (ref $books eq 'ARRAY' ? @$books : []) {
-#		my $key = DB->resultset('Cache')->canonize($this);
-#		my($bookid,$full) = DB->resultset('Cache')->load($key);
-#		unless($full) {
-#			($bookid,$full) = $self->do_book_request($c,$session,
-#										$library,$visitor,$this);
-#			DB->resultset('Cache')->store($key,$bookid,$full);
-#		}
+	#	my $key = DB->resultset('Cache')->canonize($this);
+	#	my($bookid,$full) = DB->resultset('Cache')->load($key);
+	#	unless($full) {
+	#		($bookid,$full) = $self->do_book_request($c,$session,
+	#									$library,$visitor,$this);
+	#		DB->resultset('Cache')->store($key,$bookid,$full);
+	#	}
 		my($bookid,$full) = $self->do_book_request($c,$session,
 									$library,$visitor,$this);
 		push @book, $full if(defined $full);
@@ -498,12 +500,58 @@ sub _do_import {
 	}
 	my $user = $c->user->login;
 
-	# z parametru zkonstruuj identifikator knizky (TODO jen BibInfo->fields?)
+	# z parametru zkonstruj identifikator knizky (TODO jen BibInfo->fields?)
 	my $bibinfo_params = {};
 	$bibinfo_params->{$_} = decode_utf8($c->req->param($_))
 		foreach(Obalky::BibInfo->param_keys);
 	# jen docasny fix
 	$bibinfo_params->{authors} ||= decode_utf8($c->req->param('author'));
+	
+	my $bibinfo_aggr;
+	my $part_type = $c->req->param('part_type');
+	# bibinfo souborneho zaznamu
+	if (($part_type eq "serial" or $part_type eq "mono")) {		
+		my $hash = {};
+		my $bibinfo_aggr = Obalky::BibInfo->new_from_params($bibinfo_params);
+		$bibinfo_aggr->save_to_hash($hash);
+		
+		unless ($c->req->param("part_no")) { # chyby povinny parametr
+			$c->response->content_type("text/plain");
+			$c->response->body("Missing params part_year, part_volume, part_no.");
+			return;
+		}
+		
+		my $book_aggr = DB->resultset('Book')->find_by_bibinfo($bibinfo_aggr);
+		if ($book_aggr) {
+			# book zaznam existuje, aktualizovat
+			$book_aggr->update($hash);
+		} else {
+			# book zaznam neexistuje, vytvorit
+			$book_aggr = DB->resultset('Book')->create($hash);
+		}
+		
+		# pokud se jedna o cast monografie musime nacist identifikatory casti
+		if ($part_type eq "mono") {
+			$bibinfo_params = {};
+			# nacti parametry, ale odrizni prefix "part_"
+			$bibinfo_params->{substr($_,5)} = decode_utf8($c->req->param($_)) foreach(Obalky::BibInfo->param_keys_part);
+			# nacti identifikatory rok/rocnik/cislo
+			$bibinfo_params->{$_} = decode_utf8($c->req->param($_)) foreach(Obalky::BibInfo->extended_keys_part);
+			$bibinfo_params->{id_parent} = $book_aggr->id;
+			$bibinfo_params->{part_type} = 1; # monografie
+			$bibinfo_params = DB->resultset('Book')->normalize_bibinfo($bibinfo_params);
+		}
+		# pokud se jedna o cast monografie musime nacist identifikatory casti
+		if ($part_type eq "serial") {
+			# nacti identifikatory rok/rocnik/cislo
+			$bibinfo_params->{$_} = decode_utf8($c->req->param($_)) foreach(Obalky::BibInfo->extended_keys_part);
+			$bibinfo_params->{id_parent} = $book_aggr->id;
+			$bibinfo_params->{part_type} = 2; # periodikum
+			$bibinfo_params = DB->resultset('Book')->normalize_bibinfo($bibinfo_params);
+		}
+	}
+
+	# bibinfo skenovaneho zaznamu
 	my $bibinfo = Obalky::BibInfo->new_from_params($bibinfo_params);
 
     $self->_do_log("user $user book ".($bibinfo ? $bibinfo->to_string
@@ -608,6 +656,8 @@ sub _do_import {
 	# ok, ke knizce $bibinfo zaloz novy produkt ($media)
     $self->_do_log("calling ->add_product(".Dumper($bibinfo).",",
                             Dumper($media).",$product_url)");
+warn Dumper($media);
+warn Dumper($product_url);
 	my $product = $eshop->add_product($bibinfo,$media,$product_url);
 
     $self->_do_log("ok, product ".$product->id." ready");

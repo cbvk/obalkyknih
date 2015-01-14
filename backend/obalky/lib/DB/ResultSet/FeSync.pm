@@ -219,7 +219,9 @@ Pro zadane dilo provede vymazani na vsech frontendech
 =cut
 sub request_sync_remove {
 	my($pkg,$bibinfo,$fe) = @_;
-	my $sync_params = $bibinfo->to_some_hash;
+	my $sync_params = $bibinfo->save_to_hash();
+	delete $sync_params->{title};
+	delete $sync_params->{authors};
 	if ($sync_params) {
 		$sync_params->{remove} = 'true';
 		DB->resultset('FeSync')->set_sync($sync_params, 'metadata_changed', $fe);
