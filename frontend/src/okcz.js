@@ -1,4 +1,4 @@
-/// version 17
+/// version 18
 
 /// mongodb://url:port/database  - spojeni na mongodb
 var urlmongo = "mongodb://localhost:27017/test"
@@ -14,7 +14,7 @@ var frontPortHttps = 1338;
 // =========================================
 
 /// knihovna API OKCZ v3.0
-var okcz = require('okcz17_server');
+var okcz = require('okcz_server');
 
 /// node.js moduly
 var mongo = require('mongodb');
@@ -30,7 +30,6 @@ var httpsOptions = {
   cert: fs.readFileSync('cert/cache.obalkyknih.cz-1404285806.pem'),
   ca: [ fs.readFileSync('cert/tcs-ca-bundle.pem') ]
 };
-
 
 // **********************************************
 //   Serverova cast Front-End API obalkyknih.cz
@@ -71,7 +70,7 @@ client.connect(urlmongo, function (err, db) {
   }
 
   okcz.getPerms(db);
-
+  
   // HTTP
   http.createServer(function (req, response) {
     okcz.server(req, response, db);
@@ -81,5 +80,5 @@ client.connect(urlmongo, function (err, db) {
   https.createServer(httpsOptions, function (req, response) {
     okcz.server(req, response, db);
   }).listen(frontPortHttps);
-
+  
 });
