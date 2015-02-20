@@ -30,8 +30,7 @@ sub abuse {
 	});
 	
 	# synchronizuj s frontend
-	my $bibinfo = Obalky::BibInfo->new($book);
-	DB->resultset('FeSync')->request_sync_remove($bibinfo);
+	DB->resultset('FeSync')->book_sync_remove($book->id);
 	
 	return $abuse;
 }

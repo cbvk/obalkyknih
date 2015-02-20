@@ -2,6 +2,7 @@
 package DB::ResultSet::Book;
 use base 'DBIx::Class::ResultSet';
 use Encode;
+use String::Util qw(trim);
 
 use Data::Dumper;
 use Obalky::Config;
@@ -52,18 +53,18 @@ sub find_by_bibinfo {
 	# dotazy na zaznam book (souborny zaznam)
 	unless ($id->{part_no} or $id->{part_name}) {
 		$id->{part_year} = $id->{part_volume} = undef;
-		push @books, $pkg->search({ ean13=>$id->{ean13}, part_year=>undef, part_volume=>undef, part_no=>undef, part_name=>undef }) if($id->{ean13});
+		push @books, $pkg->search({ ean13=>$id->{ean13} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{ean13});
    		return $books[0] if(@books and not wantarray);
-   		push @books, $pkg->search({ oclc=>$id->{oclc}, part_year=>undef, part_volume=>undef, part_no=>undef, part_name=>undef }) if($id->{oclc});
+   		push @books, $pkg->search({ oclc=>$id->{oclc} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{oclc});
   		return $books[0] if(@books and not wantarray);
-   		push @books, $pkg->search({ nbn=>$id->{nbn}, part_year=>undef, part_volume=>undef, part_no=>undef, part_name=>undef }) if($id->{nbn});
+   		push @books, $pkg->search({ nbn=>$id->{nbn} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{nbn});
 		return $books[0] if(@books and not wantarray);
 	}
 	
 	# dotaz na cislo periodika, nebo cast monografie
 	if ($id->{part_no} or $id->{part_name}) {
 		@books = $pkg->search_book_part($id);
-		if (@books) {
+		if (${@books}) {
 			map { # pro kazdy nalezeny zaznam (normalne cekame ze je jeden) zkontrolujeme, jestli ma vyplnenou kombinaci rok/rocnik
 				if ($_->get_column('part_type') == 2) { # tyka se to periodik
 					my $part_year = $_->get_column('part_year');
@@ -86,8 +87,18 @@ sub find_by_bibinfo {
 			# druhy pokus o vyhledani uz se vsemi info
 			@books = $pkg->search_book_part($id);
    		}
+   		
+   		# rozhodovani se jestli vyhledat rozmezi roku/rocniku/cisel
+   		my ($found_part_no_range, $found_part_year_range, $found_part_volume_range) = (0,0,0);
+   		$found_part_no_range = 1 if ($id->{part_no} and $id->{part_no} =~ /[\,\-]/);
+   		$found_part_volume_range = 1 if ($id->{part_volume} and $id->{part_volume} =~ /[\,\-]/);
+   		$found_part_year_range = 1 if ($id->{part_year} and $id->{part_year} =~ /[\,\-]/);
+   		# vyhledani rozmezi roku/rocniku/cisel
+   		if (!$books[0] and ($found_part_no_range or $found_part_volume_range or $found_part_year_range)) {
+   			@books = $pkg->search_book_by_range($id);
+   		}
 	}
-
+	
 	return wantarray ? @books : $books[0];
 }
 sub find_by_bibinfo_or_create {
@@ -164,11 +175,17 @@ sub normalize_part {
 	$str = lc $str;
 	$str =~ s/[\s]*\-[\s]*/\-/; # normalize dash
 	$str =~ s/[\s]*\,[\s]*/\,/; # normalize comma
+	$str =~ s/spec\./special/;
 	
 	# normalize punctation
 	my $regex = join "|", keys %Obalky::Config::replace_punctation;
 	$regex = qr/$regex/;
 	$str =~ s/($regex)/$Obalky::Config::replace_punctation{$1}/g;
+	
+	# replace month names by month numbers
+	$regex = join "|", keys %Obalky::Config::replace_months;
+	$regex = qr/$regex/;
+	$str =~ s/($regex)/$Obalky::Config::replace_months{$1}/g;
     
 	# hledame vice urovnove oznaceni casti monografie (napr. "Ottuv slovnik naucny, 1.díl, 2.sv." se normalizuje na 1|2)
 	# na vystupu bude vzdy v poradi dil|svazek i kdyz se informace na vstupu prohodi
@@ -180,14 +197,13 @@ sub normalize_part {
 		} $str =~ m/([0-9\s\.\-]*(dil|dily)[0-9\s]*)/g;
 	}
 	
-	#warn Dumper(@specialParts);
 	# svazek je druhy v poradi
 	if ($str =~ m/(sv(\.{0,1})|svazek|svazky)/) {
 		map {
 			push @specialParts, $_ if (defined $_ and scalar @specialParts < 2 and ($_ ne 'sv' && $_ ne 'sv.' && $_ ne 'svazek' && $_ ne 'svazky'));
 		} $str =~ m/([0-9\s\.\-]*(sv(\.{0,1})|svazek|svazky)[0-9\s]*)/g;
 	}
-	warn Dumper(@specialParts);
+	
 	# ulozeni do spravneho poradi dil-svazek
 	# pole uz mame takto serazene, staci spojit
 	if (scalar @specialParts == 2) {
@@ -198,8 +214,14 @@ sub normalize_part {
 		return join('|', @out);
 	}
 	
-	# pokud obsahuje pouze text, normalizovat text, pokud obsahuje cislo, vyber cislo
-	my @tmp = $str =~ m/(\d{1,3}([\s\-\,\.\[\]\(\)\/a]*\d{1,3}[\]\)]*)*)/g;
+	# odstraneni casto pouzivanych "predpon"
+	my $str_clr = $str;
+	$str_clr =~ s/(č(\.|$)|c(\.|$)|cislo|číslo|Č(\.|$)|Číslo|sv(\.|$)|svazek|díl|no(\.|$)|měs(\.|$))//g;
+	
+	# identifikace jestli cast obsahuje pismena
+	my @tmp;
+	@tmp = $str_clr =~ m/(\d{1,3}([\s\-\,]*\d{1,3})*)/g  unless ($str_clr =~ m/[a-z]/i);
+	# pokud ano normalizuj text, pokud ne vyber cisla oddelene carkou a polckami
 	$str = @tmp ? $tmp[0] : $pkg->normalizePureText($str);
 	
 	return $pkg->trimPart($str);
@@ -241,16 +263,21 @@ sub trimPart {
 sub normalizePureText {
 	my($pkg,$str) = @_;
 	
-	# replace punctation
+	# odstraneni interpunkce
 	my $regex = join "|", keys %Obalky::Config::replace_punctation;
 	$regex = qr/$regex/;
 	$str =~ s/($regex)/$Obalky::Config::replace_punctation{$1}/g;
 	
-	# replace month names by month numbers
+	# zmena mesice na cislo
 	$regex = join "|", keys %Obalky::Config::replace_months;
 	$regex = qr/$regex/;
 	$str =~ s/($regex)/$Obalky::Config::replace_months{$1}/g;
 	
+	# normalizace jinych nez alpha-num. znaku
+	$str =~ s/[^a-zA-Z\d\-\,]/_/g;
+	$str =~ s/([_]){2,}/_/g;
+	$str = substr($str, 1) if ($str && substr($str,0,1) eq '_');
+	$str = substr($str, 0, -1) if ($str && substr($str,-1) eq '_');	
 	$str =~ s/spec\./special/;
 	$str =~ s/\s/_/g;
 	return $str;
@@ -260,49 +287,200 @@ sub search_book_part {
 	my ($pkg,$id) = @_;
 	my @books;
 	
-	# cast periodika podle EAN/ISBN/ISSN
-	push @books, $pkg->search({ ean13 => $id->{ean13}, part_year => $id->{part_year}, part_no => $id->{part_no} })
-			if ($id->{ean13} and $id->{part_year} and $id->{part_no});
-   	return @books if(@books);
-   	push @books, $pkg->search({ ean13 => $id->{ean13}, part_volume => $id->{part_volume}, part_no => $id->{part_no} })
-			if ($id->{ean13} and $id->{part_volume} and $id->{part_no});
-   	return @books if(@books);
-   	
-   	# cast periodika podle OCLC
-   	push @books, $pkg->search({ oclc => $id->{oclc}, part_year => $id->{part_year}, part_no => $id->{part_no} })
-			if ($id->{oclc} and $id->{part_year} and $id->{part_no});
-   	return @books if(@books);
-   	push @books, $pkg->search({ oclc => $id->{oclc}, part_volume => $id->{part_volume}, part_no => $id->{part_no} })
-			if ($id->{oclc} and $id->{part_volume} and $id->{part_no});
-   	return @books if(@books);
-   	
-   	# cast periodika podle NBN
-   	push @books, $pkg->search({ nbn => $id->{nbn}, part_year => $id->{part_year}, part_no => $id->{part_no} })
-			if ($id->{nbn} and $id->{part_year} and $id->{part_no});
-   	return @books if(@books);
-   	push @books, $pkg->search({ nbn => $id->{nbn}, part_volume => $id->{part_volume}, part_no => $id->{part_no} })
-			if ($id->{nbn} and $id->{part_volume} and $id->{part_no});
-   	return @books if(@books);
-   	
-   	# zamezeni tomu, aby se nalezl zaznam na zaklade shody prazdneho vstupu jednoho s poli s prazdnym obsahem stejneho pole v DB
-   	my ($part_no, $part_name) = (' ',' ');
-   	$part_no = $id->{part_no} if ($id->{part_no});
-   	$part_name = $id->{part_name} if ($id->{part_name});
-   	
-   	# cast monografie podle EAN/ISBN
-	push @books, $pkg->search({ ean13 => $id->{ean13}, part_type => 1, -or=>{part_no => $part_no, part_name => $part_name} })
-			if ($id->{ean13} and ($id->{part_no} or $id->{part_name}));
-   	return @books if(@books);
-   	
-   	# cast monografie podle OCLC
-	push @books, $pkg->search({ oclc => $id->{oclc}, part_type => 1, -or=>{part_no => $part_no, part_name => $part_name} })
-			if ($id->{oclc} and ($id->{part_no} or $id->{part_name}));
-   	return @books if(@books);
-   	
-   	# cast monografie podle NBN
-	push @books, $pkg->search({ nbn => $id->{nbn}, part_type => 1, -or=>{part_no => $part_no, part_name => $part_name} })
-			if ($id->{nbn} and ($id->{part_no} or $id->{part_name}));
-   	return @books;
+	# PERIODIKUM
+	if ($id->{part_year} or $id->{part_volume}) {
+		# cast periodika podle EAN/ISBN/ISSN
+		push @books, $pkg->search({ ean13 => $id->{ean13}, part_year => $id->{part_year}, part_no => $id->{part_no} })
+				if ($id->{ean13} and $id->{part_year} and $id->{part_no});
+	   	return @books if(@books);
+	   	push @books, $pkg->search({ ean13 => $id->{ean13}, part_volume => $id->{part_volume}, part_no => $id->{part_no} })
+				if ($id->{ean13} and $id->{part_volume} and $id->{part_no});
+	   	return @books if(@books);
+	   	
+	   	# cast periodika podle OCLC
+	   	push @books, $pkg->search({ oclc => $id->{oclc}, part_year => $id->{part_year}, part_no => $id->{part_no} })
+				if ($id->{oclc} and $id->{part_year} and $id->{part_no});
+	   	return @books if(@books);
+	   	push @books, $pkg->search({ oclc => $id->{oclc}, part_volume => $id->{part_volume}, part_no => $id->{part_no} })
+				if ($id->{oclc} and $id->{part_volume} and $id->{part_no});
+	   	return @books if(@books);
+	   	
+	   	# cast periodika podle NBN
+	   	push @books, $pkg->search({ nbn => $id->{nbn}, part_year => $id->{part_year}, part_no => $id->{part_no} })
+				if ($id->{nbn} and $id->{part_year} and $id->{part_no});
+	   	return @books if(@books);
+	   	push @books, $pkg->search({ nbn => $id->{nbn}, part_volume => $id->{part_volume}, part_no => $id->{part_no} })
+				if ($id->{nbn} and $id->{part_volume} and $id->{part_no});
+	   	return @books if(@books);
+	}
+	
+	# MONOGRAFIE
+	else {
+	   	# zamezeni tomu, aby se nalezl zaznam na zaklade shody prazdneho vstupu jednoho s poli s prazdnym obsahem stejneho pole v DB
+	   	my ($part_no, $part_name) = (' ',' ');
+	   	$part_no = $id->{part_no} if ($id->{part_no});
+	   	$part_name = $id->{part_name} if ($id->{part_name});
+	   	
+	   	# cast monografie podle EAN/ISBN
+		push @books, $pkg->search({ ean13 => $id->{ean13}, part_type => 1, -or=>{part_no => $part_no, part_name => $part_name} })
+				if ($id->{ean13} and ($id->{part_no} or $id->{part_name}));
+	   	return @books if(@books);
+	   	
+	   	# cast monografie podle OCLC
+		push @books, $pkg->search({ oclc => $id->{oclc}, part_type => 1, -or=>{part_no => $part_no, part_name => $part_name} })
+				if ($id->{oclc} and ($id->{part_no} or $id->{part_name}));
+	   	return @books if(@books);
+	   	
+	   	# cast monografie podle NBN
+		push @books, $pkg->search({ nbn => $id->{nbn}, part_type => 1, -or=>{part_no => $part_no, part_name => $part_name} })
+				if ($id->{nbn} and ($id->{part_no} or $id->{part_name}));
+	   	return @books;
+	}
+	
+	return undef;
+}
+
+sub get_parts {
+	my ($pkg,$book,$sort) = @_;
+	return unless($book);
+	my @books;
+	my $id_parent = $book->id;
+	
+	if ($sort eq 'date') {
+		# serazeni podle aktualnosti
+		push @books, $pkg->search({ id_parent => $id_parent }, { order_by => \'CAST(part_year AS unsigned) DESC, CAST(part_no AS unsigned) DESC' } );
+	} else {
+		# serazeni od posledne pridaneho
+		push @books, $pkg->search({ id_parent => $id_parent }, { order_by => \'id DESC' } );
+	}
+	return @books;
+}
+
+sub search_book_by_range {
+	my ($pkg,$id) = @_;
+	
+	warn "SEARCHING BOOK BY RANGE\n part_no: ".Dumper($id->{part_no}).' part_volume: '.Dumper($id->{part_volume}).' part_year: '.Dumper($id->{part_year}) if($ENV{DEBUG});
+	
+	# odlozime puvodni pozadavek
+	# pokud nalezneme zaznamy pomoci rozsahu hodnot, ocitne se na vystupu prvni z nalezenych zaznamu, tj. jedno cislo (pokud nebyl explicitne odskenovan dany rozsah; v tom pripade by tato funkce search_book_by_range nebyla ani volana)
+	# po uspesnem vyhledani rozsahu budou part parametry no/volume/year nahrazeny za ty z pozadavku; cache server pri dalsim pozadavku pouzije stejny zaznam
+	my ($part_no_req, $part_volume_req, $part_year_req) = ($id->{part_no}, $id->{part_volume}, $id->{part_year});
+	
+	# sestav radu cisel z posloupnosti definovane v PART_NO
+	if ($id->{part_no} and !($id->{part_no} =~ /[a-z]/i)) {
+		my @book_part_no;
+		my @part_no_separated = split /,/, $id->{part_no};
+		# carka oddeluje hodnoty/rozsahy hodnot
+		foreach (@part_no_separated) {
+			my @part_no = split /-/, $_;
+			# neni rozsahem, obsahuje jednu hodnotu
+			if (scalar @part_no == 1) {
+				push(@book_part_no, trim($part_no[0]));
+				next;
+			}
+			# muze byt rozsahem
+			next if (scalar @part_no < 2);
+			my $cycleFrom = trim($part_no[0]);
+			my $cycleTo = trim($part_no[1]);
+			next if (!($cycleFrom =~ /^\d*$/));
+			next if (!($cycleTo =~ /^\d*$/));
+			next if ($cycleFrom > $cycleTo); # rozsah musi byt dopredny
+			for (my $i=$cycleFrom; $i<=$cycleTo; $i++) {
+				push(@book_part_no, $i);
+			}
+		}
+		$id->{part_no} = \@book_part_no if (scalar @book_part_no > 0);
+	}
+	
+	
+	# sestav radu cisel z posloupnosti definovane v PART_VOLUME
+	if ($id->{part_volume} and !($id->{part_volume} =~ /[a-z]/i)) {
+		my @book_part_volume;
+		my @part_volume_separated = split /,/, $id->{part_volume};
+		# carka oddeluje hodnoty/rozsahy hodnot
+		foreach (@part_volume_separated) {
+			my @part_volume = split /-/, $_;
+			# neni rozsahem, obsahuje jednu hodnotu
+			if (scalar @part_volume == 1) {
+				push(@book_part_volume, trim($part_volume[0]));
+				next;
+			}
+			# muze byt rozsahem
+			next if (scalar @part_volume < 2);
+			my $cycleFrom = trim($part_volume[0]);
+			my $cycleTo = trim($part_volume[1]);
+			next if (!($cycleFrom =~ /^\d*$/));
+			next if (!($cycleTo =~ /^\d*$/));
+			next if ($cycleFrom > $cycleTo); # rozsah musi byt dopredny
+			for (my $i=$cycleFrom; $i<=$cycleTo; $i++) {
+				push(@book_part_volume, $i);
+			}
+		}
+		$id->{part_volume} = \@book_part_volume if (scalar @book_part_volume > 0);
+	}
+	
+	# sestav radu cisel z posloupnosti definovane v PART_YEAR
+	if ($id->{part_year} and !($id->{part_year} =~ /[a-z]/i)) {
+		my @book_part_year;
+		my $last_valid_year;
+		my @part_year_separated = split /,/, $id->{part_year};
+		# carka oddeluje hodnoty/rozsahy hodnot
+		foreach (@part_year_separated) {
+			my @part_year = split /-/, $_;
+			# doplneni plne formy zapisu let
+			for (my $i=0; $i<=1; $i++) {
+				next if (!$part_year[$i]);
+				my $rVal = trim($part_year[$i]);
+				my $rValLength = length($rVal);
+				$last_valid_year = $rVal if ($rValLength>2); # nova hodnota jako vzor pro doplnovani nekompletnich let
+				next if ($rValLength>2); # hodnota ma uz dobrou formu (3-4 mistne cislo)
+				next unless ($last_valid_year); # pro doplneni zkracene formy roku potrebujeme kompletni zapis
+				my $pValPost = substr($last_valid_year, -$rValLength); # cast kompletniho zapisu roku shodne delky jako je nekompletni rok
+				my $pValPre = substr($last_valid_year, 0, $rValLength); # cast kompletniho zapisu roku shodne delky jako je nekompletni rok
+				if ($pValPost < $rVal) {
+					# budeme doplnovat stejne desetileti/stoleti jako kompletni rok
+					# priklad 1950-56 = 1950-1956
+					$part_year[$i] = $pValPre.$rVal;
+				} else {
+					# bude potrebny presun do dalsiho desetileti/stoleti
+					# priklad 1998-02 = 1998-2002
+					$part_year[$i] = ($pValPre+1).$rVal;
+				}
+			}
+			# neni rozsahem, obsahuje jednu hodnotu
+			if (scalar @part_year == 1) {
+				push(@book_part_year, trim($part_year[0]));
+				next;
+			}
+			# muze byt rozsahem
+			next if (scalar @part_year < 2);
+			my $cycleFrom = trim($part_year[0]);
+			my $cycleTo = trim($part_year[1]);
+			next if (!($cycleFrom =~ /^\d*$/));
+			next if (!($cycleTo =~ /^\d*$/));
+			next if ($cycleFrom > $cycleTo); # rozsah musi byt dopredny
+			for (my $i=$cycleFrom; $i<=$cycleTo; $i++) {
+				push(@book_part_year, $i);
+			}
+		}
+		$id->{part_year} = \@book_part_year if (scalar @book_part_year > 0);
+	}
+	
+	# dotaz na rozsah
+	warn "PARTS AFTER TRANSFORMATION\n part_no: ".Dumper($id->{part_no}).' part_volume: '.Dumper($id->{part_volume}).' part_year: '.Dumper($id->{part_year}) if($ENV{DEBUG});
+	my @books = $pkg->search_book_part($id);
+	
+	# pokud byl uspesny potrebujeme vratit puvodni identifikatory part_no/part_volume/part_year
+	for (my $i=0; $i<scalar @books; $i++) {
+		if ($books[$i]) {
+			$books[$i]->{book_id_origin} = $books[$i]->id;
+			$books[$i]->{_column_data}{part_no} = $part_no_req if ($part_no_req);
+			$books[$i]->{_column_data}{part_volume} = $part_volume_req if ($part_volume_req);
+			$books[$i]->{_column_data}{part_year} = $part_year_req if ($part_year_req);
+		}
+	}
+	
+	return @books;
 }
 
 1;

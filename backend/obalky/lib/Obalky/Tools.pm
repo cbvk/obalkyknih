@@ -98,8 +98,7 @@ sub cmdCronTocOcr {
 				length($content)." bytes\n";
 			$toc->update({ full_text => $text, pdf_file => undef });
 			# metadata changed; do FE sync
-			my $bibinfo = Obalky::BibInfo->new($toc->product);
-			DB->resultset('FeSync')->request_sync_remove($bibinfo);
+			DB->resultset('FeSync')->book_sync_remove($toc->book->id);
 			# PDF files are grouped in dir
 			my $dirGroupName = int($tocId/10000+1)*10000;
 			mkdir($Obalky::Config::TOC_DIR.'/'.$dirGroupName) unless (-d $Obalky::Config::TOC_DIR.'/'.$dirGroupName);

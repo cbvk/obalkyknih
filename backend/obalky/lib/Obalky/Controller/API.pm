@@ -192,31 +192,45 @@ sub do_book_request {
 	#}
 	return unless($library and $bibinfo and $permalink);
 	
-    my($book,$record) = DB->resultset('Marc')->get_book_record( $library, $permalink, $bibinfo );
+	# normalizace identifikatoru casti
+	$bibinfo = DB->resultset('Book')->normalize_bibinfo($bibinfo) if ($bibinfo->{part_no} or $bibinfo->{part_name});
 	
+    my($book,$record) = DB->resultset('Marc')->get_book_record( $library, $permalink, $bibinfo );
+    
 	# pokud se zaznam nenasel, a neni vytvoren novy (napr. v pripade dotazu na periodikum, nebo vicesvazkovou monografii)
 	# vratime souborny zaznam - jeho part_most_recent
-	my $generate_part_dummy = 0;
-	my ($bib_orig_part_no, $bib_orig_part_name, $bib_orig_part_year, $bib_orig_part_volume) = ($bibinfo->{part_no}, $bibinfo->{part_name}, $bibinfo->{part_year}, $bibinfo->{part_volume});
 	unless ($book) {
-		$bibinfo->{part_no} = $bibinfo->{part_name} = $bibinfo->{part_year} = $bibinfo->{part_volume} = undef;
-		($book,$record) = DB->resultset('Marc')->get_book_record( $library, $permalink, $bibinfo );
-		$generate_part_dummy = 1;
+		my $dummy;
+		my $book_bibinfo = $this->{bibinfo};
+		# identifikatory hledaneho zaznamu
+		$dummy->{bibinfo} = $book_bibinfo;
+		foreach(qw/isbn nbn oclc part_year part_volume part_no part_name part_note/) {
+			my $key = ($_ eq 'isbn') ? 'ean' : $_;
+			$dummy->{$key}=$book_bibinfo->{$_} if ($book_bibinfo->{$_});
+		}
+		# pokus o dohledani souborneho zaznamu
+		my $parent_bibinfo;
+		foreach(qw/isbn nbn oclc/) {
+			my $key = ($_ eq 'isbn') ? 'ean13' : $_;
+			$parent_bibinfo->{$key}=$book_bibinfo->{$_} if ($book_bibinfo->{$_});
+		}
+		my $book_parent = DB->resultset('Book')->find_by_bibinfo($parent_bibinfo);
+		$dummy->{book_id_parent}=$book_parent->id if ($book_parent);
+		
+		$dummy->{flag_bare_record}=1;
+		return (undef, $dummy);
 	}
 
 	$book->enrich($this,$library,$permalink,$bibinfo,$c->request->secure,$c->req->params);
 	
-	# pokud skutecna cast monografie, nebo periodika neexistovala, byl vyhledan part_most_recent souborneho zaznamu a
-	# potrebujeme tento zaznam zmenit na dummy (pseudo zaznam) = identifikatory casti nahradit za ty, ktere byly v pozadavku
-	if ($generate_part_dummy) {
-		delete $this->{part_most_recent};
-		delete $this->{part_no};   delete $this->{part_name};
-		delete $this->{part_year}; delete $this->{part_volume};
-		$this->{part_no} = $bib_orig_part_no if ($bib_orig_part_no);
-		$this->{part_name} = $bib_orig_part_name if ($bib_orig_part_name);
-		$this->{part_year} = $bib_orig_part_year if ($bib_orig_part_year);
-		$this->{part_volume} = $bib_orig_part_volume if ($bib_orig_part_volume);
-		$this->{part_dummy} = 1;
+	# pokud skutecna cast monografie, nebo periodika neexistuje,
+	# potrebujeme tento zaznam zmenit na dummy = identifikatory casti nahradit za ty, ktere byly v pozadavku
+	unless ($book) {
+		$this->{part_no} = $bibinfo->{part_no} if ($bibinfo->{part_no});
+		$this->{part_name} = $bibinfo->{part_name} if ($bibinfo->{part_name});
+		$this->{part_year} = $bibinfo->{part_year} if ($bibinfo->{part_year});
+		$this->{part_volume} = $bibinfo->{part_volume} if ($bibinfo->{part_volume});
+		$this->{flag_bare_record} = 1;
 	}
 
 	# zapis do DB #lastrequests [ visitor_id, session?, $book->id, $record->id ]
@@ -504,6 +518,7 @@ sub _do_log {
 
 sub _do_import {
 	my($self,$c) = @_;
+	#warn Dumper($c->req); #debug
 
     $self->_do_log("import begin");
 
@@ -543,6 +558,7 @@ sub _do_import {
 		}
 
 		my $book_aggr = DB->resultset('Book')->find_by_bibinfo($bibinfo_aggr);
+		$book_aggr = undef if ($book_aggr->get_column('id_parent')); # souborny zaznam nesmi byt cast mono./cislo per.
 		if ($book_aggr) {
 			# book zaznam existuje, aktualizovat
 			$book_aggr->update($hash);

@@ -86,8 +86,7 @@ sub save_to {
 		
 		# vyvolej synchronizacni udalost pokud obalka existuje
 		if ($checksum_old ne $checksum_new) {
-			my $bibinfo = Obalky::BibInfo->new($product);
-			DB->resultset('FeSync')->request_sync_remove($bibinfo);
+			DB->resultset('FeSync')->book_sync_remove($book->id);
 			$feSynced = 1;
 		}
 	}
@@ -114,8 +113,7 @@ sub save_to {
 		
 		# vyvolej synchronizacni udalost pri kazdem uploadu TOC
 		if (!$feSynced) {
-			my $bibinfo = Obalky::BibInfo->new($product);
-			DB->resultset('FeSync')->request_sync_remove($bibinfo);
+			DB->resultset('FeSync')->book_sync_remove($book->id);
 		}
 	}
 

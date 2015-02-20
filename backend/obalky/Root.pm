@@ -95,8 +95,7 @@ sub abuse : Local {
 			DB->resultset('Abuse')->search({ id => $id })->delete_all;
 			
 			# synchronizuj s frontend
-			my $bibinfo = Obalky::BibInfo->new($book);
-			DB->resultset('FeSync')->request_sync_remove($bibinfo);
+			DB->resultset('FeSync')->book_sync_remove($book->id);
 		}
 	}
 	$c->stash->{abused} = [ DB->resultset('Abuse')->all ];
@@ -327,6 +326,7 @@ sub account_review : Local {
 		}
     	# Vypis komentaru
     	my $search_params = { library=>$library->get_column('id') };
+    	$search_params->{html_text} = { '!='=>'' };
     	my($page, $max_page, $per_page, $order, $order_dir, $filter_val, $filter_key) = DB::pagination($c, 'Review', $search_params);
 	    $c->stash->{cur_page} = $page;
 	    $c->stash->{max_page} = $max_page;
@@ -608,7 +608,7 @@ sub view : Local {
 		}
 	}
 
-	if($c->req->param('book_id')) {
+	if($c->req->param('book_id') and $c->req->param('set_cover')) {
 		my $change = DB->resultset('Book')->find(
 			{ id => $c->req->param('book_id') }) or die;
 		my $cover_id = $c->req->param('set_cover');
@@ -617,16 +617,21 @@ sub view : Local {
 		$change->update({ toc => $toc_id }) if($toc_id);
 		
 		# synchronizuj s frontend
-		my $bibinfo = Obalky::BibInfo->new($change);
-		DB->resultset('FeSync')->request_sync_remove($bibinfo);
+		DB->resultset('FeSync')->book_sync_remove($change->id);
 
 		# invaliduj cache
 		DB->resultset('Cache')->invalidate($change->id);
 	}
 
-	# pouzije parametry co prisli v dotazu
-	my $bibinfo = Obalky::BibInfo->new_from_params($c->req->params, undef);
-	my $book = $bibinfo ? DB->resultset('Book')->find_by_bibinfo($bibinfo) : undef;
+	#vyber knihy budto podle parametru isbn,nbn,oclc, nebo presne podle zadaneho ID zaznamu
+	my ($book,$bibinfo) = (undef,undef);
+	if ($c->req->param('book_id')) {
+		$book = DB->resultset('Book')->find($c->req->param('book_id'));
+	} else {
+		# pouzije parametry co prisli v dotazu
+		$bibinfo = Obalky::BibInfo->new_from_params($c->req->params, undef);
+		$book = $bibinfo ? DB->resultset('Book')->find_by_bibinfo($bibinfo) : undef;
+	}
 	
 	# z homepage se jako vyhledavani posila pouze parametr s nazvem ISBN a my se ted pokousime zjistit, jestli to nesedne na NBN, nebo OCLC
 	if (not defined($book) and defined($c->req->param('isbn')) ) {
@@ -646,6 +651,18 @@ sub view : Local {
 		}
 	}
 	
+	# nalezeni prirazenych casti monografii
+	my $sort_by = 'id'; # default razeni od nejnovejsiho skenovaneho
+	$sort_by = $c->req->param('sort_by') if ($c->req->param('sort_by'));
+	$c->stash->{sort_by} = $sort_by;
+	my @parts = DB->resultset('Book')->get_parts($book, $sort_by);
+	if (@parts) {
+		my $book_recent = $book->get_most_recent;
+		$c->stash->{recent_book_id} = $book_recent->id if ($book_recent);
+		$c->stash->{recent_cover} = $book_recent->cover if ($book_recent->cover);
+		$c->stash->{recent_toc} = $book_recent->toc if ($book_recent->toc);
+	}
+	
 	my @books = $book ? ( $book->work ? $book->work->books : $book ) : ();
 
 	foreach my $b1 (@books) {
@@ -658,6 +675,7 @@ sub view : Local {
 	}
 
 	$c->stash->{books}   = [ @books ];#\@info;
+	$c->stash->{parts}   = [ @parts ] if (@parts);
 	$c->stash->{referer} = $referer;
 	$c->stash->{detail}  = $c->user ? 1 : 0; # prihlasenym i detaily
 	$c->stash->{seznam_main_image} = ($books[0] and $books[0]->cover) ? 
@@ -770,8 +788,8 @@ sub end : Private {
 #$bibinfo->{ean13} = '9788073039219';
 #$bibinfo->{part_year} = 'rok 2014,2015';
 #$bibinfo->{part_volume} = 'jahrg. 51(22)';
-#$bibinfo->{part_no} = undef;
-#$bibinfo->{part_name} = '(díl 1, sv. 2 : Ladislav Horáček - Paseka : váz.)';
+#$bibinfo->{part_no} = 'Nerozluštěné záhady 20. století';
+#$bibinfo->{part_name} = " student' s  book   ";
 #warn Dumper($bibinfo);
 #warn Dumper(DB->resultset("Book")->normalize_bibinfo($bibinfo));
 

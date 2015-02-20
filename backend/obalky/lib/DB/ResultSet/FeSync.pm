@@ -246,6 +246,24 @@ sub request_sync_remove {
 }
 
 
+=head2 book_sync_remove
+
+Pro zadane dilo provede vymazani na vsech frontendech podle book_id
+
+=cut
+sub book_sync_remove {
+	my($pkg,$id,$fe,$forced) = @_;
+	return unless($id);
+	my $sync_params;
+	my $book = DB->resultset('Book')->find($id);
+	$sync_params->{book_id} = $book->get_column('id_parent') ? $book->get_column('id_parent') : $id;
+	if ($sync_params) {
+		$sync_params->{remove} = 'true';
+		DB->resultset('FeSync')->set_sync($sync_params, 'metadata_changed', $fe, $forced);
+	}
+}
+
+
 =head2 request_sync_perm
 
 Pridej nove prava pristupu na vsechny frontendy

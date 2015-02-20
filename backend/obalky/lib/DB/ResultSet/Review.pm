@@ -42,8 +42,7 @@ sub remove_review {
 		my $cached_rating_count = $book->get_column('cached_rating_count') - 1;
 		$cached_rating_sum = undef if ($cached_rating_sum < 0);
 		$cached_rating_count = undef if ($cached_rating_count < 0);
-		my $bibinfo = Obalky::BibInfo->new($book);
-		DB->resultset('FeSync')->request_sync_remove($bibinfo);
+		DB->resultset('FeSync')->book_sync_remove($book->id);
 		$book->update({ cached_rating_sum=>$cached_rating_sum, cached_rating_count=>$cached_rating_count });
 		$review->delete;	
 	} else {

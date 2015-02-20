@@ -738,25 +738,30 @@ sub recalc_review {
 	my($book) = @_;
 	my $best;
 	foreach($book->reviews) { # WHERE rating NOT NULL ?
+		# zahod ty, ktere nepochazi z knihovny
+		next if (not defined $_->library or not defined $_->library_id_review);
+		# vyber komentare s vyssim impact
 		$best = $_ if($_->impact eq $Obalky::Media::REVIEW_ANNOTATION);
 		$best = $_ if($_->impact eq $Obalky::Media::REVIEW_REVIEW 
 							and not $best);
 	}
 	$book->update({ review => $best });
-	# $book->invalidate(); # musi volat volajici!
 }
 
 sub invalidate { # nutno volat po kazde zmene knizky
 	my($book,$forced) = @_;
 	DB->resultset('Cache')->invalidate($book);
-	DB->resultset('FeSync')->request_sync_remove($book->bibinfo, undef, $forced);
+	DB->resultset('FeSync')->book_sync_remove($book->id, undef, $forced);
 }
 
 sub recalc_rating {
 	my($book) = @_;
 
 	my($rs,$rc,$ers,$erc) = (0,0,0,0);
-	foreach($book->reviews) { # WHERE rating NOT NULL ?
+	foreach($book->reviews) {
+		# zahod ty, ktere nepochazi z knihovny
+		next if (not defined $_->library or not defined $_->library_id_review);
+		# napocitej rating
 		if(defined $_->rating) {
 			if ($_->rating > 0) {
 				if($_->product) { $ers += $_->rating; $erc++ }
@@ -764,8 +769,10 @@ sub recalc_rating {
 			}
 		}
 	}
-	# logika: produktove ma 6 hlasu, pak bude postupne prevazeno
-	if($erc) { $rs += int(6*$ers/$erc); $rc += 6; }
+	# puvodni logika: produktove ma 6 hlasu, pak bude postupne prevazeno
+	#if($erc) { $rs += int(6*$ers/$erc); $rc += 6; }
+	$rs += $ers;
+	$rc += $erc;
 
 	$rc = undef unless($rc);
 	$rs = undef unless($rs);
@@ -924,12 +931,14 @@ sub del_review {
 sub get_most_recent {
 	my($book) = @_;
 	return $book unless ($book->id);
+	
+	my ($max_year,$max_volume,$eq_year,$eq_volume) = (undef,undef,undef,undef);
+	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime();
+	my %max_by_year;
+	my %max_by_volume;
+	
 	my $parts = DB->resultset('Book')->search({ id_parent => $book->id }, { order_by => {-desc=>[qw/part_year part_volume/]} });
 	if ($parts->count) {
-		my ($max_year,$max_volume,$eq_year,$eq_volume) = (undef,undef,undef,undef);
-		my %max_by_year = {};
-		my %max_by_volume = {};
-		
 		# vyhledani nejnovejsiho zaznamu podle roku
 		foreach ($parts->all) {
 			# v pripade vicesvazkove monografie vracime prvni nalezeny zaznam (prvni naskenovany, protoze se seradi podle primarniho klice)
@@ -939,6 +948,7 @@ sub get_most_recent {
 			my $cur_year = $_->get_column('part_year');
 			my $cur_volume = $_->get_column('part_volume');
 			my $cur_no = $_->get_column('part_no');
+			next if ($cur_year > $year+1900); # stavaji se preklepy a ze skenovaciho klienta prijde rok vyssi nez aktualni, takove zaznamy ignorovat
 			$max_year = $cur_year unless($max_year);
 			$max_volume = $cur_volume unless($max_volume);
 			if ($cur_year && $cur_volume && !$eq_year) { # nalezly jsme zaznam s parem rok/rocnik
@@ -972,6 +982,7 @@ sub get_most_recent {
 			my $vol_diff = $max_volume - $eq_volume;
 			my $vol_to_year = $eq_year + $vol_diff;
 			my $max_year_calculated = $max_year>=$vol_to_year ? $max_year : $vol_to_year;
+			$max_year_calculated = $max_year if ($max_year_calculated > $max_year);
 			$max_volume = $max_volume + ($max_year_calculated - $max_year);
 			
 			my $recent_book_id;
@@ -996,19 +1007,30 @@ sub enrich {
 	my($book,$info,$library,$permalink,$bibinfo,$secure,$params) = @_;
 	
 	# vyzadujeme/nevyzadujeme, aby se vyhledaval zaznam s presnou shodou
-	# strict_match = 1  pokud vyhledavame souborny zaznam, poskytne se souborny zaznam a je jedno jestli ma novejsi naskenovana cisla
-	# strict_match = 0  pokud vyhledavame souborny zaznam, poskytne se nejnovejsi cislo
+	# strict_match = 1  nebude se vyhledavat novejsi cislo periodika/cast monografie (pokud se jedna o souborny zaznam)
+	# strict_match = 0  v pripade souborneho zaznamu periodika/monografie je povoleno vyhledavani novejsich casti/cisel
 	my $strict_match = 0;
 	$strict_match = ($params->{strict_match} eq 'true' or $params->{strict_match} eq '1') ? 1 : 0 if ($params->{strict_match});
 	
-	# vyhledani nejnovejsiho cisla k soubornemu zaznamu
-	my $book_req = $book;
-	$book = $book->get_most_recent unless ($strict_match);
-	warn 'Found most recent child '.$book->id.' of requested book '.$book_req->id."\n" if ($ENV{DEBUG} and $book->id!=$book_req->id);
-
+	# rozhodovani, jestli je nutne vyhledat nejnovejsi cislo k soubornemu zaznamu
+	# 1) vyhledat pokud se jedna o souborny zaznam periodika (i v pripade, ze periodikum ma oskenovanou vlastni obalku)
+	# 2) vyhledat pokud se jedna o souborny zaznam monografie, ale pouze pokud nema oskenovanou vlastni obalku
+	my $child_book = DB->resultset('Book')->search({ id_parent => $book->id }, { limit=>1 })->next;
+	my $flag_get_most_recent = 0;
+	if ($child_book and !$strict_match) {
+		$flag_get_most_recent = 1; # souborny zaznam periodika vzdy
+		$flag_get_most_recent = 0 if ($child_book->part_type==1 && ($book->cover || $book->toc)); # souborny zaznam monografie pokud nema vlastni obalku
+	}
+	
+	# vyhledani nejnovejsiho cisla k soubornemu zaznamu, pokud je nutne
+	my $book_most_recent = undef;
+	warn 'THIS IS UNION RECORD. Latest book part will be searched for.' if ($ENV{DEBUG} and $flag_get_most_recent);
+	$book_most_recent = $book->get_most_recent if ($flag_get_most_recent);
+	warn 'Found most recent child '.$book->id.' of requested book '.$book_most_recent->id."\n" if ($ENV{DEBUG} and $book_most_recent and $book->id!=$book_most_recent->id);
+	
 	# aktualizuj book bibinfo (OCLC, title,...) (strcit to do Marc::..?)
 	my $book_bibinfo = $book->bibinfo;
-	if($book_bibinfo->merge($bibinfo) and $book->id == $book_req->id) {
+	if(!$child_book and $book_bibinfo->merge($bibinfo)) {
 		$book_bibinfo->save_to($book);
 		$book->invalidate;
 	}
@@ -1022,10 +1044,35 @@ sub enrich {
 	$info->{part_volume} = $book_bibinfo->{part_volume} if $book_bibinfo->{part_volume};
 	$info->{part_no} = $book_bibinfo->{part_no} if $book_bibinfo->{part_no};
 	$info->{part_name} = $book_bibinfo->{part_name} if $book_bibinfo->{part_name};
-	$info->{part_most_recent} = 1 if ($book->id != $book_req->id);
+	$info->{part_root} = $book->get_column('id_parent') ? 0 : 1;
+	# vyhledavame souborny zaznam a k tomuto soubornemu zaznamu byla prilozena obalka/obsah novejsiho cisla periodika/casti monografie
+	# posleme taky identifikatory zaznamu, z ktereho pochazi prilozena obalka a obsah tj. prilozime part_info s identifikatory zaznamu, kteremu patri obalka/obsah
+	# to plati i kdyz hledame zaznam z rozsahu tj. pripojime identifikatory zaznamu a posleme v objektu part_info
+	if (($book_most_recent and $book_most_recent->id != $book->id) or $book->{book_id_origin}) {
+		my $part_info = undef;
+		$book_most_recent = DB->resultset('Book')->find($book->{book_id_origin}) if ($book->{book_id_origin});
+		my $bibinfo_most_recent = $book_most_recent->bibinfo;
+		$part_info->{book_id} = $book_most_recent->id;
+		$part_info->{ean} = $bibinfo_most_recent->ean13 if $bibinfo_most_recent->ean13;
+		$part_info->{nbn}  = $bibinfo_most_recent->nbn if $bibinfo_most_recent->nbn;
+		$part_info->{oclc} = $bibinfo_most_recent->oclc if $bibinfo_most_recent->oclc;
+		$part_info->{part_year} = $bibinfo_most_recent->{part_year} if $bibinfo_most_recent->{part_year};
+		$part_info->{part_volume} = $bibinfo_most_recent->{part_volume} if $bibinfo_most_recent->{part_volume};
+		$part_info->{part_no} = $bibinfo_most_recent->{part_no} if $bibinfo_most_recent->{part_no};
+		$part_info->{part_name} = $bibinfo_most_recent->{part_name} if $bibinfo_most_recent->{part_name};
+		$info->{part_info} = $part_info;
+	}
+	# pokud ma zaznam rodice, pripojime extra identifikatory
+	if ($book->get_column('id_parent')) {
+		$info->{book_id_parent} = $book->get_column('id_parent');
+		my $book_parent = DB->resultset('Book')->find($book->get_column('id_parent'));
+		$info->{part_ean_standalone} = $book_parent->ean13 ne $book->ean13 ? 1 : 0;
+		$info->{part_nbn_standalone} = $book_parent->nbn ne $book->nbn ? 1 : 0;
+		$info->{part_oclc_standalone} = $book_parent->oclc ne $book->oclc ? 1 : 0;
+	}
 
 	# 1. Najdi cover
-	my $cover = $book->get_cover; # pripadne najde work->cover
+	my $cover = $flag_get_most_recent ? $book_most_recent->get_cover : $book->get_cover; # pripadne najde work->cover
 	# $this->{cover} = { url, width, height, [data (ie7+)?] }
 	# $this->{thumbnail} = { url, width, height }
 	# $this->{generic_thumbnail} = { url, width, height }
@@ -1034,16 +1081,18 @@ sub enrich {
 		$info->{cover_thumbnail_url} = $cover->get_thumbnail_url($secure);
 		$info->{cover_medium_url}    = $cover->get_cover_url($secure);
 		$info->{cover_icon_url}      = $cover->get_icon_url($secure);
-		# jeste rozmery
 	}
 
 	# 2. Najdi TOC
-	my $toc = $book->get_toc; # pripadne najde work->cover
+	my $toc = $flag_get_most_recent ? $book_most_recent->get_toc : $book->get_toc; # pripadne najde work->cover
 	if($toc) {
 		$info->{toc_pdf_url}       = $toc->get_pdf_url($secure);
 		$info->{toc_thumbnail_url} = $toc->get_thumbnail_url($secure);
-		$info->{toc_text_url}      = $toc->get_text_url($secure) if $toc->get_column('full_text');
-		# jeste rozmery
+	}
+	my $toc_own = $flag_get_most_recent ? undef : $toc;
+	$toc_own = $book->get_toc if (!$toc_own and $book->get_toc);
+	if ($toc_own) {
+		$info->{toc_text_url}      = $toc_own->get_text_url($secure) if $toc_own->get_column('full_text');
 	}
 
 	# 3. Backlink
@@ -1078,6 +1127,9 @@ sub enrich {
 		my $toc_full_text = $book->toc->get_column('full_text') if ($book->toc);
 		$info->{toc_full_text} = $toc_full_text if (defined $toc_full_text);
 	}
+	
+	# 7. Priznak holeho zaznamu
+	$info->{flag_bare_record} = ($cover or $toc or $r_count or (scalar @{$info->{reviews}} > 0)) ? 0 : 1;
 
 	return $info;
 }
