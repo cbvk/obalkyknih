@@ -199,6 +199,7 @@ sub add_product {
 	# najdi nebo vytvor odpovidajici book
 	# warn "Looking for ".Dumper($bibinfo)."\n" if($ENV{DEBUG});
 	my $book = DB->resultset('Book')->find_by_bibinfo($bibinfo);
+	
 	# zaznam book neexistuje, vytvarime
 	unless ($book) {
 		my $hash = {};
@@ -230,7 +231,7 @@ sub add_product {
 	$book_bibinfo->save_to($book) if($book_bibinfo->merge($bibinfo));
 
 	# podle media zaktualizovat book!!! book->prepocitej_media..
-	$book->actualize_by_product($product);
+	$book->actualize_by_product($product,1);
 
 	return $product;
 }

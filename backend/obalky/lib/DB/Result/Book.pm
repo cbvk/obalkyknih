@@ -16,6 +16,7 @@ use warnings;
 use Moose;
 use MooseX::NonMoose;
 use MooseX::MarkAsMethods autoclean => 1;
+use List::Util qw( max );
 extends 'DBIx::Class::Core';
 
 =head1 COMPONENTS LOADED
@@ -106,6 +107,12 @@ __PACKAGE__->table("book");
   size: 255
 
 =head2 part_no
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
+=head2 part_name
 
   data_type: 'varchar'
   is_nullable: 1
@@ -205,6 +212,12 @@ __PACKAGE__->table("book");
   is_nullable: 1
   size: 255
 
+=head2 part_name_orig
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
 =head2 part_note_orig
 
   data_type: 'varchar'
@@ -242,6 +255,8 @@ __PACKAGE__->add_columns(
   "part_volume",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "part_no",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
+  "part_name",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "part_note",
   { data_type => "varchar", is_nullable => 1, size => 255 },
@@ -283,6 +298,8 @@ __PACKAGE__->add_columns(
   "part_volume_orig",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "part_no_orig",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
+  "part_name_orig",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "part_note_orig",
   { data_type => "varchar", is_nullable => 1, size => 255 },
@@ -653,8 +670,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-12-23 00:13:00
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oo9ugD88kDARqsejk55I3g
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-01-26 13:21:51
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nAl9XxlelluDyaMGUf3cWg
 
 use Obalky::Media;
 use Data::Dumper;
@@ -730,9 +747,9 @@ sub recalc_review {
 }
 
 sub invalidate { # nutno volat po kazde zmene knizky
-	my($book) = @_;
+	my($book,$forced) = @_;
 	DB->resultset('Cache')->invalidate($book);
-	DB->resultset('FeSync')->request_sync_remove($book->bibinfo);
+	DB->resultset('FeSync')->request_sync_remove($book->bibinfo, undef, $forced);
 }
 
 sub recalc_rating {
@@ -773,7 +790,7 @@ sub get_reviews {
 	my @book_ids;
 	my @books = $book->work_books; # pres vsechna dila..
 	map { push @book_ids, $_->id } @books;
-	my $reviews = DB->resultset('Review')->search({ book=>@book_ids }, {
+	my $reviews = DB->resultset('Review')->search({ book=>@book_ids, library=>{ -not => undef }, library_id_review=>{ -not => undef } }, {
 		order_by => { '-desc' => 'created' },
 		limit => 200
 	});
@@ -806,13 +823,19 @@ sub get_obalkyknih_url {
 }
 
 sub actualize_by_product {
-	my($book,$product) = @_;
+	my($book,$product,$forced) = @_;
+	my $invalidate = 0;
+	
+	# pokud se neco zmenilo, je potreba zaznam zneplatnit a pozadat FE o zneplatneni
+	$invalidate = ($book->cover->id!=$product->cover->id) ? 1 : 0 if ($book->cover and $product->cover);
+	$invalidate = ($book->toc->id!=$product->toc->id) ? 1 : $invalidate if ($book->toc and $product->toc);
+	
 	$book->update({ cover => $product->cover })   if($product->cover);
 	$book->update({ toc => $product->toc })       if($product->toc);
 #	$book->update({ review => $product->review }) if($product->review);
 
 	$book->recalc_rating;
-	$book->invalidate();
+	$book->invalidate($forced) if ($invalidate or $forced);
 
 #	my($sum,$count) = @_;
 #	$book->update({ external_sum => $product->review }) if($product->review);
@@ -904,31 +927,45 @@ sub get_most_recent {
 	my $parts = DB->resultset('Book')->search({ id_parent => $book->id }, { order_by => {-desc=>[qw/part_year part_volume/]} });
 	if ($parts->count) {
 		my ($max_year,$max_volume,$eq_year,$eq_volume) = (undef,undef,undef,undef);
+		my %max_by_year = {};
+		my %max_by_volume = {};
 		
 		# vyhledani nejnovejsiho zaznamu podle roku
 		foreach ($parts->all) {
+			# v pripade vicesvazkove monografie vracime prvni nalezeny zaznam (prvni naskenovany, protoze se seradi podle primarniho klice)
+			return $_ if ($_->get_column('part_type') == 1);
+			
+			# pokud se jedna o periodikum pokracujeme v hledani nejnovejsiho; v pripade monografie to neni potrebne
 			my $cur_year = $_->get_column('part_year');
 			my $cur_volume = $_->get_column('part_volume');
+			my $cur_no = $_->get_column('part_no');
 			$max_year = $cur_year unless($max_year);
 			$max_volume = $cur_volume unless($max_volume);
-			if ($cur_year && $cur_volume && !$eq_year) { # nasly jsme zaznam s parem rok/rocnik
+			if ($cur_year && $cur_volume && !$eq_year) { # nalezly jsme zaznam s parem rok/rocnik
 				$eq_year = $cur_year;
 				$eq_volume = $cur_volume;
 			}
 			$max_volume = $max_volume<$cur_volume ? $cur_volume : $max_volume if ($max_volume and $cur_volume);
+			
+			# uloz hodnotu part_no (pozdeji se bude podle toho vyhledavat aktualni cislo)
+			$max_by_year{$cur_year}{$cur_no} = $_->id if ($cur_year);
+			$max_by_volume{$cur_volume}{$cur_no} = $_->id if ($cur_volume);
 		}
 		
 		# nemame se ceho chytit, rok znamy, rocnik neznamy, tj. vyhledame nejnovejsi podle roku
 		if (($max_year && !$max_volume) || ()) {
-			return DB->resultset('Book')->search({ id_parent=>$book->id, part_year=>$max_year }, { order_by=>{-desc=>'part_no'}, limit=>1 })->next;
+			my $recent_book_id = $max_by_year{$max_year}{ max keys %{$max_by_year{$max_year}} };
+			return DB->resultset('Book')->find( $recent_book_id );
 		}
 		# nemame se ceho chytit, rocnik znamy, rok neznamy, tj. vyhledame nejnovejsi podle rocniku
 		if (!$max_year && $max_volume) {
-			return DB->resultset('Book')->search({ id_parent=>$book->id, part_volume=>$max_volume }, { order_by=>{-desc=>'part_no'}, limit=>1 })->next;
+			my $recent_book_id = $max_by_volume{$max_volume}{ max keys %{$max_by_volume{$max_volume}} };
+			return DB->resultset('Book')->find( $recent_book_id );
 		}
 		# oba parametry jsou zname, ale nemame k cemu prirovnat (nemame zaznam co obsahuje rok i rocnik zaroven), uprednostnime rok
 		if (!$eq_year) {
-			return DB->resultset('Book')->search({ id_parent=>$book->id, part_year=>$max_year }, { order_by=>{-desc=>'part_no'}, limit=>1 })->next;
+			my $recent_book_id = $max_by_year{$max_year}{ max keys %{$max_by_year{$max_year}} };
+			return DB->resultset('Book')->find( $recent_book_id );
 		}
 		# zname vsechno (nejnovejsi rok, nejnovejsi rocnik a vime je k sobe srovnat)
 		if ($eq_year && $eq_volume) {
@@ -936,7 +973,18 @@ sub get_most_recent {
 			my $vol_to_year = $eq_year + $vol_diff;
 			my $max_year_calculated = $max_year>=$vol_to_year ? $max_year : $vol_to_year;
 			$max_volume = $max_volume + ($max_year_calculated - $max_year);
-			return DB->resultset('Book')->search({ id_parent=>$book->id, -or=>{part_year=>$max_year_calculated, part_volume=>$max_volume} }, { order_by=>{-desc=>'part_no'}, limit=>1 })->next;
+			
+			my $recent_book_id;
+			my $max_part_no_by_year = max keys %{$max_by_year{$max_year_calculated}};
+			my $max_part_no_by_volume = max keys %{$max_by_volume{$max_volume}};
+			if ($max_part_no_by_year >= $max_part_no_by_volume) {
+				# maximum se naslo podle roku
+				$recent_book_id = $max_by_year{$max_year_calculated}{ $max_part_no_by_year };
+			} else {
+				# maximum se naslo podle rocniku
+				$recent_book_id = $max_by_volume{$max_volume}{ $max_part_no_by_volume };
+			}
+			return DB->resultset('Book')->find( $recent_book_id );
 		}
 	}
 	return $book;
@@ -973,6 +1021,7 @@ sub enrich {
 	$info->{part_year} = $book_bibinfo->{part_year} if $book_bibinfo->{part_year};
 	$info->{part_volume} = $book_bibinfo->{part_volume} if $book_bibinfo->{part_volume};
 	$info->{part_no} = $book_bibinfo->{part_no} if $book_bibinfo->{part_no};
+	$info->{part_name} = $book_bibinfo->{part_name} if $book_bibinfo->{part_name};
 	$info->{part_most_recent} = 1 if ($book->id != $book_req->id);
 
 	# 1. Najdi cover

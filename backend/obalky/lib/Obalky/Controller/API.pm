@@ -191,14 +191,33 @@ sub do_book_request {
 	#	warn "Chybi minimalni udaje, ignoruju (lib=".($library?$library->code:"").",permalink=".($permalink||'').",bibinfo=".($bibinfo||'').")...\n";
 	#}
 	return unless($library and $bibinfo and $permalink);
-
-    my($book,$record) = DB->resultset('Marc')->get_book_record(
-								$library, $permalink, $bibinfo );
 	
-	# pokud se zaznam nenasel, a neni vytvoren novy (napr. v pripade dotazu na periodikum, nebo vicesvazkovou monografii) vrati se prazdna odpoved
-	return (undef,undef) unless($book);
+    my($book,$record) = DB->resultset('Marc')->get_book_record( $library, $permalink, $bibinfo );
+	
+	# pokud se zaznam nenasel, a neni vytvoren novy (napr. v pripade dotazu na periodikum, nebo vicesvazkovou monografii)
+	# vratime souborny zaznam - jeho part_most_recent
+	my $generate_part_dummy = 0;
+	my ($bib_orig_part_no, $bib_orig_part_name, $bib_orig_part_year, $bib_orig_part_volume) = ($bibinfo->{part_no}, $bibinfo->{part_name}, $bibinfo->{part_year}, $bibinfo->{part_volume});
+	unless ($book) {
+		$bibinfo->{part_no} = $bibinfo->{part_name} = $bibinfo->{part_year} = $bibinfo->{part_volume} = undef;
+		($book,$record) = DB->resultset('Marc')->get_book_record( $library, $permalink, $bibinfo );
+		$generate_part_dummy = 1;
+	}
 
 	$book->enrich($this,$library,$permalink,$bibinfo,$c->request->secure,$c->req->params);
+	
+	# pokud skutecna cast monografie, nebo periodika neexistovala, byl vyhledan part_most_recent souborneho zaznamu a
+	# potrebujeme tento zaznam zmenit na dummy (pseudo zaznam) = identifikatory casti nahradit za ty, ktere byly v pozadavku
+	if ($generate_part_dummy) {
+		delete $this->{part_most_recent};
+		delete $this->{part_no};   delete $this->{part_name};
+		delete $this->{part_year}; delete $this->{part_volume};
+		$this->{part_no} = $bib_orig_part_no if ($bib_orig_part_no);
+		$this->{part_name} = $bib_orig_part_name if ($bib_orig_part_name);
+		$this->{part_year} = $bib_orig_part_year if ($bib_orig_part_year);
+		$this->{part_volume} = $bib_orig_part_volume if ($bib_orig_part_volume);
+		$this->{part_dummy} = 1;
+	}
 
 	# zapis do DB #lastrequests [ visitor_id, session?, $book->id, $record->id ]
 	#if($tip) { nelogujeme, pretikaji disky
@@ -500,7 +519,7 @@ sub _do_import {
 	}
 	my $user = $c->user->login;
 
-	# z parametru zkonstruj identifikator knizky (TODO jen BibInfo->fields?)
+	# z parametru zkonstruuj identifikator knizky (TODO jen BibInfo->fields?)
 	my $bibinfo_params = {};
 	$bibinfo_params->{$_} = decode_utf8($c->req->param($_))
 		foreach(Obalky::BibInfo->param_keys);
@@ -509,18 +528,20 @@ sub _do_import {
 	
 	my $bibinfo_aggr;
 	my $part_type = $c->req->param('part_type');
+	$part_type = "" unless ($part_type);
 	# bibinfo souborneho zaznamu
-	if (($part_type eq "serial" or $part_type eq "mono")) {		
+	if ($part_type eq "serial" or $part_type eq "mono") {
+	
 		my $hash = {};
 		my $bibinfo_aggr = Obalky::BibInfo->new_from_params($bibinfo_params);
 		$bibinfo_aggr->save_to_hash($hash);
 		
-		unless ($c->req->param("part_no")) { # chyby povinny parametr
+		unless ($c->req->param("part_no") or $c->req->param("part_name")) { # chyby povinny parametr
 			$c->response->content_type("text/plain");
-			$c->response->body("Missing params part_year, part_volume, part_no.");
+			$c->response->body("Missing params part_year, or part_volume, part_no, or part_name.");
 			return;
 		}
-		
+
 		my $book_aggr = DB->resultset('Book')->find_by_bibinfo($bibinfo_aggr);
 		if ($book_aggr) {
 			# book zaznam existuje, aktualizovat
@@ -535,21 +556,16 @@ sub _do_import {
 			$bibinfo_params = {};
 			# nacti parametry, ale odrizni prefix "part_"
 			$bibinfo_params->{substr($_,5)} = decode_utf8($c->req->param($_)) foreach(Obalky::BibInfo->param_keys_part);
-			# nacti identifikatory rok/rocnik/cislo
-			$bibinfo_params->{$_} = decode_utf8($c->req->param($_)) foreach(Obalky::BibInfo->extended_keys_part);
-			$bibinfo_params->{id_parent} = $book_aggr->id;
-			$bibinfo_params->{part_type} = 1; # monografie
-			$bibinfo_params = DB->resultset('Book')->normalize_bibinfo($bibinfo_params);
 		}
-		# pokud se jedna o cast monografie musime nacist identifikatory casti
-		if ($part_type eq "serial") {
-			# nacti identifikatory rok/rocnik/cislo
-			$bibinfo_params->{$_} = decode_utf8($c->req->param($_)) foreach(Obalky::BibInfo->extended_keys_part);
-			$bibinfo_params->{id_parent} = $book_aggr->id;
-			$bibinfo_params->{part_type} = 2; # periodikum
-			$bibinfo_params = DB->resultset('Book')->normalize_bibinfo($bibinfo_params);
-		}
+		
+		# nacti identifikatory casti
+		$bibinfo_params->{$_} = decode_utf8($c->req->param($_)) foreach(Obalky::BibInfo->extended_keys_part);
+		$bibinfo_params->{part_type} = 1 if ($part_type eq "mono"); # monografie
+		$bibinfo_params->{part_type} = 2 if ($part_type eq "serial"); # periodikum
+		$bibinfo_params->{id_parent} = $book_aggr->id;
+		$bibinfo_params = DB->resultset('Book')->normalize_bibinfo($bibinfo_params);
 	}
+	#warn Dumper($c->req); warn Dumper($bibinfo_params); die; #DEBUG
 
 	# bibinfo skenovaneho zaznamu
 	my $bibinfo = Obalky::BibInfo->new_from_params($bibinfo_params);
@@ -557,7 +573,7 @@ sub _do_import {
     $self->_do_log("user $user book ".($bibinfo ? $bibinfo->to_string
                         : 'NENI bibinfo?? '.Dumper($bibinfo_params)));
 
-	# vytvor permanenti uloziste - adresar /opt/obalky/www/import/$date/$seq
+	# vytvor permanentni uloziste - adresar /opt/obalky/www/import/$date/$seq
 	my $today = today(); $today =~ s/\-//g;
 	my $todayDir = "/opt/obalky/www/import/$today";
 	mkdir $todayDir;
@@ -608,7 +624,7 @@ sub _do_import {
 		my $header = <F>; # nemame jmeno souboru, urcime z hlavicky
 		close(F);
 		if($header =~ /^\%PDF/) {
-		   	$self->_do_log("toc.pdf: merging PDF with pdftk");
+		   	$self->_do_log("toc.pdf: mergin'(díl 1, sv. 2 : Ladislav Horáček - Paseka : váz.)'g PDF with pdftk");
 			system("pdftk $dir/toc_page_* cat output $dir/toc.pdf");
 		} else {
 		   	$self->_do_log("toc.pdf: merging with gm convert");
@@ -640,7 +656,6 @@ sub _do_import {
 		$info->{tocpdf_tmpfile} = "$dir/toc.pdf";
 		$info->{toc_firstpage} = "$dir/toc_page_0001" 
 						if(-s "$dir/toc_page_0001");
-		$info->{toctext} = undef; # zatim...
 	}
 
     $self->_do_log("calling Obalky::Media->new_from_info(".Dumper($info).")");
@@ -656,8 +671,6 @@ sub _do_import {
 	# ok, ke knizce $bibinfo zaloz novy produkt ($media)
     $self->_do_log("calling ->add_product(".Dumper($bibinfo).",",
                             Dumper($media).",$product_url)");
-warn Dumper($media);
-warn Dumper($product_url);
 	my $product = $eshop->add_product($bibinfo,$media,$product_url);
 
     $self->_do_log("ok, product ".$product->id." ready");

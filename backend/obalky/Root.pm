@@ -766,6 +766,15 @@ sub end : Private {
 	$c->forward('Obalky::View::TT');	
 }
 
+#my $bibinfo = bless {}, 'Bibinfo';
+#$bibinfo->{ean13} = '9788073039219';
+#$bibinfo->{part_year} = 'rok 2014,2015';
+#$bibinfo->{part_volume} = 'jahrg. 51(22)';
+#$bibinfo->{part_no} = undef;
+#$bibinfo->{part_name} = '(díl 1, sv. 2 : Ladislav Horáček - Paseka : váz.)';
+#warn Dumper($bibinfo);
+#warn Dumper(DB->resultset("Book")->normalize_bibinfo($bibinfo));
+
 
 =head1 AUTHOR
 

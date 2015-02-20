@@ -49,11 +49,11 @@ isbn_1234, ean_123, oclc_123, nbn_123, isbn1234_nbn123
 =cut
 
 
-my @keys = qw/ean13 oclc nbn title authors year part_year part_volume part_no part_note/;
+my @keys = qw/ean13 oclc nbn title authors year part_year part_volume part_no part_name part_note/;
 
 sub param_keys { qw/ean isbn issn oclc nbn title authors year/ }
-sub param_keys_part { qw/part_ean part_isbn part_issn part_oclc part_nbn part_title part_authors/ }
-sub extended_keys_part { qw/part_year part_volume part_no part_note/ }
+sub param_keys_part { qw/part_ean part_isbn part_issn part_oclc part_nbn part_title part_authors part_year/ }
+sub extended_keys_part { qw/part_volume part_no part_name part_note part_year/ }
 
 sub new {
 	my($pkg,$object) = @_;
@@ -74,6 +74,8 @@ sub new {
 		$bibinfo->{part_volume} = $object->part_volume if(defined $object->part_volume);
 		$bibinfo->{part_volume_orig} = $object->part_volume_orig if(defined $object->part_volume_orig);
 		$bibinfo->{part_no} = $object->part_no if(defined $object->part_no);
+		$bibinfo->{part_name} = $object->part_name if(defined $object->part_name);
+		$bibinfo->{part_name_orig} = $object->part_name_orig if(defined $object->part_name_orig);
 		$bibinfo->{part_no_orig} = $object->part_no_orig if(defined $object->part_no_orig);
 		$bibinfo->{part_note} = $object->part_note if(defined $object->part_note);
 		$bibinfo->{part_note_orig} = $object->part_note_orig if(defined $object->part_note_orig);
@@ -108,6 +110,7 @@ sub differs {
 	return $a->part_year    ne $b->part_year   if($a->part_year   and $b->part_year );
 	return $a->part_volumer ne $b->part_volume if($a->part_volume and $b->part_volume );
 	return $a->part_no      ne $b->part_no     if($a->part_no     and $b->part_no );
+	return $a->part_name    ne $b->part_name   if($a->part_name   and $b->part_name );
 	return $a->part_note    ne $b->part_note   if($a->part_note   and $b->part_note );
 	return undef; # nevime..
 }
@@ -253,10 +256,12 @@ sub new_from_params {
 		part_year => $param->{part_year},
 		part_volume => $param->{part_volume},
 		part_no => $param->{part_no},
+		part_name => $param->{part_name},
 		part_note => $param->{part_note},
 		part_year_orig => $param->{part_year_orig},
 		part_volume_orig => $param->{part_volume_orig},
 		part_no_orig => $param->{part_no_orig},
+		part_name_orig => $param->{part_name_orig},
 		part_note_orig => $param->{part_note_orig},
 		part_type => $param->{part_type},
 		id_parent => $param->{id_parent}
@@ -282,14 +287,14 @@ sub save_to_hash {
 sub save_to_hash_part {
 	my($id,$hash) = @_;
 	$hash ||= {};
-	map $hash->{$_} = $id->{$_}, grep $id->{$_}, qw/part_year part_volume part_no part_note id_parent part_year_orig part_volume_orig part_no_orig part_note_orig part_type/;
+	map $hash->{$_} = $id->{$_}, grep $id->{$_}, qw/part_year part_volume part_no part_name part_note id_parent part_year_orig part_volume_orig part_no_orig part_name_orig part_note_orig part_type/;
 	return $hash;
 }
 
 sub to_params {
 	my($id) = @_;
 	my @out;
-	foreach(qw/ean13 oclc nbn part_year part_volume part_no part_note/) {
+	foreach(qw/ean13 oclc nbn part_year part_volume part_no part_name part_note/) {
 		push @out, $_."=".$id->{$_} if($id->{$_});
 	}
 	return join("&",@out);

@@ -33,7 +33,7 @@ Returns: integer  0 = chyba, 1 = uspech
 Vytvari sync event. Vytvorenim je nachystan na spusteni.
 =cut
 sub set_sync {
-	my($pkg,$param,$type,$instances) = @_;
+	my($pkg,$param,$type,$instances,$forced) = @_;
 	my $sync_type = undef;
 	my @insts = (); # primarni klice instanci, kde se maji parametry vykonat
 	my @params = (); # primarni klice parametru, ktere se maji na instancich vykonat
@@ -97,6 +97,9 @@ sub set_sync {
 		
 		# M:N vazba mezi sync hlavickou a parametrem
 		map { DB->resultset('FeSync2param')->create({ id_sync => $sync->id, id_sync_param => $_ }) } @params;
+		
+		# pokud sync udalost vznikla napr. pri skenovani, pozadujeme aby se udalost provedla okamzite
+		$pkg->do_sync($sync->id) if ($forced);
 	}
 	
 	return 1;
@@ -110,13 +113,22 @@ Returns: integer  0 = chyba, 1 = uspech
 Rizeni synchronizacni udalosti. Prochazi databazi a zpousti funkci pro vykon synchronizacni udalosti.
 =cut
 sub do_sync {
+	my($pkg,$forced) = @_;
 	my $dt   = DateTime->now(time_zone=>'local');
 	my $date = $dt->ymd; # yyyy-mm-dd
 	my $time = $dt->hms; # hh:mm:ss
-	my $sync = DB->resultset('FeSync')->search({
+	
+	my $search_params;
+	$search_params = {
 		flag_synced => 0,
 		retry_date => { '<=', "$date $time" }
-	}, {
+	} unless ($forced);
+	
+	$search_params = {
+		id_sync => $forced
+	} if ($forced);
+	
+	my $sync = DB->resultset('FeSync')->search($search_params, {
 		join => [
 			{'fe_sync2params' => 'id_sync_param'},
 			'fe_sync_type', 'fe_instance'],
@@ -218,13 +230,18 @@ Pro zadane dilo provede vymazani na vsech frontendech
 
 =cut
 sub request_sync_remove {
-	my($pkg,$bibinfo,$fe) = @_;
+	my($pkg,$bibinfo,$fe,$forced) = @_;
 	my $sync_params = $bibinfo->save_to_hash();
+	if ($sync_params->{ean13}) {
+		$sync_params->{isbn} = $sync_params->{ean13};
+		delete $sync_params->{ean13};
+	}
 	delete $sync_params->{title};
 	delete $sync_params->{authors};
+	delete $sync_params->{year};
 	if ($sync_params) {
 		$sync_params->{remove} = 'true';
-		DB->resultset('FeSync')->set_sync($sync_params, 'metadata_changed', $fe);
+		DB->resultset('FeSync')->set_sync($sync_params, 'metadata_changed', $fe, $forced);
 	}
 }
 
