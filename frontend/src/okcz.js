@@ -14,7 +14,7 @@ var frontPortHttps = 1338;
 // =========================================
 
 /// knihovna API OKCZ v3.0
-var okcz = require('okcz_server');
+var okcz = require('okcz18_server');
 
 /// node.js moduly
 var mongo = require('mongodb');
