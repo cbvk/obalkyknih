@@ -1,0 +1,16 @@
+﻿<Window x:Class="ScannerClient_obalkyknih.UploadWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Odesílání dat" Height="150" Width="300" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Closing="Window_Closing">
+    <Grid>
+        <Grid.Background>
+            <ImageBrush Viewport="0,0,218,218" ViewportUnits="Absolute" Stretch="None" TileMode="Tile"
+                        ImageSource="/ObalkyKnih-scanner;component/Images/ok-background-center.png"/>
+        </Grid.Background>
+        <Label Content="Nahrávání dat na server může trvat několik minut." FontFamily="Arial" HorizontalAlignment="Center"
+               Foreground="#5e5e5e" Margin="0,10,0,0" VerticalAlignment="Top" />
+        <ProgressBar Height="30" HorizontalAlignment="Center" Margin="0,60,0,0" VerticalAlignment="Top" Width="254" IsIndeterminate="True" />
+        <Label Content="Vyčkejte prosím." Height="28" HorizontalAlignment="Center" FontFamily="Arial" Margin="0,30,0,0"
+               Foreground="#5e5e5e" VerticalAlignment="Top" />
+    </Grid>
+</Window>

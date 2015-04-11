@@ -1,0 +1,39 @@
+﻿<Window x:Class="ScannerClient_obalkyknih.MetadataWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Metadatový záznam" Height="500" Width="827" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.Background>
+            <ImageBrush Viewport="0,0,218,218" ViewportUnits="Absolute" Stretch="None" TileMode="Tile"
+                        ImageSource="/ObalkyKnih-scanner;component/Images/ok-background-center.png"/>
+        </Grid.Background>
+        <Label Content="Plný metadatový záznam" HorizontalAlignment="Center" FontSize="26" FontWeight="Normal" 
+                       Foreground="#FF414141" FontFamily="Arial" Margin="252,-3,252,3" />
+        <Label Name="previousMetadataLabel" Content="&lt;&lt;&lt; Předchozí záznam" FontFamily="Arial" Foreground="#FF830000"
+               Margin="182,37,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Cursor="Arrow"
+               ToolTip="Zobrazit předchozí metadatový záznam" MouseLeftButtonDown="PreviousMetadataLabel_Clicked"
+               MouseEnter="Icon_MouseEnter" MouseLeave="Icon_MouseLeave" IsEnabled="False" FontWeight="Bold" FontSize="14" />
+        <Label Name="nextMetadataLabel" Content="Následující záznam &gt;&gt;&gt;" FontFamily="Arial" Foreground="Red"
+               Margin="0,37,172,0" HorizontalAlignment="Right" VerticalAlignment="Top" Cursor="Arrow"
+               ToolTip="Zobrazit následující metadatový záznam" MouseLeftButtonDown="NextMetadataLabel_Clicked"
+               MouseEnter="Icon_MouseEnter" MouseLeave="Icon_MouseLeave" IsEnabled="False" FontWeight="Bold" FontSize="14" FontStretch="Normal" />
+        <Label Name="indexLabel" BorderThickness="0" Background="Transparent" FontFamily="Arial" Foreground="#FF830000"
+               VerticalAlignment="Top" Margin="348,32,345,0" Content="0/0" HorizontalAlignment="Center" FontWeight="Bold" FontSize="22" Width="112" HorizontalContentAlignment="Center" />
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" IsEnabled="True"
+                      Margin="0,77,0,50">
+            <TextBox Name="metadataLabel" IsReadOnly="True" BorderThickness="0" Background="Transparent" FontFamily="Arial"
+                         Foreground="#5e5e5e" VerticalAlignment="Top"/>
+        </ScrollViewer>
+        <Button Name="confirmMetadataButton" Content="Použít" Click="confirmMetadataButton_Click" Height="30"
+                                HorizontalAlignment="Center" Margin="0,0,0,10" Foreground="#b4b4b4" BorderBrush="#353535" Cursor="Hand"
+                                VerticalAlignment="Bottom" Width="80" BorderThickness="1" Style="{StaticResource MyButtonNoPadding}"
+                                ToolTip="Použít zobrazená metadata">
+            <Button.Background>
+                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                    <GradientStop Color="#484848" Offset="0.0" />
+                    <GradientStop Color="#363636" Offset="1.0" />
+                </LinearGradientBrush>
+            </Button.Background>
+        </Button>
+    </Grid>
+</Window>

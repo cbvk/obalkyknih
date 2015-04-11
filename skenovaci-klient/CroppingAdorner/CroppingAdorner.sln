@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C# Express 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CroppingAdorner", "CroppingAdorner\CroppingAdorner.csproj", "{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CroppingTest", "CroppingTest\CroppingTest.csproj", "{F000E10B-3854-4807-8F41-9BD5D531EECC}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F000E10B-3854-4807-8F41-9BD5D531EECC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F000E10B-3854-4807-8F41-9BD5D531EECC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F000E10B-3854-4807-8F41-9BD5D531EECC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F000E10B-3854-4807-8F41-9BD5D531EECC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

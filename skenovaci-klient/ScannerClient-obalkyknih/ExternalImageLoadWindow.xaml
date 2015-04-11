@@ -1,0 +1,19 @@
+﻿<Window x:Class="ScannerClient_obalkyknih.ExternalImageLoadWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Vyberte co chcete načíst" Height="250" Width="350" WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+    <Grid>
+        <Grid.Background>
+            <ImageBrush Viewport="0,0,218,218" ViewportUnits="Absolute" Stretch="None" TileMode="Tile"
+                                    ImageSource="/ObalkyKnih-scanner;component/Images/ok-background-center.png"/>
+        </Grid.Background>
+        <Image HorizontalAlignment="Left" Stretch="Uniform" VerticalAlignment="Center" Width="125" Margin="25,20,0,0" Name="coverImage"
+               Source="/ObalkyKnih-scanner;component/Images/ok-empty.png" MouseLeftButtonDown="OnImage_Clicked" Cursor="Hand" />
+        <Image HorizontalAlignment="Right" Stretch="Uniform" VerticalAlignment="Center" Width="125" Margin="0,20,25,0" Name="tocImage" 
+               Source="/ObalkyKnih-scanner;component/Images/ok-empty.png" MouseLeftButtonDown="OnImage_Clicked" Cursor="Hand" />
+        <Label Content="Obálka" HorizontalAlignment="Left" Margin="50,10,0,0" FontFamily="Arial" Foreground="#5e5e5e" FontSize="20"
+               VerticalAlignment="Top" />
+        <Label Content="Obsah" Margin="0,10,60,0" VerticalAlignment="Top" FontFamily="Arial" Foreground="#5e5e5e" FontSize="20"
+               HorizontalAlignment="Right" />
+    </Grid>
+</Window>

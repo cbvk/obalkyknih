@@ -1,0 +1,211 @@
+﻿<Window x:Class="ScannerClient_obalkyknih.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Nastavení" Height="430" Width="600" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.Background>
+            <ImageBrush Viewport="0,0,218,218" ViewportUnits="Absolute" Stretch="None" TileMode="Tile"
+                        ImageSource="/ObalkyKnih-scanner;component/Images/ok-background-center.png"/>
+        </Grid.Background>
+        <TabControl Margin="0,0,0,45">
+            <TabControl.Resources>
+                <!--Background of tabs header-->
+                <Style TargetType="{x:Type TabPanel}">
+                    <Setter Property="Height" Value="20"/>
+                    <Setter Property="Margin" Value="0" />
+                    <Setter Property="Background" >
+                        <Setter.Value>
+                            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                <GradientStop Color="#404143" Offset="0.0" />
+                                <GradientStop Color="#2F2F2F" Offset="1.0" />
+                            </LinearGradientBrush>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+                <Style TargetType="{x:Type TabItem}">
+                    <!--Font of tabs header-->
+                    <Setter Property="Foreground" Value="#B6B6B6"/>
+                    <Setter Property="Height" Value="20"/>
+                    <Setter Property="Background" >
+                        <Setter.Value>
+                            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                <GradientStop Color="#404143" Offset="0.0" />
+                                <GradientStop Color="#2F2F2F" Offset="1.0" />
+                            </LinearGradientBrush>
+                        </Setter.Value>
+                    </Setter>
+
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type TabItem}">
+                                <Grid>
+                                    <Border
+            Name="Border"
+            BorderBrush="#373737"
+            BorderThickness="1,1,1,1" >
+                                        <ContentPresenter x:Name="ContentSite"
+              VerticalAlignment="Center"
+              HorizontalAlignment="Center"
+              ContentSource="Header"
+              Margin="12,2,12,2"
+              RecognizesAccessKey="True"/>
+                                    </Border>
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Border" Property="Background" Value="#1C1C1C" />
+                                        <Setter TargetName="Border" Property="BorderThickness" Value="1,1,1,0" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+
+                </Style>
+            </TabControl.Resources>
+            <TabItem Header="Připojení">
+                <Grid>
+                    <Grid.Background>
+                        <ImageBrush Viewport="0,0,218,218" ViewportUnits="Absolute" Stretch="None" TileMode="Tile"
+                        ImageSource="/ObalkyKnih-scanner;component/Images/ok-background-center.png"/>
+                    </Grid.Background>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Label Content="Nastavení" Grid.ColumnSpan="2" FontSize="20" FontWeight="Bold" Foreground="#5e5e5e" FontFamily="Arial"
+               HorizontalAlignment="Center" VerticalAlignment="Top" />
+                    <Label Content="Sigla Knihovny:" Height="28" HorizontalAlignment="Left" Margin="30,37,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+               VerticalAlignment="Top" />
+                    <TextBox Height="23" HorizontalAlignment="Left" Margin="145,41,0,0" Name="siglaTextBox" FontFamily="Arial" Foreground="#5e5e5e"
+                 VerticalAlignment="Top" Width="120" />
+                    <Label Content="Báze záznamu:" Height="28" HorizontalAlignment="Left" Margin="21,37,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+               VerticalAlignment="Top" Grid.Column="1" />
+                    <TextBox Height="23" HorizontalAlignment="Left" Margin="129,41,0,0" Name="baseTextBox" FontFamily="Arial" Foreground="#5e5e5e"
+                 VerticalAlignment="Top" Width="120" Grid.Column="1" ToolTip="Báze bude použita u vlastního identifikátoru" />
+                    <RadioButton Content="Používat X-Server:" Height="17" HorizontalAlignment="Left" FontFamily="Arial" Foreground="#5e5e5e"
+                     Margin="21,87,0,0" Name="xServerRadioButton" VerticalAlignment="Top" Checked="XServerRadioButton_Checked"
+                     Grid.Column="1" />
+                    <Label Content="X-Server URL:" Height="28" HorizontalAlignment="Left" Margin="21,110,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+               VerticalAlignment="Top" Grid.Column="1" />
+                    <Label Content="X-Server Databáze:" Height="28" HorizontalAlignment="Left" Margin="21,139,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+               VerticalAlignment="Top" Grid.Column="1" />
+                    <TextBox Height="23" HorizontalAlignment="Left" Margin="129,114,0,0" Name="xServerUrlTextBox"  FontFamily="Arial" Foreground="#5e5e5e"
+                 VerticalAlignment="Top" Width="120" Grid.Column="1" />
+                    <TextBox Height="23" HorizontalAlignment="Left" Margin="129,143,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+                 Name="xServerDatabaseTextBox" VerticalAlignment="Top" Width="120" Grid.Column="1" />
+                    <RadioButton Content="Používat Z39.50:" Height="17" HorizontalAlignment="Left" Margin="30,87,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+                     Name="z39ServerRadioButton" VerticalAlignment="Top" Checked="Z39ServerRadioButton_Checked" />
+                    <Label Content="Z39.50 Server URL:" Height="28" HorizontalAlignment="Left" Margin="30,110,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+               VerticalAlignment="Top" />
+                    <Label Content="Z39.50 Server Port:" Height="28" HorizontalAlignment="Left" Margin="30,139,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+               VerticalAlignment="Top" />
+                    <Label Content="Z39.50 Databáze:" Height="28" HorizontalAlignment="Left" Margin="30,168,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+               VerticalAlignment="Top" />
+                    <Label Content="Z39.50 Kódování:" Height="28" HorizontalAlignment="Left" Margin="30,197,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+               VerticalAlignment="Top" />
+                    <Label Content="Z39.50 Už. jméno:" Height="28" HorizontalAlignment="Left" Margin="30,255,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+               VerticalAlignment="Top" />
+                    <Label Content="Z39.50 Heslo:" Height="28" HorizontalAlignment="Left" Margin="30,284,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+               VerticalAlignment="Top" />
+                    <Label Content="Vyhledávací atribut:" Height="28" HorizontalAlignment="Left" Margin="30,226,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+               VerticalAlignment="Top" />
+                    <TextBox Height="23" HorizontalAlignment="Left" Margin="145,114,0,0" Name="z39ServerTextBox" FontFamily="Arial" Foreground="#5e5e5e"
+                 VerticalAlignment="Top" Width="120" />
+                    <TextBox Height="23" HorizontalAlignment="Left" Margin="145,143,0,0" Name="z39PortTextBox" FontFamily="Arial" Foreground="#5e5e5e"
+                 VerticalAlignment="Top" Width="120" />
+                    <TextBox Height="23" HorizontalAlignment="Left" Margin="145,172,0,0" Name="z39DatabaseTextBox" FontFamily="Arial" Foreground="#5e5e5e"
+                 VerticalAlignment="Top" Width="120" />
+                    <TextBox Height="23" HorizontalAlignment="Left" Margin="145,259,0,0" Name="z39UserNameTextBox" FontFamily="Arial" Foreground="#5e5e5e"
+                 VerticalAlignment="Top" Width="120" />
+                    <TextBox Height="23" HorizontalAlignment="Left" Margin="145,288,0,0" Name="z39PasswordTextBox" FontFamily="Arial" Foreground="#5e5e5e"
+                 VerticalAlignment="Top" Width="120" />
+                    <TextBox Height="23" HorizontalAlignment="Left" Margin="145,230,0,0" Name="z39BarcodeField" FontFamily="Arial" Foreground="#5e5e5e"
+                 VerticalAlignment="Top" Width="120" />
+                    <ComboBox Height="23" HorizontalAlignment="Left" Margin="145,201,0,0" Name="z39EncodingComboBox" FontFamily="Arial" Foreground="#5e5e5e"
+                  VerticalAlignment="Top" Width="120" IsReadOnly="True" IsEditable="False" IsEnabled="False">
+                        <ComboBoxItem Content="UTF-8 (Unicode)" IsSelected="True" />
+                        <ComboBoxItem Content="Windows-1250" />
+                        <ComboBoxItem Content="Marc-8" />
+                    </ComboBox>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Přizpůsobení">
+                <Grid>
+                    <Grid.Background>
+                        <ImageBrush Viewport="0,0,218,218" ViewportUnits="Absolute" Stretch="None" TileMode="Tile"
+                        ImageSource="/ObalkyKnih-scanner;component/Images/ok-background-center.png"/>
+                    </Grid.Background>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Label Content="Přizpůsobení nastavení" Grid.ColumnSpan="2" FontSize="20" FontWeight="Bold" Foreground="#5e5e5e" FontFamily="Arial"
+                           HorizontalAlignment="Center" VerticalAlignment="Top" />
+
+                    <CheckBox Content="Neptát se při vypínání aplikace" Grid.Column="0"
+                              Height="28" HorizontalAlignment="Left" Margin="21,43,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+                              VerticalAlignment="Top" Name="disableClosingConfirmationCheckBox"
+                              ToolTip="Při vypínání se neobjeví potvrzovací dialog, ale rovnou se vypne aplikace." />
+                    <CheckBox Content="Automaticky stahovat aktualizace" Grid.Column="0"
+                              Height="28" HorizontalAlignment="Left" Margin="21,68,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+                              VerticalAlignment="Top" Name="alwaysDownloadUpdatesCheckBox"
+                              ToolTip="Při dostupnosti nové verzi ji automaticky stáhne." Checked="AlwaysDownloadUpdatesCheckBox_Checked" />
+                    <CheckBox Content="Nikdy nestahovat aktualizace" Grid.Column="0"
+                              Height="28" HorizontalAlignment="Left" Margin="21,93,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+                              VerticalAlignment="Top" Name="neverDownloadUpdatesCheckBox"
+                              ToolTip="Nebude se ptát na stažení nové verze, pokud je současná podporovaná." Checked="NeverDownloadUpdatesCheckBox_Checked" />
+
+                    <CheckBox Content="Ignorovat chybějícího autora nebo rok vydání" Grid.Column="1"
+                              Height="28" HorizontalAlignment="Left" Margin="10,43,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+                              Name="disableMissingAuthorYearNotificationCheckBox" VerticalAlignment="Top"
+                              ToolTip="Při odesílání záznamu bez autora nebo roku vydání se nebude ptát, ale rovnou záznam odešle" />
+                    <CheckBox Content="Ignorovat chybějící obálku" Grid.Column="1"
+                              Height="28" HorizontalAlignment="Left" Margin="10,68,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+                              Name="disableWithoutCoverNotificationCheckBox" VerticalAlignment="Top"
+                              ToolTip="Při odesílání záznamu bez obálky se nebude ptát, ale rovnou záznam odešle" />
+                    <CheckBox Content="Ignorovat chybějící obsah" Grid.Column="1"
+                              Height="28" HorizontalAlignment="Left" Margin="10,93,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+                              Name="disableWithoutTocNotificationCheckBox" VerticalAlignment="Top"
+                              ToolTip="Při odesílání záznamu bez obsahu se nebude ptát, ale rovnou záznam odešle" />
+                    <CheckBox Content="Neptat se při odstraňování obálky" Grid.Column="1"
+                              Height="28" HorizontalAlignment="Left" Margin="10,118,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+                              Name="disableCoverDeletionNotificationCheckBox" VerticalAlignment="Top"
+                              ToolTip="Při odstraňování obálky se nebude ptát na potvrzení, ale rovnou ji odstrání" />
+                    <CheckBox Content="Neptat se při odstraňování obsahu" Grid.Column="1"
+                              Height="28" HorizontalAlignment="Left" Margin="10,143,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+                              Name="disableTocDeletionNotificationCheckBox" VerticalAlignment="Top"
+                              ToolTip="Při odstraňování obsahu se nebude ptát na potvrzení, ale rovnou ho odstrání" />
+                    <CheckBox Content="Neupozorňovat při vlastním identifikátoru " Grid.Column="1"
+                              Height="28" HorizontalAlignment="Left" Margin="10,168,0,0" FontFamily="Arial" Foreground="#5e5e5e"
+                              Name="disableCustomIdentifierNotificationCheckBox" VerticalAlignment="Top"
+                              ToolTip="Při použití vlastního identifikátoru nebude na nic upozorňovat a zobrazovat finální identifikátor" />
+                    <CheckBox Content="Nerozeznávat typ identifikátoru" FontFamily="Arial" Foreground="#5e5e5e" Height="35" HorizontalAlignment="Left" Margin="10,194,0,0" Name="disableResolveIdentifierCheckBox" ToolTip="Při použití vlastního identifikátoru nebude na nic upozorňovat a zobrazovat finální identifikátor" VerticalAlignment="Top" Grid.Column="1" Width="257" />
+                    <Label Content="(v dialogovém okně pro zakládání záznamu)" Grid.Column="1" Height="34" HorizontalAlignment="Left" Margin="23,204,0,0" Name="label1" VerticalAlignment="Top" Width="255" Foreground="#FF909090" />
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <Grid HorizontalAlignment="Center" Margin="0,358,0,0" Width="200">
+            <Button Content="Uložit nastavení" Height="25" Width="120" Name="saveButton" HorizontalAlignment="Left"
+                VerticalAlignment="Top" Click="SaveButton_Click" Style="{StaticResource MyButton}"
+                Foreground="#CECECE" BorderBrush="#656565" BorderThickness="1" Cursor="Hand" >
+                <Button.Background>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#535353" Offset="0.0" />
+                        <GradientStop Color="#3d3d3d" Offset="1.0" />
+                    </LinearGradientBrush>
+                </Button.Background>
+            </Button>
+            <Button Content="Zrušit" Height="25" HorizontalAlignment="Right"
+                VerticalAlignment="Top" Style="{StaticResource MyButton}" IsCancel="True"
+                Foreground="#CECECE" BorderBrush="#656565" BorderThickness="1" Cursor="Hand">
+                <Button.Background>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#535353" Offset="0.0" />
+                        <GradientStop Color="#3d3d3d" Offset="1.0" />
+                    </LinearGradientBrush>
+                </Button.Background>
+            </Button>
+        </Grid>
+    </Grid>
+</Window>

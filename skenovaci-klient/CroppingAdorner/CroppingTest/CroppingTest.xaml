@@ -1,0 +1,96 @@
+﻿<Window
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    x:Class="CroppingTest.wndCroppingTest"
+    Title="CroppingTest"
+    Width="900" Height="600" Background="#FF000000" Loaded="Window_Loaded"
+    SizeChanged="Window_SizeChanged"
+    >
+    <Grid>
+    	<Grid.ColumnDefinitions>
+    		<ColumnDefinition/>
+    		<ColumnDefinition Width="Auto"/>
+    	</Grid.ColumnDefinitions>
+    	<Grid.RowDefinitions>
+    		<RowDefinition/>
+    		<RowDefinition Height="Auto"/>
+    	</Grid.RowDefinitions>
+    	<Image RenderTransformOrigin="0.722,0.713" x:Name="imgChurch" Stretch="Uniform" Source="MtnChurch.jpg" Margin="5,5,5,5"/>
+    	<StackPanel HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="Auto" Height="Auto" Grid.Column="1" Background="{x:Null}">
+			<StackPanel.Resources>
+				<Style x:Key="{x:Type CheckBox}" TargetType="{x:Type CheckBox}">
+					<Setter Property="Margin" Value="5,5,5,5"/>
+				</Style>
+			</StackPanel.Resources>
+    		<Image x:Name="imgCrop" Width="130" Height="100" Margin="0,5,5,0"/>
+    		<GroupBox Foreground="#FFFFFFFF" Header="Crop Subject" Margin="0,5,5,0" BorderBrush="#FFFFFFFF">
+    			<StackPanel Height="Auto">
+    				<RadioButton Content="Crop Image" Foreground="#FFFFFFFF" IsChecked="True" Checked="CropImage_Checked" Width="Auto" Height="Auto" HorizontalAlignment="Left"/>
+    				<RadioButton Content="Crop Controls" Foreground="#FFFFFFFF" Checked="CropControls_Checked" Width="Auto" Height="Auto" HorizontalAlignment="Left"/>
+    			</StackPanel>
+    		</GroupBox>
+    		<GroupBox Margin="0,8,5,0" Foreground="#FFFFFFFF" Header="Fill Color">
+    			<StackPanel Height="Auto">
+    				<RadioButton x:Name="rbRed" Content="Red" Foreground="#FFFFFFFF" IsChecked="True" Checked="Red_Checked"/>
+    				<RadioButton Content="Grey" Foreground="#FFFFFFFF" Checked="Grey_Checked"/>
+    			</StackPanel>
+    		</GroupBox>
+    	</StackPanel>
+    	<DockPanel LastChildFill="True" Margin="5,5,5,5" Visibility="Hidden" x:Name="dckControls">
+    		<StackPanel VerticalAlignment="Stretch" Width="Auto" Orientation="Horizontal" DockPanel.Dock="Top">
+    			<StackPanel.Resources>
+    				<Style x:Key="{x:Type Button}" TargetType="{x:Type Button}">
+    					<Setter Property="Margin" Value="5,5,5,5"/>
+    				</Style>
+    			</StackPanel.Resources>
+    			<StackPanel.Background>
+    				<LinearGradientBrush EndPoint="1,0.5" StartPoint="0,0.5">
+    					<GradientStop Color="#FF8099BE" Offset="0"/>
+    					<GradientStop Color="#FFFFF4A0" Offset="1"/>
+    				</LinearGradientBrush>
+    			</StackPanel.Background>
+    			<Button Content="Button"/>
+    			<Button Content="Button"/>
+    			<Button Content="Button"/>
+    			<Button Content="Button"/>
+    		</StackPanel>
+    		<StackPanel Margin="-1,0,0,0" Width="100">
+    			<StackPanel.Resources>
+    				<Style x:Key="{x:Type CheckBox}" TargetType="{x:Type CheckBox}">
+    					<Setter Property="Margin" Value="5,5,5,5"/>
+    				</Style>
+    			</StackPanel.Resources>
+    			<StackPanel.Background>
+    				<LinearGradientBrush EndPoint="1,0.5" StartPoint="0,0.5">
+    					<GradientStop Color="#FF8AA7CC" Offset="0"/>
+    					<GradientStop Color="#FFFFFFFF" Offset="1"/>
+    				</LinearGradientBrush>
+    			</StackPanel.Background>
+    			<CheckBox Content="CheckBox"/>
+    			<CheckBox Content="CheckBox"/>
+    			<CheckBox Content="CheckBox"/>
+    			<CheckBox Content="CheckBox"/>
+    			<CheckBox Content="CheckBox"/>
+    			<CheckBox Content="CheckBox"/>
+    			<CheckBox Content="CheckBox"/>
+    			<CheckBox Content="CheckBox"/>
+    		</StackPanel>
+    		<ListBox IsSynchronizedWithCurrentItem="True" FontSize="16" SelectedIndex="-1">
+    			<ListBox.Background>
+    				<LinearGradientBrush EndPoint="0.473,0.795" StartPoint="0.471,0.62" SpreadMethod="Reflect">
+    					<GradientStop Color="#FFAD99FF" Offset="0"/>
+    					<GradientStop Color="#FFF0BAF4" Offset="1"/>
+    				</LinearGradientBrush>
+    			</ListBox.Background>
+    			<ListBoxItem Content="Testing the CropController to see if it will pick up controls as well as images"/>
+    			<ListBoxItem Content="Testing the CropController to see if it will pick up controls as well as images"/>
+    			<ListBoxItem Content="Testing the CropController to see if it will pick up controls as well as images"/>
+    			<ListBoxItem Content="Testing the CropController to see if it will pick up controls as well as images"/>
+    			<ListBoxItem Content="Testing the CropController to see if it will pick up controls as well as images"/>
+    			<ListBoxItem Content="Testing the CropController to see if it will pick up controls as well as images"/>
+    			<ListBoxItem Content="Testing the CropController to see if it will pick up controls as well as images"/>
+    		</ListBox>
+    	</DockPanel>
+    	<TextBlock HorizontalAlignment="Stretch" Margin="5,0,0,5" x:Name="tblkClippingRectangle" VerticalAlignment="Top" Width="Auto" Height="Auto" Grid.Row="1" Foreground="#FFFFFFFF" Text="ClippingRectangle" TextWrapping="Wrap"/>
+    </Grid>
+</Window>
