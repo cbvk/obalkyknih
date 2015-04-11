@@ -8,7 +8,7 @@
 	<div id="foot"><div class="in">
 			
 		<div class="col">
-			<h4>Informace o projektu</h4>
+			<h4>Informace pro uživatele</h4>
 			<ul>
 				<li><a href="/for_libraries">Pro knihovny</a></li>
 				<li><a href="/for_publishers">Pro nakladatele</a></li>
@@ -26,11 +26,10 @@
 		</div>
 		
 		<div class="col">
-			<h4>O aplikaci</h4>
+			<h4>O projektu</h4>
 			<ul>
-				<li><a href="/about#o_pristupnosti">Prohlášení o přístupnosti</a></li>
 				<li><a href="/about#tos">Podmínky užití</a></li>
-				<li><a href="/about#o_aplikace">O aplikaci</a></li>
+				<li><a href="/about#o_aplikace">O projektu</a></li>
 			</ul>
 		</div>
 

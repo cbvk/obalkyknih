@@ -224,5 +224,12 @@ $(function () {
 		$(this).next().show();
 		return false;
 	});
+	
+	// View show more
+	$('#book-part-table .show-more').on('click', function(){
+		$('#book-part-table td.hide').show();
+		$(this).parent().parent().hide();
+		return false;
+	});
 
 });

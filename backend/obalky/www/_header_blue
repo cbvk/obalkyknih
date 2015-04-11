@@ -1,4 +1,4 @@
-﻿
+
 		<div id="blue"><div class="in">
 			<div class="left">
 				<form action="/view"><label for="search">Zadejte ISBN…</label><input type="text" id="search" name="isbn" value="" /><input type="submit" class="button big" value="Vyhledat" /></form>
@@ -7,7 +7,7 @@
 			<div class="center">
 				<p>Projekt ObalkyKnih.cz sdružuje různé zdroje informací
 				o knížkách do jedné, snadno použitelné webové služby. Naše databáze v tuto chvíli obsahuje <strong>[% covers %] obálek</strong>
-				a <strong>[% tocs %] obsahů</strong> českých a zahraničních publikací. Našeho API využívá <strong>přes [% libraries_at_least %] knihoven</strong>.</p>
+				a <strong>[% tocs %] obsahů</strong> českých a zahraničních publikací. Naše API využívá většina knihoven v ČR. <!-- <strong>přes [% libraries_at_least %] knihoven</strong>-->.</p>
 			</div>
 			<div class="right">
 				[% IF user %]

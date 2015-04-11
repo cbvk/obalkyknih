@@ -57,7 +57,7 @@
 				href="/"><span></span>Úvod</a></li>
 			<li class="menu_upload [% IF menu == 'upload' %]active[% END %]"><a href="/upload"><span></span>Přidat obálku</a></li>
 			<li class="menu_api [% IF menu == 'doc' %]active[% END %]"><a
-				href="/doc/Dokumentace_API_OKCZ_3.0.pdf"><span></span>API a dokumentace</a></li>
+				href="/doc/Dokumentace_API_OKCZ_3.1.pdf"><span></span>API a dokumentace</a></li>
 			<li class="menu_about [% IF menu == 'about' %]active[% END %]"><a 
 				href="/about"><span></span>O projektu</a></li>
 		</ul>

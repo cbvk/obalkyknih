@@ -14,14 +14,39 @@ Tuto knihu ještě nemáme v databázi!
 [% FOREACH book IN books %]
 <!-- [% book.id %] / cover [% book.cover %], detail [% detail %] -->
 
-<tr><td colspan=3><h1>[% book.bibinfo.to_human_title %]</h1></tr>
+<tr><td colspan=3>
+	<h1>[% book.bibinfo.to_human_title %]</h1>
+	[% IF book.part_no %]
+	<h3>
+	(
+	[% IF book.part_type.id == "1" %]Část monografie [% ELSE %]Periodikum [% END %]
+	[% IF book.part_year %]/ Rok: [% book.part_year_orig %] [% END %]
+	[% IF book.part_volume %]/ Ročník: [% book.part_volume_orig %] [% END %]
+	[% IF book.part_name %]/ Název části: [% book.part_name_orig %] [% END %]
+	[% IF book.part_no %]/ Číslo: [% book.part_no_orig %] [% END %]
+	)
+	</h3>
+[% END %]
+</td></tr>
 
-<tr>
-  <td valign="top" width=180>
 
+<tr><td valign="top" width=180>
+
+
+	[% IF recent_cover %]
+		<img class="nob" src="[% recent_cover.get_cover_url %]">
+		<center><i>Obr.1: Nejaktuálnější obálka tohoto <br/>souborného záznamu</i><br/>
+		<a href="?book_id=[% recent_book_id %]">detail</a></center>
+		<div style="clear: both" /><br/>
+	[% END %]
+	
 
 	[% IF book.cover %]
 	<img class="nob" src="[% book.cover.get_cover_url %]">
+		[% IF recent_cover %]
+		<center><i>Obr.2: Vlastní obálka tohoto <br/>souborného záznamu</i></center>
+		<div style="clear: both" /><br/>
+		[% END %]
 	<div style="clear: both" />
 	<form onsubmit="return view_abuse_onsubmit();" method="post">
 		<textarea name=note id=abuse_comment style="display: none"></textarea>
@@ -70,13 +95,17 @@ Tuto knihu ještě nemáme v databázi!
 		<b>Autor: </b>[% book.bibinfo.authors_human %]</br>
 		[% END %]
 
-		[% IF book.bibinfo.year %]
+		[% IF book.bibinfo.year AND !book.part_year %]
 		<b>Rok: </b>[% book.bibinfo.year %]<br>
 		[% END %]
 
 		[% FOREACH part = book.bibinfo.identifiers -%]
 		<b>[% part.name %]: </b>[% part.value %]<br>
 		[% END -%]
+		
+		[% IF book.id_parent %]
+		<p><a href="?book_id=[% book.id_parent.id %]">Přejít k soubornému záznamu</a></p>
+		[% END %]
 	</p>
 
 	[% IF book.get_rating_count %]
@@ -107,6 +136,51 @@ Tuto knihu ještě nemáme v databázi!
 	  </table>
 	  </p>
 	  <br>
+	[% END %]
+	
+	[% IF parts %]
+		<h3>Části díla</h3>
+		<table width="100%" id="book-part-table">
+		[% counter = 0 %]
+		[% FOREACH part IN parts %]
+			<tr>
+			[% IF part.cover %]
+				<td class="[% IF counter > 9 %]hide[% END %]">
+					[% IF part.cover %]<a href="?book_id=[% part.id %]"><img class="nob" src="[% part.cover.get_thumbnail_url %]"></a>[% END %]
+				</td>
+			[% ELSE %]
+				<td><a href="?book_id=[% part.id %]"><img class="nob" src="img/arrow.png"></a></td>
+			[% END %]
+			[% IF part.get_column('part_type') == "2" %]
+				<td class="[% IF counter > 9 %]hide[% END %]">
+					[% IF part.get_column('part_year') %]Rok: <strong>[% part.get_column('part_year') %]</strong>&nbsp; / [% END %]
+					[% IF part.get_column('part_volume') %]Ročník: <strong>[% part.get_column('part_volume') %]</strong>&nbsp; / [% END %]
+					[% IF part.get_column('part_no') %]Číslo: <strong>[% part.get_column('part_no') %]</strong>[% END %]
+				</td>
+			[% ELSE %]
+				<td class="[% IF counter > 9 %]hide[% END %]">
+					<strong>[% part.get_column('part_name_orig') %] &nbsp; [% part.get_column('part_no_orig') %]</strong>
+					<br/>
+					<span class="small">
+					Normalizovaný zápis: 
+					[% IF part.get_column('part_name') %]<u>[% part.get_column('part_name') %]</u> [% END %]
+					[% IF part.get_column('part_name') && part.get_column('part_no') %] / [% END %]
+					[% IF part.get_column('part_no') %]<u>[% part.get_column('part_no') %]</u> [% END %]
+					</span>
+				</td>
+			[% END %]
+			</tr>
+			[% IF counter == 9 %]
+				<tr><td>&nbsp;</td><td><a class="show-more" href="#">Zobrazit víc záznamů</a></td></tr>
+			[% END %]
+		[% counter = counter + 1 %]
+		[% END %]
+			<tr><td>&nbsp;</td><td>
+				[% IF sort_by != 'id' %]<a href="?book_id=[% book.id %]&sort_by=id">Seřaďit podle data skenování</a>[% ELSE %]<strong>Seřaďit podle data skenování</strong>[% END %] |
+				[% IF sort_by != 'date' %]<a href="?book_id=[% book.id %]&sort_by=date">Seřaďit podle aktuálnosti</a>[% ELSE %]<strong>Seřaďit podle aktuálnosti</strong>[% END %]
+			</td></tr>
+		</table>
+		<br/><br/>
 	[% END %]
 
 <!--
@@ -169,7 +243,7 @@ Tuto knihu ještě nemáme v databázi!
 	[% IF book.reviews %]
 		<h3>Přidat čtenářskou recenzi</h3>
 	[% ELSE %]
-		<h3>Napište na knížku první čtenářskou rezenci!</h3>
+		<h3>Napište na knížku první čtenářskou recenzi!</h3>
 	[% END %]
 	<table>
 	<tr><td>Od: 
@@ -207,10 +281,21 @@ Tuto knihu ještě nemáme v databázi!
   <td valign="top" width=180 align=right>
 
   [% UNLESS detail %]
+  
+  	[% IF recent_toc %]
+		<a href="[% recent_toc.get_pdf_url %]"><img class="nob" src="[% recent_toc.get_thumbnail_url %]"></a>
+		<center><i>Obr.3: Nejaktuálnější <br/>obsah tohoto <br/>souborného záznamu</i><br/>
+		<a href="?book_id=[% recent_book_id %]">detail</a></center>
+		<div style="clear: both" /><br/>
+	[% END %]
 
 	[% IF book.toc %]
 		<a href="[% book.toc.get_pdf_url %]"><img class="nob"
 			src="[% book.toc.get_thumbnail_url %]"></a>
+		[% IF recent_toc %]
+		<center><i>Obr.4: Vlastní obsah tohoto <br/>souborného záznamu</i></center>
+		<div style="clear: both" /><br/>
+		[% END %]
 	[% END %]
 
   [% ELSE %]

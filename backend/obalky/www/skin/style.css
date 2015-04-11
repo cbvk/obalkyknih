@@ -251,5 +251,9 @@ table.qe-table a.f-icon img {background:none !important; border:0 !important; pa
 	#admin-submenu ul li.active {background-color:#E7CECE; border-radius:4px; box-shadow:0 0 10px 5px #dea5a5 inset;}
 	#admin-submenu ul li.active a {color:#444;}
 
+/* Book parts */
+#book-part-table {width:100%;}
+	#book-part-table td {vertical-align:middle; padding:0px; height:36px;}
+	#book-part-table td.hide {display:none;}
 
 /* end */

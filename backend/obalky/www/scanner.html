@@ -53,13 +53,96 @@ Registrace do systému je možná na adrese <a href="http://www.obalkyknih.cz/si
 <p>
 Dokumentace k programu je dostupná na adrese <a href="https://docs.google.com/document/d/1hTGa7gy0bOJqznFec-6u8Esr4rIso0pHER-x3X0bCco">https://docs.google.com/document/d/1hTGa7gy0bOJqznFec-6u8Esr4rIso0pHER-x3X0bCco</a>
 </p>
+
 <p>
-Pokud máte jakékoliv dotazy, neváhejte se na nás obrátit:<br>
-<ul>
+<h2>Nejčastější dotazy FAQ</h2>
+<h4>Jak funguje skenovací klient?</h4>
+Pomocí protokolu Z39.50 či X-serveru zjistíme načtením čárového kódu dokumentu z katalogu své knihovny identifikátory titulu - ISBN, ISSN, EAN, č. ČNB, OCLC. 
+Zároveň je nutné zkontrolovat, zda se jedná o stejný titul, např. podle názvu,autora, roku vydání, .... Následně se dle zjištěných identifikátorů vyhledá na serveru obalkyknih.cz, 
+zda existuje obálka a obsah k příslušnému titulu. Nalezne-li, zobrazí obálku a obsah v klientu. Skenujeme co chybí - obálka či obsah, případně obojí.
+Přeskenováním se aktuální obálka i obsah přepíše (například u špatné obálky).
+<br>
+Návody s popisem naleznete zde: <a href="https://github.com/cbvk/obalkyknih/wiki/Online-napoveda-skenovaci-klient" target="_blank">https://github.com/cbvk/obalkyknih/wiki/Online-napoveda-skenovaci-klient</a>. 
+</p>
+
+<p>
+<h4>Pokud  u titulu skenuji jen obsah, co se stane s existující obálkou?</h4>  
+Obálka zůstane stejná. K titulu se přidá jen nově naskenovaný obsah.
+</p>
+
+<p>
+<h4>Jak nastavím kvalitu skenování - rozlišení, počet barev, ...?</h4>   
+Skenovací klient si vše nastaví sám. Proces skenování probíhá automaticky.
+</p>
+
+<p>
+<h4>Jaké identifikátory skenovací klient používá?</h4>
+ISBN (knihy), ISSN (periodika), EAN (CD, DVD disky), č. ČNB, OCLC, vlastní identifikátor.
+</p>
+
+<p>
+<h4>Co je to vlastní identifikátor?</h4>
+Jedná se řetězec složený ze sigly příslušné knihovny a ID zaznamu (pole 001 v MARC 21) oddělené pomlčkou. Skenovací
+klient doplňuje vlastní identifikátor automaticky, v případě, že nejsou dostupné žádné další identifikátory (ISBN,
+ISSN, EAN, č. ČNB, OCLC). 
+</p>
+
+<p>
+<h4>Kdy použít vlastní identifikátor?</h4>
+<font color="red">!!! POUZE !!!</font> v případě, že titul nemá platný identifikátor - ISBN, ISSN, EAN, č. ČNB nebo OCLC.
+Uložením titulu pod vlastním identifikátorem se obálky a obsah zpřístupní pouze pro konkrétní knihovnu, která titul uložila. Všem ostatním knihovnám bude nedostupné. Ukládání pod vlastním identifikátorem 
+je proto nutné se vyhnout, pokud existuje jiná možnost.
+<br>
+Postup:
+<br>
+Nejprve je nutné ověřit v <a href="http://www.caslin.cz" name="Caslin" target="_blank">Souborném katalogu ČR</a>, zda titul nemá přiřazeno číslo ISBN/ISSN.
+<br>
+Pak je nutné hledat tamtéž, zda titul nemá přiřazeno číslo ČNB. Pokud toto číslo záznam neobsahuje, ale jedná se o titul z české produkce, který by ho mít měl, požádáme Souborný katalog ČR o jeho přiřazení (vyplněním formuláře přímo u konkrétního záznamu v SK ČR - je nutné mít přístupové heslo do SK ČR).
+<br>
+Pokud se jedná o zahraniční titul, kontrolujeme např. <a href="http://www.ubka.uni-karlsruhe.de/kvk_en.html" target="_blank">zde</a>, zda titul nemá již přiřazeno číslo OCLC.
+</p>
+
+<p>
+<h4>Jak poznám, že se obálka a obsah správně naskenovaly a uložily na server?</h4>
+Ve skenovacím klientu se po odeslání obálky a obsahu na server zobrazí informační okno "Odeslání úspšné" a náhled obálky a obsahu.  
+
+</p>
+
+<p>
+<h4>Kniha nemá původní obálku, nebo byla převázána.</h4>  
+Skenuji titulni list, pokud je graficky zajimavý. Jinak obálku neskenuji. Obsah ano.
+</p>
+
+<p>
+<h4>Obálka na obálkyknih.cz je nekvalitní.</h4>
+Pokud na serveru máme nekvalitní obálku - nízké rozlišení, znehodnocení razítkem či nálepkou - obálku přeskenujeme.
+Stejně tak postupujeme u obsahu.
+</p>
+
+<p>
+<h4>Mám skenovat ke každé knize i obsah?</h4>
+Ano. Obsahy jsou pro čtenáře důležité. Zvláště u knihoven bez volného výběru a pro čtenáře objednávajících přes webový
+katalog. Zároveň se připravuje poskytování fulltextového vyhledávání obsahů pro knihovní systémy.   
+</p>
+
+<p>
+<h4>Při skenování stránek skenovací klient zkolabuje ... "spadne".</h4>
+Program vypíše chybu a ukončí se. Problém je většinou v poškozeném ovladači skeneru (driveru) v počítači. Oprava spočívá v reinstalaci ovladačů skeneru.   
+</p>
+
+<p>
+<h4>Zjistím někde, kolik obálek/obsahů jsem na server již nahrál?</h4>
+Na adrese <a href="http://servis.obalkyknih.cz/stat/" target="_blank">http://servis.obalkyknih.cz/stat/</a> naleznete statistiky skenování všech knihoven. 
+Přihlašovací údaje jsou stejné jako registrační jméno a heslo pro server obalkyknih.cz. Pokud skenuje v jedné knihovně více lidí, doporučujeme každému vytvořit samostatnou registraci.
+</p>
+
+<br>
+<p>
+Pokud máte jakékoliv dotazy, neváhejte se na nás obrátit: <b>info (at) obalkyknih.cz</b><br>
+<!--<ul>
+<li><b>info (at) obalkyknih.cz</b></li>
 <li>Připomínky lze vkládat na adrese: <a href="https://github.com/moravianlibrary/ObalkyKnih-scanner/issues" target=_blank> https://github.com/moravianlibrary/ObalkyKnih-scanner/issues</a></li>
-<li>Michal Běčák, <b>michal.becak (at) mzk.cz</b></li>
-<li>Spolecná adresa <b>info (at) obalkyknih.cz</b></li>
-</ul>
+</ul> -->
 
 
 
