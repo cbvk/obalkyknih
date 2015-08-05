@@ -546,24 +546,26 @@ sub _do_import {
 	$part_type = "" unless ($part_type);
 	# bibinfo souborneho zaznamu
 	if ($part_type eq "serial" or $part_type eq "mono") {
-	
-		my $hash = {};
-		my $bibinfo_aggr = Obalky::BibInfo->new_from_params($bibinfo_params);
-		$bibinfo_aggr->save_to_hash($hash);
 		
-		unless ($c->req->param("part_no") or $c->req->param("part_name")) { # chyby povinny parametr
+		# chybi povinny parametr
+		unless ($c->req->param("part_no") or $c->req->param("part_name") or ($c->req->param("part_year") and $c->req->param("part_volume"))) {
 			$c->response->content_type("text/plain");
 			$c->response->body("Missing params part_year, or part_volume, part_no, or part_name.");
 			return;
 		}
-
+		
+		my $hash = {};
+		my $bibinfo_aggr = Obalky::BibInfo->new_from_params($bibinfo_params);
+		$bibinfo_aggr->save_to_hash($hash);
+		
 		my $book_aggr = DB->resultset('Book')->find_by_bibinfo($bibinfo_aggr);
-		$book_aggr = undef if ($book_aggr->get_column('id_parent')); # souborny zaznam nesmi byt cast mono./cislo per.
+		$book_aggr = undef if ($book_aggr and $book_aggr->get_column('id_parent')); # souborny zaznam nesmi byt cast mono./cislo per.
 		if ($book_aggr) {
 			# book zaznam existuje, aktualizovat
 			$book_aggr->update($hash);
 		} else {
 			# book zaznam neexistuje, vytvorit
+			warn Dumper($hash);
 			$book_aggr = DB->resultset('Book')->create($hash);
 		}
 		
@@ -580,6 +582,8 @@ sub _do_import {
 		$bibinfo_params->{part_type} = 2 if ($part_type eq "serial"); # periodikum
 		$bibinfo_params->{id_parent} = $book_aggr->id;
 		$bibinfo_params = DB->resultset('Book')->normalize_bibinfo($bibinfo_params);
+		warn 'BIBINFO po normalizaci' if($ENV{DEBUG});
+		warn Dumper($bibinfo_params) if($ENV{DEBUG});
 	}
 	#warn Dumper($c->req); warn Dumper($bibinfo_params); die; #DEBUG
 
@@ -640,7 +644,7 @@ sub _do_import {
 		my $header = <F>; # nemame jmeno souboru, urcime z hlavicky
 		close(F);
 		if($header =~ /^\%PDF/) {
-		   	$self->_do_log("toc.pdf: mergin'(díl 1, sv. 2 : Ladislav Horáček - Paseka : váz.)'g PDF with pdftk");
+		   	$self->_do_log("toc.pdf: merging PDF with pdftk");
 			system("pdftk $dir/toc_page_* cat output $dir/toc.pdf");
 		} else {
 		   	$self->_do_log("toc.pdf: merging with gm convert");

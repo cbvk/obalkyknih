@@ -61,9 +61,12 @@ sub set_sync {
 	
 	# pozadujeme na FE vykonat tyto parametry
 	foreach (keys %$param) {
+		next unless ($param->{$_});
 		my $id_param;
 		my $curParam = $param->{$_};
-		if (reftype($curParam) eq 'HASH') {
+		my $curParamRefType = reftype($curParam);
+		$curParamRefType = "" unless ($curParamRefType);
+		if ($curParamRefType eq 'HASH') {
 			if ($curParam->{type} eq 'post') {
 				$id_param = DB->resultset('FeSyncParam')->create({
 					param_name => $_,

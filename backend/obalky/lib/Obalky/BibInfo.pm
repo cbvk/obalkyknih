@@ -421,7 +421,8 @@ sub isbn_forms {
 }
 
 sub get_obalkyknih_url {
-	my($bibinfo,$secure) = @_;
+	my($bibinfo,$secure,$book_id) = @_;
+	return Obalky::Config->url($secure)."/view?book_id=".$book_id if ($book_id);
 	return Obalky::Config->url($secure)."/view?".$bibinfo->to_some_param;
 }
 

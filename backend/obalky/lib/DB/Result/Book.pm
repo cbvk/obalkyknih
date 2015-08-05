@@ -797,11 +797,23 @@ sub get_reviews {
 	my @book_ids;
 	my @books = $book->work_books; # pres vsechna dila..
 	map { push @book_ids, $_->id } @books;
-	my $reviews = DB->resultset('Review')->search({ book=>@book_ids, library=>{ -not => undef }, library_id_review=>{ -not => undef } }, {
+	my $reviews = DB->resultset('Review')->search({ book=>@book_ids, library=>{ -not => undef }, library_id_review=>{ -not => undef }, impact=>9 }, {
 		order_by => { '-desc' => 'created' },
 		limit => 200
 	});
 	return $reviews->all;
+}
+
+sub get_annotation {
+	my($book) = @_;
+	my @book_ids;
+	my @books = $book->work_books; # pres vsechna dila..
+	map { push @book_ids, $_->id } @books;
+	my $reviews = DB->resultset('Review')->search({ book=>@book_ids, library=>{ -not => undef }, library_id_review=>{ -not => undef }, impact=>0 }, {
+		order_by => { '-asc' => 'id' },
+		limit => 1
+	});
+	return $reviews->next;
 }
 
 sub get_rating_count { # nutne asi jen kvuli view
@@ -826,7 +838,9 @@ sub get_rating_avg5 { # nutne asi jen kvuli view
 sub get_obalkyknih_url {
 	my($book,$secure) = @_;
 	my $bibinfo = $book->bibinfo;
-	return $bibinfo ? $bibinfo->get_obalkyknih_url($secure) : undef;
+	my $idPart;
+	$idPart = $book->get_column('id') if ($book->{_column_data}{id_parent});
+	return $bibinfo ? $bibinfo->get_obalkyknih_url($secure,$idPart) : undef;
 }
 
 sub actualize_by_product {
@@ -958,6 +972,7 @@ sub get_most_recent {
 			$max_volume = $max_volume<$cur_volume ? $cur_volume : $max_volume if ($max_volume and $cur_volume);
 			
 			# uloz hodnotu part_no (pozdeji se bude podle toho vyhledavat aktualni cislo)
+			$cur_no = 0 unless ($cur_no);
 			$max_by_year{$cur_year}{$cur_no} = $_->id if ($cur_year);
 			$max_by_volume{$cur_volume}{$cur_no} = $_->id if ($cur_volume);
 		}
@@ -1030,20 +1045,21 @@ sub enrich {
 	
 	# aktualizuj book bibinfo (OCLC, title,...) (strcit to do Marc::..?)
 	my $book_bibinfo = $book->bibinfo;
+	my $tmp_bibinfo = $book->bibinfo;
 	if(!$child_book and $book_bibinfo->merge($bibinfo)) {
-		$book_bibinfo->save_to($book);
+		$tmp_bibinfo->{part_year} = undef; $tmp_bibinfo->{part_volume} = undef; $tmp_bibinfo->{part_no} = undef;
+		$tmp_bibinfo->save_to($book);
 		$book->invalidate;
 	}
-#	$bibinfo->save_to($book);
 
 	$info->{book_id} = $book->id;
 	$info->{ean} = $book_bibinfo->ean13 if $book_bibinfo->ean13;
 	$info->{nbn}  = $book_bibinfo->nbn if $book_bibinfo->nbn;
 	$info->{oclc} = $book_bibinfo->oclc if $book_bibinfo->oclc;
-	$info->{part_year} = $book_bibinfo->{part_year} if $book_bibinfo->{part_year};
-	$info->{part_volume} = $book_bibinfo->{part_volume} if $book_bibinfo->{part_volume};
-	$info->{part_no} = $book_bibinfo->{part_no} if $book_bibinfo->{part_no};
-	$info->{part_name} = $book_bibinfo->{part_name} if $book_bibinfo->{part_name};
+	$info->{part_year} = $book_bibinfo->{part_year}     if ($book_bibinfo->{part_year} and $book->get_column('part_year'));
+	$info->{part_volume} = $book_bibinfo->{part_volume} if ($book_bibinfo->{part_volume} and $book->get_column('part_volume'));
+	$info->{part_no} = $book_bibinfo->{part_no}         if ($book_bibinfo->{part_no} and $book->get_column('part_no'));
+	$info->{part_name} = $book_bibinfo->{part_name}     if ($book_bibinfo->{part_name} and $book->get_column('part_name'));
 	$info->{part_root} = $book->get_column('id_parent') ? 0 : 1;
 	# vyhledavame souborny zaznam a k tomuto soubornemu zaznamu byla prilozena obalka/obsah novejsiho cisla periodika/casti monografie
 	# posleme taky identifikatory zaznamu, z ktereho pochazi prilozena obalka a obsah tj. prilozime part_info s identifikatory zaznamu, kteremu patri obalka/obsah
@@ -1063,12 +1079,23 @@ sub enrich {
 		$info->{part_info} = $part_info;
 	}
 	# pokud ma zaznam rodice, pripojime extra identifikatory
+	my $idf_backlink;
 	if ($book->get_column('id_parent')) {
 		$info->{book_id_parent} = $book->get_column('id_parent');
 		my $book_parent = DB->resultset('Book')->find($book->get_column('id_parent'));
-		$info->{part_ean_standalone} = $book_parent->ean13 ne $book->ean13 ? 1 : 0;
-		$info->{part_nbn_standalone} = $book_parent->nbn ne $book->nbn ? 1 : 0;
-		$info->{part_oclc_standalone} = $book_parent->oclc ne $book->oclc ? 1 : 0;
+		# inicializace kodu rodice (pokud neexistuji a nalezeny dil ma dany identifikator, stale muze byt jako part_standalone)
+		my ($bookParentEan13, $bookParentNbn, $bookParentOclc) = ('','','');
+		# naplneni identifikatoru rodice, pokud existuji
+		$bookParentEan13 = $book_parent->ean13 if ($book_parent->ean13);
+		$bookParentNbn   = $book_parent->nbn if ($book_parent->nbn);
+		$bookParentOclc  = $book_parent->oclc if ($book_parent->oclc);
+		$info->{part_ean_standalone} = $book_parent->ean13 ne $book->ean13 ? 1 : 0 if ($book->ean13);
+		$info->{part_nbn_standalone} = $book_parent->nbn ne $book->nbn ? 1 : 0 if ($book->nbn);
+		$info->{part_oclc_standalone} = $book_parent->oclc ne $book->oclc ? 1 : 0 if ($book->oclc);
+		# byl vyhledan rozsah; vytvorime odkaz, ktery zobrazi pouze vyhledane zaznamy
+		if ($book->{_column_data}{book_range_ids} && ($info->{part_year} || $info->{part_volume} || $info->{part_no})) {
+			$idf_backlink = 'http://www.obalkyknih.cz/view?book_id='.$book_parent->id.'&sort_by=date&idf=' . join(',', @{$book->get_column('book_range_ids')});
+		}
 	}
 
 	# 1. Najdi cover
@@ -1084,20 +1111,22 @@ sub enrich {
 	}
 
 	# 2. Najdi TOC
-	my $toc = $flag_get_most_recent ? $book_most_recent->get_toc : $book->get_toc; # pripadne najde work->cover
+	my $toc = $flag_get_most_recent ? $book_most_recent->get_toc : $book->get_toc;
 	if($toc) {
-		$info->{toc_pdf_url}       = $toc->get_pdf_url($secure);
+		$info->{toc_pdf_url}       = $toc->get_pdf_url($secure) unless ($idf_backlink);
+		$info->{toc_pdf_url}       = $idf_backlink if ($idf_backlink);
 		$info->{toc_thumbnail_url} = $toc->get_thumbnail_url($secure);
 	}
 	my $toc_own = $flag_get_most_recent ? undef : $toc;
 	$toc_own = $book->get_toc if (!$toc_own and $book->get_toc);
-	if ($toc_own) {
+	if ($toc_own and !$flag_get_most_recent) {
 		$info->{toc_text_url}      = $toc_own->get_text_url($secure) if $toc_own->get_column('full_text');
 	}
 
 	# 3. Backlink
 	if($cover) { # or $toc or $review or $neco...) { # jinak nelinkuj..
-		$info->{backlink_url}  = $book->get_obalkyknih_url($secure);
+		$info->{backlink_url}  = $book->get_obalkyknih_url($secure) unless ($idf_backlink);
+		$info->{backlink_url}  = $idf_backlink if ($idf_backlink);
 	}
 
 	# 4. Hodnoceni
@@ -1114,7 +1143,7 @@ sub enrich {
 
 	# 5. Recenze
 	$info->{reviews} = [];
-	if ($params->{review}) {
+	if ($params->{review}) { # $params->{review} je priznak z URL dotazu
 		my @reviews = $book->get_reviews;
 		map {
 			my $review = $_->to_info;
@@ -1123,13 +1152,31 @@ sub enrich {
 	}
 	
 	# 6. Toc fulltext
-	if ($params->{toc_full_text}) {
+	if ($params->{toc_full_text} and !$book->{_column_data}{book_range_ids} and !$flag_get_most_recent) {
 		my $toc_full_text = $book->toc->get_column('full_text') if ($book->toc);
 		$info->{toc_full_text} = $toc_full_text if (defined $toc_full_text);
+	}
+	# byl vyhledan rozsah; spojime TOC fulltext ze vsech vyhledanych casti
+	if ($params->{toc_full_text} and $book->{_column_data}{book_range_ids}) {
+		my $range_full_text;
+		map {
+			$range_full_text .= " ".$_->toc->get_column('full_text') if ($_->toc and $_->toc->get_column('full_text'));
+		} DB->resultset('Book')->search({ id => $book->get_column('book_range_ids') });
+		$info->{toc_full_text} = $range_full_text;
 	}
 	
 	# 7. Priznak holeho zaznamu
 	$info->{flag_bare_record} = ($cover or $toc or $r_count or (scalar @{$info->{reviews}} > 0)) ? 0 : 1;
+	
+	# 8. Anotace
+	$info->{annotation} = [];
+	if ($params->{review}) { # $params->{review} je priznak z URL dotazu
+		my @annotations = $book->get_annotation;
+		map {
+			my $annotation = $_->to_annotation_info;
+			push @{$info->{annotation}}, $annotation if($annotation);
+		} @annotations if ($annotations[0]);
+	}
 
 	return $info;
 }

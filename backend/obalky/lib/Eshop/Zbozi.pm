@@ -67,9 +67,11 @@ sub process_shopitem {
 	return if(defined $ENV{ZBOZI_PART} and $ean !~ /$ENV{ZBOZI_PART}$/);
 
 	my $title = $item->{PRODUCT};
-	$title =~ s/ - SLEVA \d+\%//g;
-	$title =~ s/^<\s*//g;
-	$title =~ s/\s*>$//g;
+	if (defined $title) {
+		$title =~ s/ - SLEVA \d+\%//g;
+		$title =~ s/^<\s*//g;
+		$title =~ s/\s*>$//g;
+	}
 
 	$info->{price_vat} = $item->{PRICE_VAT};
 	$info->{price_cur} = 'CZK';
@@ -90,7 +92,7 @@ sub process_shopitem {
 			return;
 		}
 		my $temp = "$tmp_dir/$ean.$ext";
-		system ("wget -q $cover_url -O $temp >/dev/null") and die $!;
+		system ("wget -q $cover_url -O $temp >/dev/null") and return;
 
 ##		if($ext eq 'jpg' or $ext eq 'gif') { # obalka
 			$info->{cover_url} = $cover_url;

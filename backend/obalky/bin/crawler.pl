@@ -68,6 +68,7 @@ foreach my $eshop (DB->resultset('Eshop')->all) {
 
 	warn "Crawling $name from $from to $to\n" if($DEBUG);
 
+	warn Dumper("$SESSION_DIR/$name.str");
 	my $storable = eval { retrieve("$SESSION_DIR/$name.str") } || {};
 #	$storable = {} if($DEBUG); # pri debugu vzdy nanovo..
 
@@ -85,6 +86,7 @@ foreach my $eshop (DB->resultset('Eshop')->all) {
 
 	foreach(@list) {
 		my($bibinfo,$media,$product_url) = @$_;
+		next unless (defined $bibinfo);
 		warn $name." found ".$bibinfo->to_some_id."\n" if($DEBUG);
 		$found{$name}++;
 

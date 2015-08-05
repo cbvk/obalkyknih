@@ -78,7 +78,7 @@ sub save_to {
 				}
 			}
 		}
-		my $checksum_old = $book->cover ? $book->cover->checksum : undef;
+		my $checksum_old = $book->cover ? $book->cover->checksum : "";
 		$cover = DB->resultset('Cover')->create_from_file($book,$product,$tmp);
 		my $checksum_new = $cover->checksum;
 		$cover->update({ orig_url => $cover_url }) if($cover);
@@ -96,7 +96,7 @@ sub save_to {
 	my $toc_url  = $media->{tocpdf_url};
 	my $toc_tmp  = $media->{tocpdf_tmpfile};
 	my $toc_firstpage = $media->{toc_firstpage}; # toto je hack
-	warn "save_to: toc_firstpage=$toc_firstpage\n";
+	warn "save_to: toc_firstpage=$toc_firstpage\n" if ($toc_firstpage);
 	if($toc_text or $toc_url or $toc_tmp) {
 		$toc = DB->resultset('Toc')->find_or_create(
 			{ product => $product, book => $book },{ key => 'toc_product' });

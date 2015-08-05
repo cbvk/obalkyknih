@@ -651,11 +651,16 @@ sub view : Local {
 		}
 	}
 	
-	# nalezeni prirazenych casti monografii
+	# nalezeni casti monografii/periodik
 	my $sort_by = 'id'; # default razeni od nejnovejsiho skenovaneho
 	$sort_by = $c->req->param('sort_by') if ($c->req->param('sort_by'));
 	$c->stash->{sort_by} = $sort_by;
-	my @parts = DB->resultset('Book')->get_parts($book, $sort_by);
+	
+	my @idf; # seznam book_id, ktere maji byt zobrazeny; pouziva se pri backlinku rozsahu periodik
+	my $idf = $c->req->param('idf');
+	@idf = split(',', $idf) if ($idf);
+	
+	my @parts = DB->resultset('Book')->get_parts($book, $sort_by, \@idf);
 	if (@parts) {
 		my $book_recent = $book->get_most_recent;
 		$c->stash->{recent_book_id} = $book_recent->id if ($book_recent);
@@ -664,7 +669,7 @@ sub view : Local {
 	}
 	
 	my @books = $book ? ( $book->work ? $book->work->books : $book ) : ();
-
+	
 	foreach my $b1 (@books) {
 		next unless($b1->tips);	
 		$b1->{tips_ids} = [];
@@ -674,8 +679,9 @@ sub view : Local {
 		}
 	}
 
-	$c->stash->{books}   = [ @books ];#\@info;
+	$c->stash->{books}   = [ @books ];
 	$c->stash->{parts}   = [ @parts ] if (@parts);
+	$c->stash->{idf}     = $idf if ($idf);
 	$c->stash->{referer} = $referer;
 	$c->stash->{detail}  = $c->user ? 1 : 0; # prihlasenym i detaily
 	$c->stash->{seznam_main_image} = ($books[0] and $books[0]->cover) ? 
@@ -785,10 +791,10 @@ sub end : Private {
 }
 
 #my $bibinfo = bless {}, 'Bibinfo';
-#$bibinfo->{ean13} = '9788073039219';
+#$bibinfo->{ean13} = '978-80-87646-04-5';
 #$bibinfo->{part_year} = 'rok 2014,2015';
 #$bibinfo->{part_volume} = 'jahrg. 51(22)';
-#$bibinfo->{part_no} = 'Nerozluštěné záhady 20. století';
+#$bibinfo->{part_no} = 'Díl 2.';
 #$bibinfo->{part_name} = " student' s  book   ";
 #warn Dumper($bibinfo);
 #warn Dumper(DB->resultset("Book")->normalize_bibinfo($bibinfo));

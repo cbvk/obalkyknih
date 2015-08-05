@@ -371,6 +371,22 @@ sub to_info {
     return \%res;
 }
 
+sub to_annotation_info {
+    my($review) = @_;
+    return unless($review->html_text);
+    my $dt = DateTime::Format::ISO8601->parse_datetime($review->created);
+    my %res = (
+     	'created', $dt->datetime,
+        'annotation_text', $review->html_text
+    );
+    if ($review->library) {
+    	$res{source} = $review->library->get_column('name') if ($review->library->get_column('name') ne '');
+    	$res{id} = $review->library_id_review if ($review->library_id_review && $review->library->get_column('code') ne '');
+    }
+    
+    return \%res;
+}
+
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 __PACKAGE__->meta->make_immutable;
 1;

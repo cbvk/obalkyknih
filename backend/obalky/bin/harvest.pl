@@ -46,7 +46,7 @@ if ($mode ne 'LibraryThing') {
 		: DB->resultset('Book');
 } else {
 	my $titleOwn = 'NOT LIKE "%ě%" COLLATE utf8_bin AND title NOT LIKE "%č%" COLLATE utf8_bin AND title NOT LIKE "%š%" COLLATE utf8_bin AND title NOT LIKE "%ř%" COLLATE utf8_bin AND title NOT LIKE "%ž%" COLLATE utf8_bin AND title NOT LIKE "%ý%" COLLATE utf8_bin AND title NOT LIKE "%á%" COLLATE utf8_bin AND title NOT LIKE "%í%" COLLATE utf8_bin AND title NOT LIKE "%é%" COLLATE utf8_bin AND title NOT LIKE "%ú%" COLLATE utf8_bin AND title NOT LIKE "%ů%" COLLATE utf8_bin AND title NOT LIKE "%ó%" COLLATE utf8_bin AND title NOT LIKE "%ň%" COLLATE utf8_bin AND title NOT LIKE "%ľ%" COLLATE utf8_bin
-		AND (harvest_last_time IS NULL OR harvest_last_time < "'.$last_month.'" OR harvest_max_eshop < "'.$max_eshop_id.'") AND ean13 IS NOT NULL AND ean13 NOT LIKE "977%" AND eshop IS NULL';
+		AND (harvest_last_time IS NULL OR harvest_last_time < "'.$last_month.'" OR harvest_max_eshop < "'.$max_eshop_id.'") AND ean13 IS NOT NULL AND ean13 NOT LIKE "977%" AND cover IS NULL';
 	$books = DB->resultset('Book')->search([ { title => \$titleOwn } ])
 }
 

@@ -424,7 +424,8 @@ sub get_file {
                $method eq 'original' ? $cover->file_orig : 
                $method eq 'orig' ? $cover->file_orig : $cover->file_thumb;
 	my $content = $blob->content;
-	my $ext = ($content =~ /^.PNG/) ? "png" : "jpeg";
+	my $ext = 'jpeg';
+	$ext = 'png' if ($content and $content =~ /^.PNG/);
 	return $blob ? ("image/$ext", $blob->content, $ext) : ();
 }
 

@@ -51,18 +51,18 @@ sub find_by_bibinfo {
 	$id->{part_name} = undef unless(defined $id->{part_name});
 	
 	# dotazy na zaznam book (souborny zaznam)
-	unless ($id->{part_no} or $id->{part_name}) {
+	unless ($id->{part_no} or $id->{part_name} or $id->{part_year} or $id->{part_volume}) {
 		$id->{part_year} = $id->{part_volume} = undef;
 		push @books, $pkg->search({ ean13=>$id->{ean13} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{ean13});
    		return $books[0] if(@books and not wantarray);
-   		push @books, $pkg->search({ oclc=>$id->{oclc} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{oclc});
-  		return $books[0] if(@books and not wantarray);
    		push @books, $pkg->search({ nbn=>$id->{nbn} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{nbn});
 		return $books[0] if(@books and not wantarray);
+   		push @books, $pkg->search({ oclc=>$id->{oclc} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{oclc});
+  		return $books[0] if(@books and not wantarray);
 	}
 	
 	# dotaz na cislo periodika, nebo cast monografie
-	if ($id->{part_no} or $id->{part_name}) {
+	if ($id->{part_no} or $id->{part_name} or $id->{part_year} or $id->{part_volume}) {
 		@books = $pkg->search_book_part($id);
 		if (${@books}) {
 			map { # pro kazdy nalezeny zaznam (normalne cekame ze je jeden) zkontrolujeme, jestli ma vyplnenou kombinaci rok/rocnik
@@ -96,6 +96,10 @@ sub find_by_bibinfo {
    		# vyhledani rozmezi roku/rocniku/cisel
    		if (!$books[0] and ($found_part_no_range or $found_part_volume_range or $found_part_year_range)) {
    			@books = $pkg->search_book_by_range($id);
+   			return undef if (!$books[0]);
+   			my @book_ids;
+   			map { push @book_ids, $_->id; } @books;
+   			$books[0]->{_column_data}{book_range_ids} = \@book_ids;
    		}
 	}
 	
@@ -110,7 +114,7 @@ sub find_by_bibinfo_or_create {
 	return $book if $book;
 	
 	# nezakladej zaznam pokud se dotazujeme pres /api/books na part_no; namisto toho vyhledej/zaloz souborny zaznam
-	return undef if ($bibinfo->{part_no} or $bibinfo->{part_name});
+	return undef if ($bibinfo->{part_no} or $bibinfo->{part_name} or $bibinfo->{part_year} or $bibinfo->{part_volume});
 	
 	# zaznam book nenalezen, budeme ukladat novy
 	my $hash = {};
@@ -177,6 +181,10 @@ sub normalize_part {
 	$str =~ s/[\s]*\,[\s]*/\,/; # normalize comma
 	$str =~ s/spec\./special/;
 	
+	# najdi posledny vyskyt znaku +
+	my $lastPlus = rindex($str, '+');
+	$str = substr($str, 0, $lastPlus-1) if ($lastPlus > -1);
+	
 	# normalize punctation
 	my $regex = join "|", keys %Obalky::Config::replace_punctation;
 	$regex = qr/$regex/;
@@ -216,7 +224,7 @@ sub normalize_part {
 	
 	# odstraneni casto pouzivanych "predpon"
 	my $str_clr = $str;
-	$str_clr =~ s/(č(\.|$)|c(\.|$)|cislo|číslo|Č(\.|$)|Číslo|sv(\.|$)|svazek|díl|no(\.|$)|měs(\.|$))//g;
+	$str_clr =~ s/(č(\.|$)|c(\.|$)|cislo|číslo|Č(\.|$)|Číslo|sv(\.|$)|svazek|díl|Díl|dil|no(\.|$)|měs(\.|$))//g;
 	
 	# identifikace jestli cast obsahuje pismena
 	my @tmp;
@@ -242,7 +250,7 @@ sub trimPart {
 	
 	# najdi od konce, kde zacina rozumna informace
 	for (my $p = length($str)-1; $p>=0; $p--) {
-		last if (substr($str, $p, 1) !~ m/^[\s\[\]\(\)\.\,\-\;\\\/_]$/);
+		last if (substr($str, $p, 1) !~ m/^[\s\[\]\(\)\.\,\-\;\\\/_\+]$/);
 		$endAt = $p;
 	}
 	
@@ -289,29 +297,26 @@ sub search_book_part {
 	
 	# PERIODIKUM
 	if ($id->{part_year} or $id->{part_volume}) {
+		my (@partYear,@partVolume,@partNo) = (undef,undef,undef);
+		@partYear = @{$id->{part_year}} if ($id->{part_year});
+		@partVolume = @{$id->{part_volume}} if ($id->{part_volume});
+		@partNo = @{$id->{part_no}} if ($id->{part_no});
+		push @partYear, $id->{part_year} if (ref $id->{part_year} ne 'ARRAY');
+		push @partVolume, $id->{part_volume} if (ref $id->{part_volume} ne 'ARRAY');
+		push @partNo, $id->{part_no} if (ref $id->{part_no} ne 'ARRAY');
+
 		# cast periodika podle EAN/ISBN/ISSN
-		push @books, $pkg->search({ ean13 => $id->{ean13}, part_year => $id->{part_year}, part_no => $id->{part_no} })
-				if ($id->{ean13} and $id->{part_year} and $id->{part_no});
-	   	return @books if(@books);
-	   	push @books, $pkg->search({ ean13 => $id->{ean13}, part_volume => $id->{part_volume}, part_no => $id->{part_no} })
-				if ($id->{ean13} and $id->{part_volume} and $id->{part_no});
-	   	return @books if(@books);
-	   	
-	   	# cast periodika podle OCLC
-	   	push @books, $pkg->search({ oclc => $id->{oclc}, part_year => $id->{part_year}, part_no => $id->{part_no} })
-				if ($id->{oclc} and $id->{part_year} and $id->{part_no});
-	   	return @books if(@books);
-	   	push @books, $pkg->search({ oclc => $id->{oclc}, part_volume => $id->{part_volume}, part_no => $id->{part_no} })
-				if ($id->{oclc} and $id->{part_volume} and $id->{part_no});
-	   	return @books if(@books);
+		push @books, $pkg->search_book_part_helper([ $pkg->search({ ean13 => $id->{ean13}, part_type => 2 }) ], \@partYear, \@partVolume, \@partNo)
+				if ($id->{ean13});
+		return @books if(@books);
 	   	
 	   	# cast periodika podle NBN
-	   	push @books, $pkg->search({ nbn => $id->{nbn}, part_year => $id->{part_year}, part_no => $id->{part_no} })
-				if ($id->{nbn} and $id->{part_year} and $id->{part_no});
-	   	return @books if(@books);
-	   	push @books, $pkg->search({ nbn => $id->{nbn}, part_volume => $id->{part_volume}, part_no => $id->{part_no} })
-				if ($id->{nbn} and $id->{part_volume} and $id->{part_no});
-	   	return @books if(@books);
+	   	push @books, $pkg->search_book_part_helper([ $pkg->search({ nbn => $id->{nbn}, part_type => 2 }) ], \@partYear, \@partVolume, \@partNo)
+				if ($id->{nbn});
+	   	
+	   	# cast periodika podle OCLC
+	   	push @books, $pkg->search_book_part_helper([ $pkg->search({ oclc => $id->{oclc}, part_type => 2 }) ], \@partYear, \@partVolume, \@partNo)
+				if ($id->{oclc});
 	}
 	
 	# MONOGRAFIE
@@ -326,32 +331,101 @@ sub search_book_part {
 				if ($id->{ean13} and ($id->{part_no} or $id->{part_name}));
 	   	return @books if(@books);
 	   	
+	   	# cast monografie podle NBN
+		push @books, $pkg->search({ nbn => $id->{nbn}, part_type => 1, -or=>{part_no => $part_no, part_name => $part_name} })
+				if ($id->{nbn} and ($id->{part_no} or $id->{part_name}));
+	   	return @books if (@books);
+	   	
 	   	# cast monografie podle OCLC
 		push @books, $pkg->search({ oclc => $id->{oclc}, part_type => 1, -or=>{part_no => $part_no, part_name => $part_name} })
 				if ($id->{oclc} and ($id->{part_no} or $id->{part_name}));
 	   	return @books if(@books);
 	   	
-	   	# cast monografie podle NBN
-		push @books, $pkg->search({ nbn => $id->{nbn}, part_type => 1, -or=>{part_no => $part_no, part_name => $part_name} })
-				if ($id->{nbn} and ($id->{part_no} or $id->{part_name}));
-	   	return @books;
+	   	# souborne zaznamy podle EAN/ISBN
+		push @books, $pkg->search({ ean13 => $id->{ean13}, part_type => undef }, { order_by => \'cover DESC' })
+				if ($id->{ean13});
+	   	return @books if(@books);
+	   	
+	   	# souborne zaznamy podle NBN
+		push @books, $pkg->search({ nbn => $id->{nbn}, part_type => undef }, { order_by => \'cover DESC' })
+				if ($id->{nbn});
+	   	return @books if(@books);
+	   	
+	   	# souborne zaznamy podle OCLC
+		push @books, $pkg->search({ oclc => $id->{oclc}, part_type => undef }, { order_by => \'cover DESC' })
+				if ($id->{oclc});
+	   	return @books if(@books);
 	}
 	
 	return undef;
 }
 
+sub search_book_part_helper {
+	my ($pkg,$items,$partYear,$partVolume,$partNo,) = @_;
+	my @books;
+	
+	map {
+		for (my $i=0; $i<scalar @$partYear; $i++) {
+			my $partYear = @$partYear[$i];
+			for (my $j=0; $j<scalar @$partVolume; $j++) {
+				my $partVolume = @$partVolume[$j];
+				for (my $k=0; $k<scalar @$partNo; $k++) {
+					my $partNo = @$partNo[$k];
+					
+					# presna shoda rok + cislo
+					if ($partYear and $partNo and $_->get_column("part_year") and $_->get_column("part_no") and 
+					    $_->get_column("part_year") eq $partYear and $_->get_column("part_no") eq $partNo)
+					{
+						push @books, $_;
+						next;
+					}
+					
+					# presna shoda rocnik + cislo
+					if ($partVolume and $partNo and $_->get_column("part_volume") and $_->get_column("part_no") and 
+					    $_->get_column("part_volume") eq $partVolume and $_->get_column("part_no") eq $partNo)
+					{
+						push @books, $_;
+						next;
+					}
+					
+					# oprava vstupu; pokud se na vstupu rok a rocnik shoduje, jeden z nich nebude potrebny
+					if ($partYear and $partVolume and $partYear eq $partVolume) {
+						$partVolume = undef if (length($partYear) == 4);
+						$partYear = undef   if (length($partYear) != 4);
+					}
+					
+					# presna shoda rok + rocnik, nebo castecna shoda pouze v roce, nebo rocniku
+					# v takovemto pripade nesmi byt v DB vyplneno cislo periodika
+					if (($partYear and $partVolume and $_->get_column("part_year") eq $partYear and $_->get_column("part_volume") eq $partVolume and !$_->get_column("part_no")) or
+						($partYear and !$partVolume and $_->get_column("part_year") eq $partYear and !$_->get_column("part_no")) or
+						(!$partYear and $partVolume and $_->get_column("part_volume") eq $partVolume and !$_->get_column("part_no")))
+					{
+						push @books, $_;
+						next;
+					}
+				}
+			}
+		}
+	} @$items;
+	
+	return @books;
+}
+
 sub get_parts {
-	my ($pkg,$book,$sort) = @_;
+	my ($pkg,$book,$sort,$idf) = @_;
 	return unless($book);
 	my @books;
 	my $id_parent = $book->id;
 	
+	my $srchQuery = { id_parent => $id_parent };
+	$srchQuery = { id_parent => $id_parent, id => $idf } if (scalar @{$idf});
+	
 	if ($sort eq 'date') {
 		# serazeni podle aktualnosti
-		push @books, $pkg->search({ id_parent => $id_parent }, { order_by => \'CAST(part_year AS unsigned) DESC, CAST(part_no AS unsigned) DESC' } );
+		push @books, $pkg->search($srchQuery, { order_by => \'CAST(part_year AS unsigned) DESC, CAST(part_no AS unsigned) DESC' } );
 	} else {
 		# serazeni od posledne pridaneho
-		push @books, $pkg->search({ id_parent => $id_parent }, { order_by => \'id DESC' } );
+		push @books, $pkg->search($srchQuery, { order_by => \'id DESC' } );
 	}
 	return @books;
 }

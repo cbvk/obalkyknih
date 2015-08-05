@@ -197,7 +197,7 @@ sub add_product {
 	my($eshop,$bibinfo,$media,$product_url) = @_;
 
 	# najdi nebo vytvor odpovidajici book
-	# warn "Looking for ".Dumper($bibinfo)."\n" if($ENV{DEBUG});
+	warn "Looking for ".Dumper($bibinfo)."\n" if($ENV{DEBUG});
 	my $book = DB->resultset('Book')->find_by_bibinfo($bibinfo);
 	
 	# zaznam book neexistuje, vytvarime

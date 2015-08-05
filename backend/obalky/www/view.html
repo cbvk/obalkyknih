@@ -145,20 +145,20 @@ Tuto knihu ještě nemáme v databázi!
 		[% FOREACH part IN parts %]
 			<tr>
 			[% IF part.cover %]
-				<td class="[% IF counter > 9 %]hide[% END %]">
+				<td class="[% IF counter > 9 AND !idf %]hide[% END %]">
 					[% IF part.cover %]<a href="?book_id=[% part.id %]"><img class="nob" src="[% part.cover.get_thumbnail_url %]"></a>[% END %]
 				</td>
 			[% ELSE %]
 				<td><a href="?book_id=[% part.id %]"><img class="nob" src="img/arrow.png"></a></td>
 			[% END %]
 			[% IF part.get_column('part_type') == "2" %]
-				<td class="[% IF counter > 9 %]hide[% END %]">
+				<td class="[% IF counter > 9 AND !idf %]hide[% END %]">
 					[% IF part.get_column('part_year') %]Rok: <strong>[% part.get_column('part_year') %]</strong>&nbsp; / [% END %]
 					[% IF part.get_column('part_volume') %]Ročník: <strong>[% part.get_column('part_volume') %]</strong>&nbsp; / [% END %]
 					[% IF part.get_column('part_no') %]Číslo: <strong>[% part.get_column('part_no') %]</strong>[% END %]
 				</td>
 			[% ELSE %]
-				<td class="[% IF counter > 9 %]hide[% END %]">
+				<td class="[% IF counter > 9 AND !idf %]hide[% END %]">
 					<strong>[% part.get_column('part_name_orig') %] &nbsp; [% part.get_column('part_no_orig') %]</strong>
 					<br/>
 					<span class="small">
@@ -170,14 +170,14 @@ Tuto knihu ještě nemáme v databázi!
 				</td>
 			[% END %]
 			</tr>
-			[% IF counter == 9 %]
+			[% IF counter == 9 AND !idf %]
 				<tr><td>&nbsp;</td><td><a class="show-more" href="#">Zobrazit víc záznamů</a></td></tr>
 			[% END %]
 		[% counter = counter + 1 %]
 		[% END %]
 			<tr><td>&nbsp;</td><td>
-				[% IF sort_by != 'id' %]<a href="?book_id=[% book.id %]&sort_by=id">Seřaďit podle data skenování</a>[% ELSE %]<strong>Seřaďit podle data skenování</strong>[% END %] |
-				[% IF sort_by != 'date' %]<a href="?book_id=[% book.id %]&sort_by=date">Seřaďit podle aktuálnosti</a>[% ELSE %]<strong>Seřaďit podle aktuálnosti</strong>[% END %]
+				[% IF sort_by != 'id' %]<a href="?book_id=[% book.id %]&sort_by=id[% IF idf %]&idf=[%idf%][% END %]">Seřaďit podle data skenování</a>[% ELSE %]<strong>Seřaďit podle data skenování</strong>[% END %] |
+				[% IF sort_by != 'date' %]<a href="?book_id=[% book.id %]&sort_by=date[% IF idf %]&idf=[%idf%][% END %]">Seřaďit podle aktuálnosti</a>[% ELSE %]<strong>Seřaďit podle aktuálnosti</strong>[% END %]
 			</td></tr>
 		</table>
 		<br/><br/>
