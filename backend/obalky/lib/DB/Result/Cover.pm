@@ -354,8 +354,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-06-19 18:45:43
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:TWcBPThdvn8Vki98wwtJSw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:P6+bUdvqmP/7LjlJDIBkjQ
 
 use Data::Dumper;
 use DB;

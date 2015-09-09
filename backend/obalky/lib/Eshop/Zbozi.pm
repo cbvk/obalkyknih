@@ -53,7 +53,9 @@ sub process_shopitem {
 	my($self,$tmp_dir,$item) = @_;
 
 	my $product_url = $item->{URL} or die;
+	my $authors = $item->{AUTHORS} // '';
 	$product_url =~ s/^\<//; $product_url =~ s/\>$//; # MLP fix
+	$authors =~ s/^\<//; $authors =~ s/\>$//; # MLP fix
 
 	my $info;
 	my $ean = $item->{ISBN} || $item->{EAN} || $item->{PRODUCTNO};
@@ -112,7 +114,7 @@ sub process_shopitem {
 
     my $bibinfo = Obalky::BibInfo->new_from_params({
 		ean => $ean, title => $title, 
-		authors=> $item->{AUTHORS}, year => $item->{ROKVYDANI} });
+		authors=> $authors, year => $item->{ROKVYDANI} });
 	my $media = Obalky::Media->new_from_info( $info );
 
 	# rmdir "/tmp/cover.$$.$ean";

@@ -364,6 +364,11 @@ sub search_book_part_helper {
 	my ($pkg,$items,$partYear,$partVolume,$partNo,) = @_;
 	my @books;
 	
+	# dodatecne dohledame i podle slouceneho pole, separovaneho carkou
+	push @$partYear, join(',', @{$partYear}) if (scalar @$partYear > 1);
+	push @$partVolume, join(',', @{$partVolume}) if (scalar @$partVolume > 1);
+	push @$partNo, join(',', @{$partNo}) if (scalar @$partNo > 1);
+	
 	map {
 		for (my $i=0; $i<scalar @$partYear; $i++) {
 			my $partYear = @$partYear[$i];
@@ -406,6 +411,7 @@ sub search_book_part_helper {
 				}
 			}
 		}
+		
 	} @$items;
 	
 	return @books;

@@ -16,7 +16,6 @@ use warnings;
 use Moose;
 use MooseX::NonMoose;
 use MooseX::MarkAsMethods autoclean => 1;
-use List::Util qw( max );
 extends 'DBIx::Class::Core';
 
 =head1 COMPONENTS LOADED
@@ -670,12 +669,13 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-01-26 13:21:51
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nAl9XxlelluDyaMGUf3cWg
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:45mSCqbqjRDIqt0ygIqDxg
 
 use Obalky::Media;
 use Data::Dumper;
 use DB;
+use List::Util qw( max );
 
 sub displayable_products {
 	my($book) = @_;
@@ -797,11 +797,17 @@ sub get_reviews {
 	my @book_ids;
 	my @books = $book->work_books; # pres vsechna dila..
 	map { push @book_ids, $_->id } @books;
-	my $reviews = DB->resultset('Review')->search({ book=>@book_ids, library=>{ -not => undef }, library_id_review=>{ -not => undef }, impact=>9 }, {
+	my $reviews = DB->resultset('Review')->search({ book=>@book_ids, impact=>9 }, {
 		order_by => { '-desc' => 'created' },
 		limit => 200
 	});
-	return $reviews->all;
+	my @reviews;
+	foreach ($reviews->all) {
+		my ($status,$id_review) = ('','');
+		$status = $_->get_column('status') if (defined $_->get_column('status')); 
+		push @reviews, $_ if ($_->get_column('library_id_review') && $status ne '2' || $status eq '1');
+	}
+	return @reviews;
 }
 
 sub get_annotation {
@@ -809,11 +815,14 @@ sub get_annotation {
 	my @book_ids;
 	my @books = $book->work_books; # pres vsechna dila..
 	map { push @book_ids, $_->id } @books;
-	my $reviews = DB->resultset('Review')->search({ book=>@book_ids, library=>{ -not => undef }, library_id_review=>{ -not => undef }, impact=>0 }, {
-		order_by => { '-asc' => 'id' },
-		limit => 1
+	my $reviews = DB->resultset('Review')->search({ book=>@book_ids, impact=>0 }, {
+		order_by => { '-asc' => 'id' }
 	});
-	return $reviews->next;
+	foreach ($reviews->all) {
+		my ($status,$id_review) = ('','');
+		$status = $_->get_column('status') if (defined $_->get_column('status')); 
+		return $_ if ($_->get_column('library_id_review') && $status ne '2' || $status eq '1');
+	}
 }
 
 sub get_rating_count { # nutne asi jen kvuli view
@@ -1169,13 +1178,10 @@ sub enrich {
 	$info->{flag_bare_record} = ($cover or $toc or $r_count or (scalar @{$info->{reviews}} > 0)) ? 0 : 1;
 	
 	# 8. Anotace
-	$info->{annotation} = [];
+	$info->{annotation} = "";
 	if ($params->{review}) { # $params->{review} je priznak z URL dotazu
 		my @annotations = $book->get_annotation;
-		map {
-			my $annotation = $_->to_annotation_info;
-			push @{$info->{annotation}}, $annotation if($annotation);
-		} @annotations if ($annotations[0]);
+		$info->{annotation} = $annotations[0]->to_annotation_info if ($annotations[0]);
 	}
 
 	return $info;

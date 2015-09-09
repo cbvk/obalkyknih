@@ -115,8 +115,8 @@ __PACKAGE__->set_primary_key("id");
 __PACKAGE__->add_unique_constraint("cache_request", ["request"]);
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-04-25 16:11:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YQgq+06fh/oL5ePlIgBJ5A
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ilOEPmwsir7Ri/T3l8kKxw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

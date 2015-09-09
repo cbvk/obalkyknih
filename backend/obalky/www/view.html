@@ -2,6 +2,8 @@
 
 [% PROCESS _errors %]
 
+[% USE date %]
+
 <table cellspacing=4>
 
 [% IF books.size == 0 %]
@@ -195,9 +197,8 @@ Tuto knihu ještě nemáme v databázi!
 	  </table>
 	  </p>
 	[% END %]
-	-->
 
-<!-- Bara chtela doporucovani smazat, pac to hlasi blbosti a jsme za pitomce-->
+
 	[% IF book.tips_ids AND book.tips_ids.size %]
       <h3>Doporučená literatura</h3>
 	  <p>
@@ -209,13 +210,28 @@ Tuto knihu ještě nemáme v databázi!
 	  </table>
 	  </p>
 	[% END %]
-<!--	-->
+-->
 
-	[% IF book.reviews %]
-		<h3>Recenze</h3>
+	[% IF book.get_annotation %]
+		<h3>Anotace</h3>
+		<p>
+		[% FOREACH annotation IN book.get_annotation %]
+			[% annotation.to_annotation_info.html %]
+		[% END %]
+		</p>
+		[% IF annotation.library %]
+		<p style="padding-left: 30px; color: #777; font-style: italic; font-size:80%; text-align:right;">Zdroj anotace: <a href="[% annotation.library.webopac %]" target="_blank">[% annotation.library.name %]</a></p>
+		<br/>
+		[% END %]
+	[% END %]
+
+	[% IF book.get_reviews %]
+		<h3>Komentáře</h3>
 	  	<table width="100%">
-	  	[% FOREACH review IN book.reviews %]
-	  	[% IF review.html_text %]
+	  	[% i = 0 %]
+	  	[% FOREACH review IN book.get_reviews %]
+	  	[% IF review.html_text && review.impact==9 %]
+	  	[% IF i > 0 %]<tr><td colspan="2"><hr style="padding:0;margin:10px 0 0;" /></td></tr>[% END %]
 	  	<tr><td valign=top>
 	  			[% IF review.product %]
 	  				<a href="[% review.product.product_url %]"><img border=0 
@@ -226,14 +242,19 @@ Tuto knihu ještě nemáme v databázi!
 	  				<b>[% review.visitor_name %]</b> 
 	  				<i>([% review.visitor_blurred_ip %])</i>
 	  			[% END %]
+	  		</td>
 	  		<td align=right valign=top width=200>
 	  			[% IF review.rating AND review.rating != 0 %]
 	  				<img src="/stars?value=[% review.rating %]" />
 	  			[% END %]
-	  	<tr><td colspan=2 style="padding-left: 30px">[% review.html_text %]
+	  		</td></tr>
+	  	<tr><td colspan=2 style="padding-left: 30px">[% review.html_text %]</td></tr>
+	  	<tr><td align="right" colspan=2 style="padding-left: 30px; color: #777; font-style: italic; font-size:80%; text-align:right;">[% date.format(review.created, format = '%d.%m.%Y') %] &nbsp;&nbsp; [% IF review.library %]Zdroj: <a href="[% review.library.webopac %]" target="_blank">[% review.library.name %]</a>[% END %]</td></tr>
 	  	[% END %]
+	  	[% i = i + 1 %]
 	  	[% END %]
 	  	</table>
+	  	<br/><br/>
   	[% END %]
 
 	[% IF loop.first %]

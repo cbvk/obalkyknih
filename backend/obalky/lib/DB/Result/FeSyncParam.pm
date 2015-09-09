@@ -134,8 +134,8 @@ Composing rels: L</fe_sync2params> -> id_sync
 __PACKAGE__->many_to_many("id_syncs", "fe_sync2params", "id_sync");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-08-08 15:08:00
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7I12hq2jLDWxXe3ChkTnzQ
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jTjTyWoJTK5hYSMVcyAZ4g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

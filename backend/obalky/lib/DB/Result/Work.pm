@@ -109,8 +109,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-04-25 16:11:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:vsmM0KG30le5PjATutXzXA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:l12V9DbLyhUF7vOy8rqMSA
 
 
 sub get_cover {

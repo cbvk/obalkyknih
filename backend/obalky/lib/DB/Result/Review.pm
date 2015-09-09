@@ -113,6 +113,11 @@ __PACKAGE__->table("review");
   is_nullable: 1
   size: 32
 
+=head2 status
+
+  data_type: 'tinyint'
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -147,6 +152,8 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 40 },
   "library_id_review",
   { data_type => "varchar", is_nullable => 1, size => 32 },
+  "status",
+  { data_type => "tinyint", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -337,10 +344,11 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-08-07 16:31:03
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BrZx5ijDQ0KmIJsKorQ+lQ
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CXI5ulVcgS6qqmCOimfxCw
 
 use Data::Dumper;
+use HTML::StripTags qw(strip_tags);
 
 sub visitor_blurred_ip {
     my($review) = @_;
@@ -364,6 +372,7 @@ sub to_info {
     	$res{sigla} = $review->library->get_column('code') if ($review->library->get_column('code') ne '');
     	$res{library_name} = $review->library->get_column('name') if ($review->library->get_column('name') ne '');
     	$res{id} = $review->library_id_review if ($review->library_id_review && $review->library->get_column('code') ne '');
+    	$res{id} = $review->id unless (defined $review->library_id_review);
     }
     #$res{visitor_name} = $review->visitor_name if ($review->visitor_name);
     #$res{visitor_ip} = $review->visitor_blurred_ip if ($review->visitor_name);
@@ -374,14 +383,19 @@ sub to_info {
 sub to_annotation_info {
     my($review) = @_;
     return unless($review->html_text);
-    my $dt = DateTime::Format::ISO8601->parse_datetime($review->created);
+    my $html = $review->html_text;
+    $html = strip_tags($html);
+    #$html =~ s/<br>/ /g; $html =~ s/<br\/>/ /g; $html =~ s/<br \/>/ /g;
+    #return if($html =~ /<\//); # nechceme texty s tagy
+    
     my %res = (
-     	'created', $dt->datetime,
-        'annotation_text', $review->html_text
+    	'html', $html
     );
     if ($review->library) {
     	$res{source} = $review->library->get_column('name') if ($review->library->get_column('name') ne '');
     	$res{id} = $review->library_id_review if ($review->library_id_review && $review->library->get_column('code') ne '');
+    } else {
+    	$res{source} = 'Web obalkyknih.cz';
     }
     
     return \%res;

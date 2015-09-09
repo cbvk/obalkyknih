@@ -403,8 +403,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2014-08-01 15:44:06
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zDgguAjfT9ByHjFGtXtFPg
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AwbE+g6//szwmeQUgcXcuQ
 
 
 sub media { Obalky::Media->new(shift) }

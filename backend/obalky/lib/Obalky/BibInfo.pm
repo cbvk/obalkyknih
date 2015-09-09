@@ -287,7 +287,14 @@ sub save_to_hash {
 sub save_to_hash_part {
 	my($id,$hash) = @_;
 	$hash ||= {};
-	map $hash->{$_} = $id->{$_}, grep $id->{$_}, qw/part_year part_volume part_no part_name part_note id_parent part_year_orig part_volume_orig part_no_orig part_name_orig part_note_orig part_type/;
+	map {
+		my $param = $id->{$_};
+		
+		# bibinfo muze byt zadano jako rozsah, nutne ulozit jako retezec separovany carkou
+		$param = join(',', @{$id->{$_}}) if (ref $id->{$_} eq 'ARRAY');
+		
+		$hash->{$_} = $param;
+	} grep $id->{$_}, qw/part_year part_volume part_no part_name part_note id_parent part_year_orig part_volume_orig part_no_orig part_name_orig part_note_orig part_type/;
 	return $hash;
 }
 
