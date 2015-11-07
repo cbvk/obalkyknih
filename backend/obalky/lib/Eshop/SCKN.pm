@@ -17,7 +17,8 @@ sub crawl {
 	my($self,$storable,$from,$to) = @_;	
 
 	my $id = $storable->{last_id} || 1;
-	for(;@list<5000;$id++) {
+	$id = 1;
+	for(;@list<5;$id++) {
 		#sleep(1);
 
 		my $listurl = 'http://www.sckn.cz/ceskeknihy/html/'.

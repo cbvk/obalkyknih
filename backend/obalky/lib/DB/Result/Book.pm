@@ -862,12 +862,12 @@ sub actualize_by_product {
 	
 	my ($oldPriority,$newPriority,$oldDim,$newDim) = (0,0,0,1); #init
 	my $eshopId = $product->eshop->get_column('id');
-	if ($book && $book->cover) {
+	if ($book && $book->cover && $product && $product->cover) {
 		my $resOldP = DB->resultset('Product')->search({ book=>$book->id, cover=>$book->cover->id });
 		my $retOldP = $resOldP->next;
-		$oldPriority = $retOldP->eshop->get_column('priority');
+		$oldPriority = $retOldP->eshop->get_column('priority') if ($retOldP);
 		$newPriority = $product->eshop->get_column('priority');
-		$oldDim = $retOldP->cover->get_column('orig_width') * $retOldP->cover->get_column('orig_height');
+		$oldDim = $retOldP->cover->get_column('orig_width') * $retOldP->cover->get_column('orig_height') if ($retOldP);
 		$newDim = $product->cover->get_column('orig_width') * $product->cover->get_column('orig_height');
 	}
 	# RIZENI PRIORITY (PRIORITA AKTIVNI OBALKY)
