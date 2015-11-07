@@ -418,9 +418,9 @@ sub get_icon_url {
 sub get_file {
 	my($cover,$method) = @_;
     my $blob = $method eq 'medium' ? $cover->file_medium :
-                $method eq 'thumbnail' ? $cover->file_thumb :    
-                $method eq 'thumb' ? $cover->file_thumb :        
-                $method eq 'icon' ? $cover->file_icon :
+               $method eq 'thumbnail' ? $cover->file_thumb :    
+               $method eq 'thumb' ? $cover->file_thumb :        
+               $method eq 'icon' ? $cover->file_icon :
                $method eq 'original' ? $cover->file_orig : 
                $method eq 'orig' ? $cover->file_orig : $cover->file_thumb;
 	my $content = $blob->content;

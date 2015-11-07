@@ -78,16 +78,57 @@ sub save_to {
 				}
 			}
 		}
-		my $checksum_old = $book->cover ? $book->cover->checksum : "";
-		$cover = DB->resultset('Cover')->create_from_file($book,$product,$tmp);
-		my $checksum_new = $cover->checksum;
-		$cover->update({ orig_url => $cover_url }) if($cover);
-		$product->update({ cover => $cover });
+		# checksum puvodni obalky
+		my $checksum_old = $product->cover ? $product->cover->checksum : "";
+		# checksum nove obalky
+		my $checksum_new = `md5sum $tmp | head -c 32`;
 		
-		# vyvolej synchronizacni udalost pokud obalka existuje
-		if ($checksum_old ne $checksum_new) {
+		# RIZENI PRIORITY (PRIORITA ROZLISENI)
+		my ($id_eshop,$old_width,$old_height,$new_width,$new_height) = (0,0,0,1,1);
+		$id_eshop = $product->eshop->get_column('id') if ($product->eshop);
+		$old_width = $product->cover->get_column('orig_width') if ($product->cover);
+		$old_height = $product->cover->get_column('orig_height') if ($product->cover);
+		($new_width,$new_height) = Obalky::Tools->image_size($tmp) if (-e $tmp);
+		my $old_dim = $old_width * $old_height;
+		my $new_dim = $new_width * $new_height;
+		
+		warn 'KONTROLNI SOUCET SE SHODUJE ...' if ($ENV{DEBUG} && $checksum_old eq $checksum_new);
+		
+		# Nahravame pokud
+		# 1) se zmenil obrazek a zaroven
+		# 2) je vyssi rozliseni, nebo se jedna o upload sken. klientem + webem
+		if ( $checksum_old ne $checksum_new
+		     && ($new_dim > $old_dim || $id_eshop == $DB::Result::Eshop::ESHOP_UPLOAD) )
+		{
+			warn 'PREHRAVAM OBRAZEK PRODUKTU NA ZAKLADE PRIORITY ROZLISENI ...' if ($ENV{DEBUG});
+			my ($cover_old_icon,$cover_old_thumb,$cover_old_medium,$cover_old_orig) = (undef,undef,undef,undef);
+			if ($product->cover) {
+				$cover_old_icon = $product->cover->get_column('file_icon');
+				$cover_old_thumb = $product->cover->get_column('file_thumb');
+				$cover_old_medium = $product->cover->get_column('file_medium');
+				$cover_old_orig = $product->cover->get_column('file_orig');
+			}
+			
+			$cover = DB->resultset('Cover')->create_from_file($book,$product,$tmp);
+			$cover->update({ orig_url => $cover_url }) if($cover);
+			$product->update({ cover => $cover });
+			
+			# smazat nahrazene obrazky, pokud se uz nikde nepouziva
+			if ($cover_old_orig && !DB->resultset('Cover')->search({ file_orig => $cover_old_orig })->count) {
+				DB->resultset('Fileblob')->find($cover_old_icon)->delete if ($cover_old_icon);
+				DB->resultset('Fileblob')->find($cover_old_thumb)->delete if ($cover_old_thumb);
+				DB->resultset('Fileblob')->find($cover_old_medium)->delete if ($cover_old_medium);
+				DB->resultset('Fileblob')->find($cover_old_orig)->delete if ($cover_old_orig);
+				my $dirGroupName = int($cover_old_orig/100000+1)*100000;
+				my $filenameOrig = $Obalky::Config::FILEBLOB_DIR.'/'.$dirGroupName.'/'.$cover_old_orig;
+				unlink($filenameOrig) if (-e $filenameOrig);
+			}
+			
+			# vyvolej synchronizacni udalost
 			DB->resultset('FeSync')->book_sync_remove($book->id);
 			$feSynced = 1;
+		} else {
+			warn 'OBRAZEK PRODUKTU NENI NUTNE PREHRAT ...' if ($ENV{DEBUG});
 		}
 	}
 

@@ -260,6 +260,9 @@ sub book_sync_remove {
 	my $sync_params;
 	my $book = DB->resultset('Book')->find($id);
 	$sync_params->{book_id} = $book->get_column('id_parent') ? $book->get_column('id_parent') : $id;
+	$sync_params->{isbn} = $book->get_column('ean13') if ($book->get_column('ean13'));
+	$sync_params->{nbn} = $book->get_column('nbn') if ($book->get_column('nbn'));
+	$sync_params->{oclc} = $book->get_column('oclc') if ($book->get_column('oclc'));
 	if ($sync_params) {
 		$sync_params->{remove} = 'true';
 		DB->resultset('FeSync')->set_sync($sync_params, 'metadata_changed', $fe, $forced);

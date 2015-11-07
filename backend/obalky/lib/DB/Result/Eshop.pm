@@ -86,6 +86,12 @@ __PACKAGE__->table("eshop");
   is_nullable: 1
   size: 64
 
+=head2 priority
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -105,6 +111,8 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 0, size => 255 },
   "fullname",
   { data_type => "varchar", is_nullable => 1, size => 64 },
+  "priority",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -166,11 +174,13 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:JhoP4flQhJmcyx9Uc9IAiQ
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-10-17 22:08:46
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9F9V/hFeAgDok5Qu0d0MZg
 
 
 use Data::Dumper;
+
+our $ESHOP_UPLOAD = 109;
 
 sub product_count {
 	my($eshop) = @_;
