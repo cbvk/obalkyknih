@@ -67,8 +67,14 @@ sub process_shopitem {
 	
 	# podpora stahovani po castech (for i in 0 .. 1 ; do ZBOZI_PART=$i ...)
 	return if(defined $ENV{ZBOZI_PART} and $ean !~ /$ENV{ZBOZI_PART}$/);
-
+	
 	my $title = $item->{PRODUCT};
+
+	# pokud titul obsahuje tagy
+	if (ref($title) eq 'HASH') {
+	    $title = join(' ', $title->{content});
+	}
+	
 	if (defined $title) {
 		$title =~ s/ - SLEVA \d+\%//g;
 		$title =~ s/^<\s*//g;

@@ -35,7 +35,7 @@ die "[ FE ID MISSING ]\n" unless ($IDFE);
 
 # pripojeni zdrojove MongoDB databaze
 my $client = MongoDB::MongoClient->new(host => 'localhost:27017');
-my $db = $client->get_database('test');
+my $db = $client->get_database('okcz_db');
 my $conSrc = $db->get_collection('stat');
 
 # pripojeni cilove lokalni MySQL databaze

@@ -856,12 +856,31 @@ sub actualize_by_product {
 	my($book,$product,$forced) = @_;
 	my $invalidate = 0;
 	
-	# pokud se neco zmenilo, je potreba zaznam zneplatnit a pozadat FE o zneplatneni
+	# pokud se neco zmenilo, je potreba zaznam zneplatnit a pozadat taky FE o zneplatneni
 	$invalidate = ($book->cover->id!=$product->cover->id) ? 1 : 0 if ($book->cover and $product->cover);
 	$invalidate = ($book->toc->id!=$product->toc->id) ? 1 : $invalidate if ($book->toc and $product->toc);
 	
-	$book->update({ cover => $product->cover })   if($product->cover);
-	$book->update({ toc => $product->toc })       if($product->toc);
+	my ($oldPriority,$newPriority,$oldDim,$newDim) = (0,0,0,1); #init
+	my $eshopId = $product->eshop->get_column('id');
+	if ($book && $book->cover && $product && $product->cover) {
+		my $resOldP = DB->resultset('Product')->search({ book=>$book->id, cover=>$book->cover->id });
+		my $retOldP = $resOldP->next;
+		$oldPriority = $retOldP->eshop->get_column('priority') if ($retOldP);
+		$newPriority = $product->eshop->get_column('priority');
+		$oldDim = $retOldP->cover->get_column('orig_width') * $retOldP->cover->get_column('orig_height') if ($retOldP);
+		$newDim = $product->cover->get_column('orig_width') * $product->cover->get_column('orig_height');
+	}
+	# RIZENI PRIORITY (PRIORITA AKTIVNI OBALKY)
+	# Zmena aktivni obalky produktu (kniha muze mit vice produktu, a kazdy produkt svoji obalku, ale pouze jedna aktivni)
+	# 1) ma zdroj vyssiu prioritu
+	# 2) ma stejnu prioritu, ale vyssi rozliseni
+	if (($newPriority > $oldPriority) || (($newPriority == $oldPriority) && ($newDim > $oldDim))) {
+		warn 'ZMENA AKTIVNI OBALKY NA ZAKLADE PRIORITY ...' if ($ENV{DEBUG});
+		$book->update({ cover => $product->cover })   if($product->cover);
+		$book->update({ toc => $product->toc })       if($product->toc);
+	} else {
+		warn 'AKTIVNI OBALKA BEZE ZMENY ...' if ($ENV{DEBUG});
+	}
 #	$book->update({ review => $product->review }) if($product->review);
 
 	$book->recalc_rating;
@@ -1117,6 +1136,11 @@ sub enrich {
 		$info->{cover_thumbnail_url} = $cover->get_thumbnail_url($secure);
 		$info->{cover_medium_url}    = $cover->get_cover_url($secure);
 		$info->{cover_icon_url}      = $cover->get_icon_url($secure);
+		# publikovat originalni rozmery obrazku
+		if ($cover->orig_width and $cover->orig_height) {
+			$info->{orig_width}      = $cover->orig_width;
+			$info->{orig_height}     = $cover->orig_height;
+		}
 		$info->{cover_preview510_url}= $cover->get_preview510_url($secure);
 	}
 
@@ -1183,6 +1207,11 @@ sub enrich {
 		my @annotations = $book->get_annotation;
 		$info->{annotation} = $annotations[0]->to_annotation_info if ($annotations[0]);
 	}
+	
+	# 9. Bibliograficke data
+	$info->{bib_title} = $book->get_column('title') if ($book->get_column('title'));
+	$info->{bib_author} = $book->get_column('authors') if ($book->get_column('authors'));
+	$info->{bib_year} = $book->get_column('year') if ($book->get_column('year'));
 
 	return $info;
 }

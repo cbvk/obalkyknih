@@ -48,7 +48,7 @@ sub blue_stash {
 		$blue_info{recent} = DB->resultset('Cover')->recent(16,1)
 						unless($ENV{SKIP_RECENT});
 		$blue_info{eshops} = [ grep { 
-            not $_->is_internal and $_->logo_url and $_->id <= 140 } 
+            not $_->is_internal and $_->logo_url and $_->id <= 8000 } 
 								DB->resultset('Eshop')->all ];
 		my $libs = DB->resultset('Library')->count;
 		$libs = 10*int($libs/10);
@@ -791,10 +791,10 @@ sub end : Private {
 }
 
 #my $bibinfo = bless {}, 'Bibinfo';
-#$bibinfo->{ean13} = '978-80-87646-04-5';
+#$bibinfo->{ean13} = '9788073039219';
 #$bibinfo->{part_year} = 'rok 2014,2015';
 #$bibinfo->{part_volume} = 'jahrg. 51(22)';
-#$bibinfo->{part_no} = 'Díl 2.';
+#$bibinfo->{part_no} = 'Nerozluštěné záhady 20. století';
 #$bibinfo->{part_name} = " student' s  book   ";
 #warn Dumper($bibinfo);
 #warn Dumper(DB->resultset("Book")->normalize_bibinfo($bibinfo));

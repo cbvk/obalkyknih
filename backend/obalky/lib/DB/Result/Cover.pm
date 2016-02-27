@@ -480,8 +480,13 @@ sub get_file {
 	return $cover->get_master() if ($method eq 'master');
 	return $cover->get_preview($method) if ($method eq 'preview510');
     my $blob = $method eq 'medium' ? $cover->file_medium :
+<<<<<<< HEAD
                $method eq 'thumbnail' ? $cover->file_thumb :
                $method eq 'thumb' ? $cover->file_thumb :
+=======
+               $method eq 'thumbnail' ? $cover->file_thumb :    
+               $method eq 'thumb' ? $cover->file_thumb :        
+>>>>>>> branch 'master' of https://github.com/cbvk/obalkyknih.git
                $method eq 'icon' ? $cover->file_icon :
                $method eq 'original' ? $cover->file_orig : 
                $method eq 'orig' ? $cover->file_orig : $cover->file_thumb;
