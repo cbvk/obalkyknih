@@ -74,11 +74,16 @@ Heslo a další nastavení si můžete změnit v menu 'nastavení' v horní čá
 				<label for="libpurpose">Stručně popište jak, nebo kde plánujete službu Obálkyknih.cz používat:</label>
 				<textarea type="text" name="libpurpose" id="libpurpose" rows="4">[% libpurpose %]</textarea>
 			</p>
+			
 		</fieldset>
+		
+		<div class="g-recaptcha" data-sitekey="6LdFDxgTAAAAAHQKFJBlrT351_ALAeQbq62dQLj6"></div>
+		<p>&nbsp;</p>
 			
 		<p><input type="submit" name="signup" class="button big" value="Vytvořit účet" /> &nbsp;&nbsp;<input name="libskipmember" type="checkbox" id="libskipmember" [% IF libskipmember %]checked[% END %] /> <label for="libskipmember" class="small">Prohlašuji, že knihovna je členem sdružení <a href="http://skip.nkp.cz">SKIP</a> (nepovinné)</label></p>
 	
 	</form>
+	<script src='https://www.google.com/recaptcha/api.js?hl=cs'></script>
 
 [% END %]
 

@@ -8,9 +8,13 @@ use utf8;
 use DB::Result::Library;
 
 #use strict;
+use HTTP::Request::Common;
+use LWP::UserAgent;
+use Obalky::Config;
 use Data::Dumper;
 use DateTime;
 use locale;
+use JSON;
 
 sub find_by_email {
 	my($pkg,$email) = @_;
@@ -78,8 +82,16 @@ sub signup {
 	my $libcode = $hash->{libcode};
 	$libcode =~ s/[ \-]//g;
 	my $libpurpose = $hash->{purpose_description};
+	
+	#reCaptcha verify
+	my $ua = LWP::UserAgent->new;
+	my $reCaptchaResult = $ua->request(POST 'https://www.google.com/recaptcha/api/siteverify',
+		[ secret => $Obalky::Config::RECAPTCHA_SECRET, response => $hash->{'g-recaptcha-response'} ]);
 
 	my @errors;
+	
+	push @errors, "Potvrďte, že nejste robot."
+		unless (index($reCaptchaResult->content, '"success": true') != -1);
 
 	push @errors, "Není vyplněno plné jméno uživatele."
 		if(not $hash->{fullname} or $hash->{fullname} !~ /\s/);

@@ -1117,6 +1117,7 @@ sub enrich {
 		$info->{cover_thumbnail_url} = $cover->get_thumbnail_url($secure);
 		$info->{cover_medium_url}    = $cover->get_cover_url($secure);
 		$info->{cover_icon_url}      = $cover->get_icon_url($secure);
+		$info->{cover_preview510_url}= $cover->get_preview510_url($secure);
 	}
 
 	# 2. Najdi TOC
@@ -1178,7 +1179,6 @@ sub enrich {
 	$info->{flag_bare_record} = ($cover or $toc or $r_count or (scalar @{$info->{reviews}} > 0)) ? 0 : 1;
 	
 	# 8. Anotace
-	$info->{annotation} = "";
 	if ($params->{review}) { # $params->{review} je priznak z URL dotazu
 		my @annotations = $book->get_annotation;
 		$info->{annotation} = $annotations[0]->to_annotation_info if ($annotations[0]);

@@ -55,13 +55,13 @@ __PACKAGE__->table("cover");
 
   data_type: 'integer'
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
 
 =head2 book
 
   data_type: 'integer'
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
 
 =head2 file_thumb
 
@@ -121,6 +121,13 @@ __PACKAGE__->table("cover");
   default_value: 0
   is_nullable: 1
 
+=head2 auth
+
+  data_type: 'varchar'
+  is_foreign_key: 1
+  is_nullable: 1
+  size: 50
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -134,9 +141,9 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "product",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "book",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "file_thumb",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "file_medium",
@@ -161,6 +168,8 @@ __PACKAGE__->add_columns(
   },
   "used_count",
   { data_type => "integer", default_value => 0, is_nullable => 1 },
+  "auth",
+  { data_type => "varchar", is_foreign_key => 1, is_nullable => 1, size => 50 },
 );
 
 =head1 PRIMARY KEY
@@ -218,6 +227,41 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 auth
+
+Type: belongs_to
+
+Related object: L<DB::Result::Auth>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "auth",
+  "DB::Result::Auth",
+  { id => "auth" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
+=head2 auths
+
+Type: has_many
+
+Related object: L<DB::Result::Auth>
+
+=cut
+
+__PACKAGE__->has_many(
+  "auths",
+  "DB::Result::Auth",
+  { "foreign.cover" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 book
 
 Type: belongs_to
@@ -230,7 +274,12 @@ __PACKAGE__->belongs_to(
   "book",
   "DB::Result::Book",
   { id => "book" },
-  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
 );
 
 =head2 books
@@ -320,7 +369,12 @@ __PACKAGE__->belongs_to(
   "product",
   "DB::Result::Product",
   { id => "product" },
-  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
 );
 
 =head2 products
@@ -354,10 +408,11 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:P6+bUdvqmP/7LjlJDIBkjQ
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-11-23 00:41:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ize2WSIyUolmXuTxws+FIw
 
 use Data::Dumper;
+use Image::Info qw(image_info dim);
 use DB;
 
 sub is_generic { shift->id < 1_000_000 ? 1 : 0 }
@@ -413,14 +468,21 @@ sub get_icon_url {
     $cover->get_absolute_url('icon',$secure) 
 }
 
+sub get_preview510_url { 
+	my($cover,$secure) = @_;
+    $cover->get_absolute_url('preview510',$secure) 
+}
+
 # spacer: image/gif, [71,73,70,56,57,97,1,0,1,0,128,0,0,0,0,0,0,0,0,33,
 #                     249,4,1,0,0,0,0,44,0,0,0,0,1,0,1,0,0,2,2,68,1,0,59]
 sub get_file {
 	my($cover,$method) = @_;
+	return $cover->get_master() if ($method eq 'master');
+	return $cover->get_preview($method) if ($method eq 'preview510');
     my $blob = $method eq 'medium' ? $cover->file_medium :
-                $method eq 'thumbnail' ? $cover->file_thumb :    
-                $method eq 'thumb' ? $cover->file_thumb :        
-                $method eq 'icon' ? $cover->file_icon :
+               $method eq 'thumbnail' ? $cover->file_thumb :
+               $method eq 'thumb' ? $cover->file_thumb :
+               $method eq 'icon' ? $cover->file_icon :
                $method eq 'original' ? $cover->file_orig : 
                $method eq 'orig' ? $cover->file_orig : $cover->file_thumb;
 	my $content = $blob->content;
@@ -428,6 +490,58 @@ sub get_file {
 	$ext = 'png' if ($content and $content =~ /^.PNG/);
 	return $blob ? ("image/$ext", $blob->content, $ext) : ();
 }
+
+sub get_master {
+	my($cover) = @_;
+	my $id = $cover->file_orig->id;
+	my $dirGroupName = int($id/100000+1)*100000;
+	my $img_filename = $Obalky::Config::FILEBLOB_DIR.'/'.$dirGroupName.'/'.$id;
+	return () unless (-e $img_filename);
+	
+	my $info = image_info($img_filename);
+	open FILE, $img_filename;
+	my $file_contents = do { local $/; <FILE> };
+	close (FILE);
+	return ($info->{file_media_type}, $file_contents, $info->{file_ext});
+}
+
+sub get_preview {
+	my($cover,$method) = @_;
+	my $id = $cover->file_orig->id;
+	my $dirGroupName = int($id/100000+1)*100000;
+	my $orig_filename = $Obalky::Config::FILEBLOB_DIR.'/'.$dirGroupName.'/'.$id;
+	return () unless (-e $orig_filename);
+	
+	# rozliseni a cache adresar
+	my $width_wanted = 510;
+	my $resampled_filename = $Obalky::Config::PREVIEW510_DIR.'/'.$dirGroupName.'/'.$id.'.png';
+	my $width = $width_wanted;
+	
+	# kontrola existence uz resamplovaneho obrazku
+	if (-e $resampled_filename) {
+		open FILE, $resampled_filename;
+		my $file_contents = do { local $/; <FILE> };
+		close (FILE);
+		return ('image/png', $file_contents, 'png');
+	}
+	
+	# kontrola rozliseni; pokud je nizke nebude se resamplovat
+	my $info = image_info($orig_filename);
+	$width = $info->{width} if ($info->{width} <= $width and $info->{width} > 170);
+	$width = 170 if ($info->{width} < 170);
+	
+	# resamplovani a ulozeni nahledu do cache adresare
+	system('mkdir '.$Obalky::Config::PREVIEW510_DIR.'/'.$dirGroupName) unless (-e $Obalky::Config::PREVIEW510_DIR.'/'.$dirGroupName);
+	system "convert -dither FloydSteinberg $orig_filename png8:$resampled_filename" if ($width == $width_wanted);
+	system "convert $orig_filename png24:$resampled_filename" unless ($width == $width_wanted);
+	
+	# zaslani resamplovane verze z cache adresare
+	return () unless (-e $resampled_filename);
+	open FILE, $resampled_filename;
+	my $file_contents = do { local $/; <FILE> };
+	close (FILE);
+	return ('image/png', $file_contents, 'png');
+}	
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 __PACKAGE__->meta->make_immutable;

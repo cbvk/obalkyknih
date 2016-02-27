@@ -393,6 +393,24 @@ sub search_book_part_helper {
 						next;
 					}
 					
+					# rok + cislo castecna shoda u rozsahu periodik
+					# pokud hledame periodika v rozsahu 1-6 = 1,2,3,4,5,6 a zaznam ulozeny v db. je napr. dvoucislo 3,4
+					if ($partYear and $partNo and $_->get_column("part_year") and $_->get_column("part_no") and 
+					    $_->get_column("part_year") eq $partYear and 
+					    $partNo=~/\,/ and $_->get_column("part_no")=~/\,/ and $partNo=~$_->get_column("part_no")) {
+						push @books, $_;
+						next;
+					}
+					
+					# rocnik + cislo castecna shoda u rozsahu periodik
+					# pokud hledame periodika v rozsahu 1-6 = 1,2,3,4,5,6 a zaznam ulozeny v db. je napr. dvoucislo 3,4
+					if ($partVolume and $partNo and $_->get_column("part_volume") and $_->get_column("part_no") and 
+					    $_->get_column("part_volume") eq $partVolume and
+					    $partNo=~/\,/ and $_->get_column("part_no")=~/\,/ and $partNo=~$_->get_column("part_no")) {
+						push @books, $_;
+						next;
+					}
+					
 					# oprava vstupu; pokud se na vstupu rok a rocnik shoduje, jeden z nich nebude potrebny
 					if ($partYear and $partVolume and $partYear eq $partVolume) {
 						$partVolume = undef if (length($partYear) == 4);
