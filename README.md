@@ -2,7 +2,8 @@ Obálky knih.cz 3.2 (aktualizace 2016)
 ==================
 
 Došlo k obohacení API projektu Obálky knih.cz o "obálky" autorů.
-Ukázka na stránkách projektu: http://www.obalkyknih.cz/view_auth?auth_id=jk01083016
+
+Ukázka na stránkách projektu: <a href="http://www.obalkyknih.cz/view_auth?auth_id=jk01083016">http://www.obalkyknih.cz/view_auth?auth_id=jk01083016</a>
 
 
 Obálky knih.cz 3.1
