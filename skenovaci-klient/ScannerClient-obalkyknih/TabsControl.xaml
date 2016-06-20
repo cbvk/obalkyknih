@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:src="clr-namespace:ScannerClient_obalkyknih"
              mc:Ignorable="d" Background="#363636"
-             d:DesignHeight="700" d:DesignWidth="1000" Name="TabsControlUserControl">
+             d:DesignHeight="700" d:DesignWidth="1000" Name="TabsControlUserControl" Visibility="Visible">
     <TabControl Name="tabControl" Padding="0" BorderThickness="0" SelectionChanged="tabControl_SelectionChanged">
         <TabControl.Resources>
             <!--Background of tabs header-->
@@ -125,15 +125,15 @@
                                         ToolTip="Seznam autorů oddělen čárkou" TabIndex="2" />
                             <TextBox Height="22" Padding="0,2,0,0" Margin="16,133,36,0" Name="partYearTextBox" FontFamily="Arial" Background="#363636"
                                         Foreground="#CECECE" VerticalAlignment="Top" BorderBrush="#111111" TextChanged="ValidateIdentifiers"
-                                        ToolTip="Rok vydání díla (svazku)" TabIndex="3" />
+                                        ToolTip="Rok vydání díla (svazku)" TabIndex="3" LostFocus="reloadCoverAndToc" />
                             <TextBox Height="22" Padding="0,2,0,0" Margin="16,219,36,0" Name="partNumberTextBox" FontFamily="Arial" Background="#FF626262"
                                         Foreground="#CECECE" VerticalAlignment="Top" BorderBrush="#111111" TextChanged="ValidateIdentifiers"
-                                        ToolTip="Číslo díla (svazku)" TabIndex="5" />
+                                        ToolTip="Číslo díla (svazku)" TabIndex="5" LostFocus="reloadCoverAndToc" />
                             <TextBox Height="22" Padding="0,2,0,0" Margin="16,175,36,0" Name="partVolumeTextBox" FontFamily="Arial" Background="#FF626262"
                                         Foreground="#CECECE" VerticalAlignment="Top" BorderBrush="#111111" TextChanged="ValidateIdentifiers"
-                                        ToolTip="Ročník díla (svazku)" TabIndex="4" />
+                                        ToolTip="Ročník díla (svazku)" TabIndex="4" LostFocus="reloadCoverAndToc" />
                             <TextBox Height="22" Padding="0,2,0,0" Margin="16,265,36,0" Name="partNameTextBox" FontFamily="Arial" Background="#FF626262"
-                                        Foreground="#CECECE" VerticalAlignment="Top" BorderBrush="#111111" ToolTip="Poznámky týkající se díla (svazku)" TabIndex="6" />
+                                        Foreground="#CECECE" VerticalAlignment="Top" BorderBrush="#111111" ToolTip="Poznámky týkající se díla (svazku)" TabIndex="6" LostFocus="reloadCoverAndToc" />
                             <TextBox Height="22" Padding="0,2,0,0" Margin="16,332,36,0" Name="partIsbnTextBox" FontFamily="Arial" Background="#363636" 
                                         Foreground="#CECECE" VerticalAlignment="Top" BorderBrush="#111111" TextChanged="ValidateIdentifiers" 
                                         ToolTip="ISBN číslo díla (pokud existuje)" IsEnabled="False" Visibility="Collapsed" />
@@ -142,26 +142,26 @@
                                         ToolTip="ISSN číslo díla (pokud existuje)" IsEnabled="False" Visibility="Collapsed" />
                             <TextBox Height="22" Padding="0,2,0,0" Margin="16,376,36,0" Name="partCnbTextBox" FontFamily="Arial" Background="#363636"
                                         Foreground="#CECECE" VerticalAlignment="Top" BorderBrush="#111111" TextChanged="ValidateIdentifiers" 
-                                        ToolTip="ČNB identifikátor díla (pokud existuje)" TabIndex="8" />
+                                        ToolTip="ČNB identifikátor díla (pokud existuje)" TabIndex="8" LostFocus="reloadCoverAndToc" />
                             <TextBox Height="22" Padding="0,2,0,0" Margin="16,420,36,0" Name="partOclcTextBox" FontFamily="Arial" Background="#363636"
                                         Foreground="#CECECE" VerticalAlignment="Top" BorderBrush="#111111" TextChanged="ValidateIdentifiers"
-                                        ToolTip="OCLC číslo díla (pokud existuje)" TabIndex="9" />
+                                        ToolTip="OCLC číslo díla (pokud existuje)" TabIndex="9" LostFocus="reloadCoverAndToc" />
                             <TextBox Height="22" Padding="0,2,0,0" Margin="16,464,36,0" Name="partEanTextBox" FontFamily="Arial" Background="#363636"
                                         Foreground="#CECECE" VerticalAlignment="Top" BorderBrush="#111111" TextChanged="ValidateIdentifiers" 
-                                        ToolTip="EAN číslo díla (pokud existuje)" TabIndex="10" />
+                                        ToolTip="EAN číslo díla (pokud existuje)" TabIndex="10" LostFocus="reloadCoverAndToc" />
                             <TextBox Height="22" Padding="0,2,0,0" Margin="16,508,36,0" Name="partUrnNbnTextBox" FontFamily="Arial" Background="#363636"
                                         Foreground="#CECECE" VerticalAlignment="Top" BorderBrush="#111111" TextChanged="ValidateIdentifiers" 
-                                        ToolTip="URN:NBN identifikátor díla (pokud existuje)" TabIndex="11" />
+                                        ToolTip="URN:NBN identifikátor díla (pokud existuje)" TabIndex="11" LostFocus="reloadCoverAndToc" />
                             <TextBox Height="22" Padding="0,2,0,0" Margin="16,552,36,0" Name="partSiglaTextBox" FontFamily="Arial" Background="#363636"
                                         Foreground="#CECECE" VerticalAlignment="Top" BorderBrush="#111111" TextChanged="ValidateIdentifiers"
-                                        ToolTip="Váš unikátní identifikátor díla, například systémové číslo nebo čárový kód (vyplňte jen pokud neexistuje jiný identifikátor)" TabIndex="12" />
+                                        ToolTip="Váš unikátní identifikátor díla, například systémové číslo nebo čárový kód (vyplňte jen pokud neexistuje jiný identifikátor)" TabIndex="12" LostFocus="reloadCoverAndToc" />
                             <Image Margin="0,135,10,0" Name="partYearWarning" Stretch="Uniform" VerticalAlignment="Top" Visibility="Hidden"
                                    Width="18" Source="/ObalkyKnih-scanner;component/Images/ok-icon-warning.png" HorizontalAlignment="Right" 
                                    MouseLeftButtonDown="PartImageWarning_Click" />
-                            <Image Margin="0,179,10,0" Name="partNumberWarning" Stretch="Uniform" VerticalAlignment="Top" Visibility="Hidden"
+                            <Image Margin="0,221,10,0" Name="partNumberWarning" Stretch="Uniform" VerticalAlignment="Top" Visibility="Hidden"
                                    Width="18" Source="/ObalkyKnih-scanner;component/Images/ok-icon-warning.png" HorizontalAlignment="Right"
                                    MouseLeftButtonDown="PartImageWarning_Click" />
-                            <Image Margin="0,223,10,0" Name="partVolumeWarning" Stretch="Uniform" VerticalAlignment="Top" Visibility="Hidden"
+                            <Image Margin="0,176,10,0" Name="partVolumeWarning" Stretch="Uniform" VerticalAlignment="Top" Visibility="Hidden"
                                    Width="18" Source="/ObalkyKnih-scanner;component/Images/ok-icon-warning.png" HorizontalAlignment="Right" 
                                    MouseLeftButtonDown="PartImageWarning_Click" />
                             <Image Margin="0,334,10,0" Name="partIsbnWarning" Stretch="Uniform" VerticalAlignment="Top" Visibility="Hidden"
@@ -486,7 +486,7 @@
                         </Button>
                     </Grid>
                     <!--Scanning and image loading-->
-                    <Grid Margin="0,400,0,0" VerticalAlignment="Top" HorizontalAlignment="Center">
+                    <Grid Margin="34,400,34,0" VerticalAlignment="Top" HorizontalAlignment="Center" Height="171">
                         <Button Name="scanCoverButton" Content="Skenovat obálku" Height="30" Click="ScanCoverButton_Click"
                                 HorizontalAlignment="Center" Margin="0,0,0,0" Foreground="#CECECE" BorderBrush="#656565"
                                 VerticalAlignment="Top" Width="165" BorderThickness="1" Style="{StaticResource MyButton}"
@@ -499,7 +499,7 @@
                             </Button.Background>
                         </Button>
                         <Button Name="scanTocButton" Content="Skenovat obsah" Height="30" Click="ScanTocButton_Click"
-                                HorizontalAlignment="Center" Margin="0,40,0,0" Foreground="#CECECE" BorderBrush="#656565"
+                                HorizontalAlignment="Center" Margin="0,64,0,0" Foreground="#CECECE" BorderBrush="#656565"
                                 VerticalAlignment="Top" Width="165" BorderThickness="1" Style="{StaticResource MyButton}" 
                                 Cursor="Hand" ToolTip="Naskenovat obrázek z obsahu">
                             <Button.Background>
@@ -509,13 +509,19 @@
                                 </LinearGradientBrush>
                             </Button.Background>
                         </Button>
-                        <Label Name="loadFromFileLabel" Content="Načíst ze souboru" FontFamily="Arial" Foreground="#5E5E5E"
-                               Margin="0,80,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Cursor="Hand"
+                        <Label Name="loadFromFileLabel" Content="Načíst ze souboru" FontFamily="Arial" Foreground="#FF1E1E1E"
+                               Margin="29,134,29,0" HorizontalAlignment="Center" VerticalAlignment="Top" Cursor="Hand"
                                ToolTip="Načíst obrázek ze souboru, po kliknutí vyberte zda chcete načíst obálku nebo obsah"
                                MouseLeftButtonDown="LoadFromFile_Clicked" MouseEnter="Icon_MouseEnter" MouseLeave="Icon_MouseLeave" />
+                        <Label Content="A5" Height="28" HorizontalAlignment="Left" Margin="28,30,0,0" Name="scanCoverA5" VerticalAlignment="Top" Foreground="#FF5E5E5E" MouseLeftButtonUp="scanA5CoverButton_MouseLeftButtonUp" Cursor="Hand" />
+                        <Label Content="A4" Foreground="#FF5E5E5E" Height="28" HorizontalAlignment="Right" Margin="0,30,72,0" Name="scanCoverA4" VerticalAlignment="Top" MouseLeftButtonUp="scanA4CoverButton_MouseLeftButtonUp" Cursor="Hand" />
+                        <Label Content="A3" Foreground="#FF5E5E5E" Height="28" HorizontalAlignment="Left" Margin="116,30,0,0" Name="scanCoverA3" VerticalAlignment="Top" MouseLeftButtonUp="scanA3CoverButton_MouseLeftButtonUp" Cursor="Hand" />
+                        <Label Content="A5" Foreground="#FF5E5E5E" Height="28" HorizontalAlignment="Left" Margin="28,94,0,0" Name="scanTocA5" VerticalAlignment="Top" MouseLeftButtonUp="scanA5TocButton_MouseLeftButtonUp" Cursor="Hand" />
+                        <Label Content="A4" Foreground="#FF5E5E5E" Height="28" HorizontalAlignment="Left" Margin="69,94,0,0" Name="scanTocA4" VerticalAlignment="Top" MouseLeftButtonUp="scanA4TocButton_MouseLeftButtonUp" Cursor="Hand" />
+                        <Label Content="A3" Foreground="#FF5E5E5E" Height="28" HorizontalAlignment="Left" Margin="116,94,0,0" Name="scanTocA3" VerticalAlignment="Top" MouseLeftButtonUp="scanA3TocButton_MouseLeftButtonUp" Cursor="Hand" />
                     </Grid>
                     <!--Sending to obalkyknih.cz-->
-                    <Grid Margin="0,560,0,0" VerticalAlignment="Top" HorizontalAlignment="Center">
+                    <Grid Margin="34,577,34,0" VerticalAlignment="Top" HorizontalAlignment="Center">
                         <Button Name="sendButton" Content="Odeslat" Height="30" BorderBrush="#b7da86" Cursor="Hand"
                                 HorizontalAlignment="Center" Margin="0,0,0,0" Foreground="White" ToolTip="Odeslat všechno na obalkyknih.cz"
                                 VerticalAlignment="Top" Width="165" BorderThickness="1" Style="{StaticResource MyButton}" Click="SendButton_Click">
@@ -527,8 +533,9 @@
                             </Button.Background>
                         </Button>
                         <CheckBox Name="ocrCheckBox" Content="Použít OCR" Margin="0,40,0,0" FontFamily="Arial" Foreground="#5E5E5E"
-                                  VerticalAlignment="Top" HorizontalAlignment="Center" ToolTip="Použít OCR na odeslaný obsah" />
+                                  VerticalAlignment="Top" HorizontalAlignment="Center" ToolTip="Použít OCR na odeslaný obsah" Visibility="Hidden" IsChecked="True" />
                     </Grid>
+                    <Separator Height="5" HorizontalAlignment="Left" Margin="36,524,0,0" Name="separator3" VerticalAlignment="Top" Width="163" />
                 </Grid>
             </Grid>
         </TabItem>
@@ -575,9 +582,10 @@
                     <Image Source="/ObalkyKnih-scanner;component/Images/ok-icon-done.png" Margin="0,300,0,0" Stretch="Uniform"
                            VerticalAlignment="Top" HorizontalAlignment="Center" Width="89"/>
                     <Button Name="controlNewUnitButton" Content="Nový záznam" Height="30" Cursor="Hand"
-                                HorizontalAlignment="Center" Margin="0,450,0,0" Background="#5E5E5E" Foreground="#CECECE" 
-                                VerticalAlignment="Top" Width="165" BorderThickness="0" Style="{StaticResource MyButton}" 
+                                HorizontalAlignment="Left" Margin="22,450,0,0" Background="#5E5E5E" Foreground="#CECECE" 
+                                VerticalAlignment="Top" Width="188" BorderThickness="0" Style="{StaticResource MyButton}" 
                                 ClickMode="Press" Click="controlNewUnitButton_Click" ToolTip="Založit nový záznam"/>
+                    <Button Background="#5E5E5E" BorderThickness="0" ClickMode="Press" Content="Skenovat další stejný titul" Cursor="Hand" Foreground="#CECECE" Height="33" HorizontalAlignment="Center" Margin="22,404,20,0" Name="controlSameUnitButton" Style="{StaticResource MyButton}" ToolTip="Založit nový záznam" VerticalAlignment="Top" Width="188" Click="controlSameUnitButton_Click" />
                 </Grid>
 
                 <!--Right pannel-->

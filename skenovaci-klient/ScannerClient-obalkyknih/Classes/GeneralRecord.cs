@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Collections.Generic;
 using System;
 using System.Windows.Media.Imaging;
@@ -135,12 +135,19 @@ namespace ScannerClient_obalkyknih.Classes
         /// <summary>Parse record publish year from single metadata field defined in Settings</summary>
         /// <param name="metadata">Metadata of record</param>
         /// <returns>Publish year</returns>
-        protected string ParseYear(Metadata metadata)
+         protected string ParseYear(Metadata metadata)
         {
-            return metadata.VariableFields.Where(vf => Settings.MetadataPublishYearField.Item1.ToString("D3").Equals(vf.TagName))
-                                           .SelectMany(vf => vf.Subfields)
-                                           .Where(subf => Settings.MetadataPublishYearField.Item2.ToString().Equals(subf.Key))
-                                           .Select(subf => subf.Value).FirstOrDefault();
+            // AACR2
+            string yearAacr2 = metadata.VariableFields.Where(vf => Settings.MetadataPublishYearField.Item1.ToString("D3").Equals(vf.TagName))
+                                                                           .SelectMany(vf => vf.Subfields)
+                                                                           .Where(subf => Settings.MetadataPublishYearField.Item2.ToString().Equals(subf.Key))
+                                                                           .Select(subf => subf.Value).FirstOrDefault();
+            // RDA
+            string yearRda = metadata.VariableFields.Where(  vf => Settings.MetadataPublishYearFieldRDA.Item1.ToString("D3").Equals(vf.TagName))
+                                                                           .SelectMany(vf => vf.Subfields)
+                                                                           .Where(subf => Settings.MetadataPublishYearFieldRDA.Item2.ToString().Equals(subf.Key))
+                                                                           .Select(subf => subf.Value).FirstOrDefault();
+            return yearRda ?? yearAacr2;
         }
 
         /// <summary>Parse particular record identifiers defined by metadataSettings from metadata</summary>

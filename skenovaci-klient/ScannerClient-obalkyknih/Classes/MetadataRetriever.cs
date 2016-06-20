@@ -302,7 +302,14 @@ namespace ScannerClient_obalkyknih.Classes
                     identifierFieldNumber = Settings.Z39BarcodeField;
                     break;
                 case IdentifierType.CNB:
-                    identifierFieldNumber = Settings.Z39CnbField;
+                    if (isUnion)
+                    {
+                        identifierFieldNumber = Settings.DEFAULT_NKP_CNB_FIELD;
+                    }
+                    else
+                    {
+                        identifierFieldNumber = Settings.Z39CnbField;
+                    }
                     break;
                 case IdentifierType.EAN:
                     identifierFieldNumber = Settings.Z39EanField;

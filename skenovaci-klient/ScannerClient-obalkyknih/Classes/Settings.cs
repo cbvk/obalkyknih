@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Xml.Serialization;
 using System.IO;
 using System.Windows;
@@ -19,6 +19,7 @@ namespace ScannerClient_obalkyknih
         const int DEFAULT_ISBN_FIELD = 7;
         const int DEFAULT_ISSN_FIELD = 8;
         const int DEFAULT_CNB_FIELD = 48;
+        public const int DEFAULT_NKP_CNB_FIELD = 48; // for union search
         const int DEFAULT_BARCODE_FIELD = 1063;
         public const int DEFAULT_FIELD = 1035;
 
@@ -565,7 +566,13 @@ namespace ScannerClient_obalkyknih
             get
             {
                 int cnb = GetIntRegistryValue(IsAdminZ39CnbField, "Z39CnbField");
-                return cnb == 0 ? DEFAULT_CNB_FIELD : cnb;
+                int defaultCnb = DEFAULT_CNB_FIELD;
+                switch (Settings.Sigla)
+                {
+                    case "CBA001": defaultCnb = 2544; break;
+                    case "KLG001": defaultCnb = 2383; break;
+                }
+                return cnb == 0 ? defaultCnb : cnb;
             }
             set
             {
@@ -850,6 +857,71 @@ namespace ScannerClient_obalkyknih
             }
         }
 
+        /// <summary>Store aquired image to local storage</summary>
+        internal static bool EnableLocalImageCopy
+        {
+            get
+            {
+                return Convert.ToBoolean(GetIntRegistryValue(false, "EnableLocalImageCopy"));
+            }
+            set
+            {
+                SetRegistryValue(false, "EnableLocalImageCopy", value ? 1 : 0, RegistryValueKind.DWord);
+            }
+        }
+
+        /// <summary>Scan with low data flow</summary>
+        internal static bool EnableScanLowDataFlow
+        {
+            get
+            {
+                return Convert.ToBoolean(GetIntRegistryValue(false, "EnableScanLowDataFlow"));
+            }
+            set
+            {
+                SetRegistryValue(false, "EnableScanLowDataFlow", value ? 1 : 0, RegistryValueKind.DWord);
+            }
+        }
+
+        /// <summary>Scan with low resolution</summary>
+        internal static bool EnableScanLowRes
+        {
+            get
+            {
+                return Convert.ToBoolean(GetIntRegistryValue(false, "EnableScanLowRes"));
+            }
+            set
+            {
+                SetRegistryValue(false, "EnableScanLowRes", value ? 1 : 0, RegistryValueKind.DWord);
+            }
+        }
+
+        internal static string ScanOutputDir
+        {
+            get
+            {
+                // default dir
+                string localUploadDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                localUploadDir = System.IO.Path.Combine(localUploadDir, "storage");
+                // loaded from windows registry
+                string scanOutputDir = GetStringRegistryValue(IsAdminScanOutputDir, "ScanOutputDir");
+                return string.IsNullOrEmpty(scanOutputDir) ? localUploadDir : scanOutputDir;
+            }
+            set
+            {
+                SetRegistryValue(IsAdminScanOutputDir, "ScanOutputDir", value, RegistryValueKind.String);
+            }
+        }
+
+        /// <summary>Indicates that scan output directory was filled by admin and can't be changed in application</summary>
+        internal static bool IsAdminScanOutputDir
+        {
+            get
+            {
+                return AdminSettingsRegistryKey != null && AdminSettingsRegistryKey.GetValue("ScanOutputDir", null) != null;
+            }
+        }
+
         /// <summary>Version of application used for information about new changes</summary>
         internal static string VersionInfo
         {
@@ -917,12 +989,21 @@ namespace ScannerClient_obalkyknih
             }
         }
 
-        /// <summary>Publish Year field in Marc21 (field, subfield, ind1, ind2)</summary>
+        /// <summary>Publish Year (AACR2) field in Marc21 (field, subfield, ind1, ind2)</summary>
         internal static Tuple<int, char, char?, char?> MetadataPublishYearField
         {
             get
             {
                 return new Tuple<int, char, char?, char?>(260, 'c', null, null);
+            }
+        }
+        
+        /// <summary>Publish Year field (RDA) in Marc21 (field, subfield, ind1, ind2)</summary>
+        internal static Tuple<int, char, char?, char?> MetadataPublishYearFieldRDA
+        {
+            get
+            {
+                return new Tuple<int, char, char?, char?>(264, 'c', null, null);
             }
         }
 
@@ -979,6 +1060,30 @@ namespace ScannerClient_obalkyknih
                 return new Tuple<int, char, char?, char?>(24, 'a', '3', null);
             }
         }
+        
+        internal static Tuple<int, char, char?, char?> MetadataVolumeFieldA
+        {
+            get
+            {
+                return new Tuple<int, char, char?, char?>(915, 'a', null, null);
+            }
+        }
+        
+        internal static Tuple<int, char, char?, char?> MetadataPartNoFieldA
+        {
+            get
+            {
+                return new Tuple<int, char, char?, char?>(915, 'b', null, null);
+            }
+        }
+        
+        internal static Tuple<int, char, char?, char?> MetadataPublishYearFieldA
+        {
+            get
+            {
+                return new Tuple<int, char, char?, char?>(915, 'c', null, null);
+            }
+        }
 
         /// <summary>PPI used for scanning of cover</summary>
         internal const int CoverDPI = 300;
@@ -988,6 +1093,9 @@ namespace ScannerClient_obalkyknih
 
         /// <summary>PPI used for scanning of cover</summary>
         internal const int TocDPI = 300;
+
+        /// <summary>PPI used for scanning in low resolution</summary>
+        internal const int LowResDPI = 200;
 
         /// <summary>Color type used for scanning of cover (Color/Grey/Black and White)</summary>
         internal const ScanColor TocScanType = ScanColor.Color;

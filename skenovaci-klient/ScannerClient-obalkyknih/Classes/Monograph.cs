@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Linq;
 using System.Collections.Generic;
 using System;
@@ -29,8 +29,10 @@ namespace ScannerClient_obalkyknih.Classes
         public string PartTitle { get; set; }
 
         public string PartAuthors { get; set; }
-        
+
         public string PartCustom { get; set; }
+
+        public bool HasIssn { get; set; }
 
         public List<MetadataIdentifier> listIdentifiers { get; set; }
 
@@ -84,6 +86,9 @@ namespace ScannerClient_obalkyknih.Classes
             SetPartIdentfier(metadata, IdentifierType.OCLC, Settings.MetadataOclcField);
             this.Custom = metadata.Sysno;
 
+            IEnumerable<string> identifierIssn = ParseIdentifier(metadata, Settings.MetadataIssnField);
+            this.HasIssn = (identifierIssn.FirstOrDefault() != null) ? true : false;
+
             if (this.listIdentifiers.Count > 2)
             {
                 //choose part and union ISBNs
@@ -111,7 +116,7 @@ namespace ScannerClient_obalkyknih.Classes
         private void SetPartIdentfier(Metadata metadata, IdentifierType idType, Tuple<int, char, char?, char?> metadataSettings)
         {
             IEnumerable<string> identifiers = ParseIdentifier(metadata, metadataSettings);
-            
+
             string first = identifiers.FirstOrDefault();
             string second = identifiers.Where(id => !id.Equals(first)).FirstOrDefault();
             DuplicateIdentifiers = new Dictionary<IdentifierType, string>();
@@ -131,6 +136,7 @@ namespace ScannerClient_obalkyknih.Classes
                     break;
                 case IdentifierType.OCLC:
                     this.PartOclc = second;
+                    if (this.PartOclc!=null && this.PartOclc.Trim().Substring(0, 7) != "(OCoLC)") this.PartOclc = null;
                     break;
             }
         }

@@ -87,7 +87,7 @@
                 <Label HorizontalAlignment="Left" Name="programSupportLabel" VerticalAlignment="Top"
                        Margin="180,220,0,0" Height="24" Width="89" Foreground="#4C4B49" FontFamily="Arial" />
                 <Label Content="Verze není aktuální" HorizontalAlignment="Left" Margin="40,250,0,0" Name="versionStateLabel"
-                       VerticalAlignment="Top" Foreground="#4C4B49" FontFamily="Arial"/>
+                       VerticalAlignment="Top" FontFamily="Arial" />
                 <Image Source="/ObalkyKnih-scanner;component/Images/ok-icon-caution.png" Stretch="Uniform" Margin="150,250,0,0"
                        Name="versionStateImage" VerticalAlignment="Top" HorizontalAlignment="Left" Width="23" Visibility="Hidden" />
                 <Line X1="40" Y1="290" X2="260" Y2="290" Stroke="#4C4B49" StrokeThickness="1" />

@@ -14,13 +14,14 @@ set VALUE_NAME="Inno Setup: App Path"
 REM find version of reg.exe
 for /f "tokens=1-2" %%i in ('sigcheck.exe %WINDIR%\System32\reg.exe /accepteula') do ( if "%%i"=="Version:" set filever=%%j )
 for /f "tokens=1,2 delims=." %%a in ("%filever%") do ( set filever=%%a.%%b )
-if %filever% GTR 6 (
+REM if %filever% GTR 6 (
 echo Compiling on Windows Vista or newer
 set regskip=2
-) else (
-echo Compiling on Windows XP
-set regskip=4
-)
+REM ) else (
+REM echo Compiling on Windows XP
+REM set regskip=4
+REM )
+
 REM check if key exists or try WOW6432Node
 reg query %KEY_NAME% 1>nul 2>nul
 if %ERRORLEVEL% NEQ 0 (

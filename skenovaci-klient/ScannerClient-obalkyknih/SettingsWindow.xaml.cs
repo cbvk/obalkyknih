@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Windows;
 using System.Text;
 using SobekCM.Bib_Package.MARC.Parsers;
 using System.Windows.Input;
+using System.Windows.Forms;
 
 namespace ScannerClient_obalkyknih
 {
@@ -42,6 +43,8 @@ namespace ScannerClient_obalkyknih
             this.z39PasswordTextBox.Text = Settings.Z39Password;
             this.z39BarcodeField.IsEnabled = !Settings.IsAdminZ39BarcodeField && Settings.IsZ39Enabled;
             this.z39BarcodeField.Text = Settings.Z39BarcodeField.ToString();
+            this.z39CnbField.IsEnabled = !Settings.IsAdminZ39CnbField && Settings.IsZ39Enabled;
+            this.z39CnbField.Text = Settings.Z39CnbField.ToString();
             this.z39EncodingComboBox.IsEnabled = !Settings.IsAdminZ39Encoding && Settings.IsZ39Enabled;
             if (Settings.Z39Encoding == Record_Character_Encoding.MARC)
             {
@@ -85,6 +88,12 @@ namespace ScannerClient_obalkyknih
             this.disableTocDeletionNotificationCheckBox.IsChecked = Settings.DisableTocDeletionNotification;
             this.disableCustomIdentifierNotificationCheckBox.IsChecked = Settings.DisableCustomIdentifierNotification;
             this.disableResolveIdentifierCheckBox.IsChecked = Settings.DisableResolveIdentifier;
+            this.enableLocalImageCopy.IsChecked = Settings.EnableLocalImageCopy;
+            this.scanLowDataFlowCheckBox.IsChecked = Settings.EnableScanLowDataFlow;
+            this.scanLowResCheckBox.IsChecked = Settings.EnableScanLowRes;
+
+            this.scanOutputDir.IsEnabled = !Settings.IsAdminScanOutputDir;
+            this.scanOutputDir.Text = Settings.ScanOutputDir;
         }
 
         // Enables XServer components, disables Z39.50 components
@@ -132,6 +141,7 @@ namespace ScannerClient_obalkyknih
             Settings.Z39UserName = this.z39UserNameTextBox.Text;
             Settings.Z39Password = this.z39PasswordTextBox.Text;
             Settings.Z39BarcodeField = int.Parse(this.z39BarcodeField.Text);
+            Settings.Z39CnbField = int.Parse(this.z39CnbField.Text);
             if (this.z39EncodingComboBox.SelectedIndex == 2)
             {
                 Settings.Z39Encoding = Record_Character_Encoding.MARC;
@@ -162,6 +172,11 @@ namespace ScannerClient_obalkyknih
             Settings.DisableTocDeletionNotification = (bool)this.disableTocDeletionNotificationCheckBox.IsChecked;
             Settings.DisableCustomIdentifierNotification = (bool)this.disableCustomIdentifierNotificationCheckBox.IsChecked;
             Settings.DisableResolveIdentifier = (bool)this.disableResolveIdentifierCheckBox.IsChecked;
+            Settings.EnableLocalImageCopy = (bool)this.enableLocalImageCopy.IsChecked;
+            Settings.EnableScanLowDataFlow = (bool)this.scanLowDataFlowCheckBox.IsChecked;
+            Settings.EnableScanLowRes = (bool)this.scanLowResCheckBox.IsChecked;
+
+            Settings.ScanOutputDir = this.scanOutputDir.Text;
             
             Settings.PersistSettings();
 
@@ -261,5 +276,14 @@ namespace ScannerClient_obalkyknih
         {
             this.alwaysDownloadUpdatesCheckBox.IsChecked = false;
         }
+
+        private void chooseScanOutputDir_Click(object sender, RoutedEventArgs e)
+        {
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            DialogResult result = fbd.ShowDialog();
+            string folderName = fbd.SelectedPath;
+            if (!String.IsNullOrEmpty(folderName)) scanOutputDir.Text = folderName;
+        }
+
     }
 }

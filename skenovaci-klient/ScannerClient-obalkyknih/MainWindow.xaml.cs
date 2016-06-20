@@ -33,6 +33,8 @@ namespace ScannerClient_obalkyknih
         private bool showIsLatestVersionPopup = false;
         //signals is this version is supported
         private bool? isAllowedVersion = null;
+        //signals finished version check
+        private bool isVersionCheckFinished = false;
         //client for downloading of update
         private WebClient webClient = new WebClient();
         //force shutdown - do not show confirmation message
@@ -209,18 +211,19 @@ namespace ScannerClient_obalkyknih
         {
             if (!Settings.Version.ToString().Equals(Settings.VersionInfo))
             {
-                MessageBoxDialogWindow.Show("Verze 0.21 (opravné vydání)",
-                      "Změny ve verzi 0.21:\n\n"
-                    + "* Oprava stahování metadat z X-Serveru.\n"
-                    + "* Oprava aktualizace metadatového záznamu.\n"
-                    + "* Možnost vypnout rozeznávání identifikátorů při zakládání záznamu.\n"
-                    + "* Automatické vyplnění vlastního identifikátoru, pokud záznam nemá žádny jiný.\n\n"
-                    + "Změny ve verzi 0.20:\n\n"
-                    + "* Možnost vyhledávat podle dalších identifikátorů, např. ISBN, ISSN, nebo ČNB.\n"
-                    + "* Možnost skenování obálek a obsahů vícesvazkových děl.\n"
-                    + "* Možnost skenování čísel periodik.\n"
-                    + "* Možnost napojení souborného záznamu (pokud skenujeme část monografie).\n"
-                    + "* Vyhledání souborného záznamu v souborném katalogu.\n", "OK", MessageBoxDialogWindow.Icons.Information);
+                MessageBoxDialogWindow.Show("Verze 0.29",
+                      "Změny ve verzi 0.29:\n"
+                    + "* Bugfix známých problémů.\n\n"
+                    + "Změny ve verzi 0.28:\n"
+                    + "* Možnost ukládat naskenované obrázky do vlastního adresáře (nastavení 'přizpůsobení').\n"
+                    + "* V názvu souboru naskenovaných obálek a obsahů se vyskytují\n"
+                    + "  identifikátory isbn, issn, ean, čnb, oclc, nebo vlastný identifikátor.\n"
+                    + "* Bugfix známých problémů.\n\n"
+                    + "Změny ve verzi 0.27:\n"
+                    + "* Rozšířena podpora skenerů. Nová záložka nastavení 'kompatibilita' skenování.\n"
+                    + "* Pokud naleznete problém s Vaším skenerem, kontaktujte nás.\n"
+                    + "* Možnost ukládat naskenované obrázky do složky aplikace sken. klienta.\n"
+                    + "* Bugfix známých problémů.\n", "OK", MessageBoxDialogWindow.Icons.Information);
                 Settings.VersionInfo = Settings.Version.ToString();
             }
         }
@@ -317,7 +320,7 @@ namespace ScannerClient_obalkyknih
             // don't care if some file can't be deleted right now
             catch (Exception) { }
 
-            //isAllowedVersion = true; //DEBUG
+            if (this.isVersionCheckFinished && Settings.NeverDownloadUpdates && isAllowedVersion != false) isAllowedVersion = true; //debug
             if (isAllowedVersion == null)
             {
                 MessageBoxDialogWindow.Show("Kontrola verze", "Kontrola verze zatím neskončila, počkejte prosím.",
@@ -429,6 +432,7 @@ namespace ScannerClient_obalkyknih
         // Complex actions after update-info was retrieved
         private void UpdateInfoBackgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
+            this.isVersionCheckFinished = true;
             if (e.Error != null)
             {
                 this.versionStateLabel.Content = "";
@@ -438,7 +442,7 @@ namespace ScannerClient_obalkyknih
                         "Informace o aktualizaci mají nesprávný formát. Kontaktujte prosím administrátory servru obalkyknih.cz.",
                         "OK", MessageBoxDialogWindow.Icons.Error);
                 }
-                else
+                else if (!Settings.NeverDownloadUpdates)
                 {
                     var result = MessageBoxDialogWindow.Show("Chyba stahování informací o aktualizaci",
                         "Při stahování informací o aktualizaci se vyskytla chyba. Po stisknutí OK se zahájí další pokus.",
@@ -447,6 +451,12 @@ namespace ScannerClient_obalkyknih
                     {
                         updateInfoBackgroundWorker.RunWorkerAsync();
                     }
+                }
+                else
+                {
+                    this.versionStateLabel.Content = "Verzi není možné zjistit";
+                    this.versionStateLabel.Foreground = Brushes.Red;
+                    this.versionStateLabel.FontWeight = FontWeights.Bold;
                 }
             }
             else if (!e.Cancelled)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Text.RegularExpressions;
 using WIA;
 using System.ComponentModel;
 using System.IO;
@@ -52,10 +53,10 @@ namespace ScannerClient_obalkyknih
         // Index of currently valid metadata from metadataList
         private int metadataIndex = 0;
 
-        private GeneralRecord generalRecord;
+        public GeneralRecord generalRecord;
 
         // Backup image for Ctrl+Z (Undo)
-        private KeyValuePair<string, BitmapSource> backupImage = new KeyValuePair<string,BitmapSource>();
+        private KeyValuePair<string, BitmapSource> backupImage = new KeyValuePair<string, BitmapSource>();
 
         private KeyValuePair<string, BitmapSource> redoImage = new KeyValuePair<string, BitmapSource>();
 
@@ -70,7 +71,7 @@ namespace ScannerClient_obalkyknih
         // GUID that corresponds to cover image
         private Guid coverGuid;
 
-        // Dictionary containing GUID and file path of all loaded images 
+        // Dictionary containing GUID and file path of all loaded images
         private Dictionary<Guid, string> imagesFilePaths = new Dictionary<Guid, string>();
 
         // Dictionary containing GUID and dimensions of originals of all loaded images
@@ -99,6 +100,9 @@ namespace ScannerClient_obalkyknih
 
         // Union tab showing
         private bool unionTabVisible = false;
+
+        // Is input correct
+        private bool inputCorrect = false;
 
         #endregion
 
@@ -137,7 +141,7 @@ namespace ScannerClient_obalkyknih
                 // part and union grid hidden by default
                 this.gridIdentifiers.Visibility = Visibility.Hidden;
             }
-            else if(record is Periodical)
+            else if (record is Periodical)
             {
                 this.addUnionButton.IsEnabled = false;
                 this.addUnionButton.Visibility = Visibility.Collapsed;
@@ -192,7 +196,7 @@ namespace ScannerClient_obalkyknih
             kg = new KeyGesture(Key.H, ModifierKeys.Control);
             ib = new InputBinding(this.flipHorizontalCommand, kg);
             this.InputBindings.Add(ib);
-            
+
             //crop
             cb = new CommandBinding(this.cropCommand, CropCommandExecuted, CropCommandCanExecute);
             this.CommandBindings.Add(cb);
@@ -294,7 +298,7 @@ namespace ScannerClient_obalkyknih
                 Crop_Clicked(null, null);
             }
         }
-        
+
         //deskew
         private void DeskewCommandCanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
@@ -338,7 +342,7 @@ namespace ScannerClient_obalkyknih
                 }
             }
         }
-        
+
         // Downloads metadata and cover and toc images
         private void DownloadMetadataButton_Click(object sender, RoutedEventArgs e)
         {
@@ -346,7 +350,7 @@ namespace ScannerClient_obalkyknih
             (Window.GetWindow(this) as MainWindow).AddMessageToStatusBar("Stahuji metadata.");
             this.metadataReceiverBackgroundWorker.RunWorkerAsync(this.generalRecord);
         }
-        
+
         // On doubleclick, downloads pdf with toc and opens it in default viewer
         private void OriginalTocImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -375,7 +379,7 @@ namespace ScannerClient_obalkyknih
             uploaderBackgroundWorker.WorkerSupportsCancellation = true;
             uploaderBackgroundWorker.DoWork += new DoWorkEventHandler(UploaderBW_DoWork);
             uploaderBackgroundWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(UploaderBW_RunWorkerCompleted);
-            
+
             metadataReceiverBackgroundWorker.WorkerSupportsCancellation = true;
             metadataReceiverBackgroundWorker.WorkerReportsProgress = false;
             metadataReceiverBackgroundWorker.DoWork += new DoWorkEventHandler(MetadataReceiverBW_DoWork);
@@ -419,18 +423,24 @@ namespace ScannerClient_obalkyknih
                         // show metadata window if multiple records fetched
                         if (metadataList.Count > 1)
                         {
-                            var metadataIndex = (this.generalRecord is Monograph) ? 0 : metadataList.Count-1;
+                            var metadataIndex = (this.generalRecord is Monograph) ? 0 : metadataList.Count - 1;
                             MetadataWindow metadataWindow = new MetadataWindow(metadataList, metadataIndex);
                             metadataWindow.ShowDialog();
                             if (metadataWindow.DialogResult.HasValue && metadataWindow.DialogResult.Value)
                             {
                                 this.metadata = metadataList;
                                 this.metadataIndex = metadataWindow.MetadataIndex;
-                                 idx = metadataWindow.reorder[this.metadataIndex];
+                                idx = metadataWindow.reorder[this.metadataIndex];
                             }
                         }
-                        
+
                         this.generalRecord.ImportFromMetadata(this.metadata[idx]);
+                        if ((this.generalRecord is Monograph) && (this.generalRecord as Monograph).HasIssn)
+                        {
+                            MessageBoxDialogWindow.Show("Špatný vstup", "Chystáte se skenovat novou monografii, ale v záznamu byl nalezen identifikátor ISSN. \nProsím vyhledejte záznam jako periodikum (zmáčkněte CTRL+N a v oknu zvolte záložku PERIODIKUM).",
+                                "OK", MessageBoxDialogWindow.Icons.Error);
+                        }
+
                         FillTextboxes();
                         this.showCompleteMetadataButton.IsEnabled = true;
 
@@ -453,7 +463,7 @@ namespace ScannerClient_obalkyknih
             FillGeneralRecord();
             if (this.generalRecord is Periodical)
             {
-                if (this.generalRecord.PartNo == null ||
+                if (this.generalRecord.PartNo == null &&
                     (this.generalRecord.PartYear == null && (this.generalRecord as Periodical).PartVolume == null))
                 {
                     MessageBoxDialogWindow.Show("Varování!", "Musíte vyplnit rok a číslo nebo ročník a číslo",
@@ -465,7 +475,7 @@ namespace ScannerClient_obalkyknih
             MetadataRetriever.RetrieveOriginalCoverAndTocInformation(this.generalRecord);
             if (this.generalRecord.OriginalCoverImageLink != null)
             {
-                (Window.GetWindow(this) as MainWindow).AddMessageToStatusBar("Stahuji obálku.");
+                if ((Window.GetWindow(this) as MainWindow) != null) (Window.GetWindow(this) as MainWindow).AddMessageToStatusBar("Stahuji obálku.");
                 using (WebClient coverWc = new WebClient())
                 {
                     coverWc.OpenReadCompleted += new OpenReadCompletedEventHandler(CoverDownloadCompleted);
@@ -474,7 +484,7 @@ namespace ScannerClient_obalkyknih
             }
             if (this.generalRecord.OriginalTocThumbnailLink != null)
             {
-                (Window.GetWindow(this) as MainWindow).AddMessageToStatusBar("Stahuji obsah.");
+                if ((Window.GetWindow(this) as MainWindow) != null) (Window.GetWindow(this) as MainWindow).AddMessageToStatusBar("Stahuji obsah.");
                 using (WebClient tocWc = new WebClient())
                 {
                     tocWc.OpenReadCompleted += new OpenReadCompletedEventHandler(TocDownloadCompleted);
@@ -507,7 +517,8 @@ namespace ScannerClient_obalkyknih
         // Actions after toc image was downloaded - shows image
         void TocDownloadCompleted(object sender, OpenReadCompletedEventArgs e)
         {
-            (Window.GetWindow(this) as MainWindow).RemoveMessageFromStatusBar("Stahuji obsah.");
+            MainWindow win = (Window.GetWindow(this) as MainWindow);
+            if (win.IsInitialized) win.RemoveMessageFromStatusBar("Stahuji obsah.");
             if (e.Error == null && !e.Cancelled)
             {
                 BitmapImage imgsrc = new BitmapImage();
@@ -531,7 +542,7 @@ namespace ScannerClient_obalkyknih
         void TocPdfDownloadCompleted(object sender, AsyncCompletedEventArgs e)
         {
             (Window.GetWindow(this) as MainWindow).RemoveMessageFromStatusBar("Stahuji pdf obsahu.");
-            
+
             if (e.Error == null && !e.Cancelled)
             {
                 System.Diagnostics.Process.Start(Settings.TemporaryFolder + @"orig_toc.pdf");
@@ -558,18 +569,18 @@ namespace ScannerClient_obalkyknih
             {
                 (this.generalRecord as Monograph).PartTitle =
                     string.IsNullOrWhiteSpace(this.partTitleTextBox.Text) ? null : this.partTitleTextBox.Text;
-                this.generalRecord.Title = 
+                this.generalRecord.Title =
                     string.IsNullOrWhiteSpace(this.titleTextBox.Text) ? null : this.titleTextBox.Text;
             }
             else
             {
-                this.generalRecord.Title = 
+                this.generalRecord.Title =
                     string.IsNullOrWhiteSpace(this.partTitleTextBox.Text) ? null : this.partTitleTextBox.Text;
             }
             //authors
             if (this.generalRecord is Monograph)
             {
-                (this.generalRecord as Monograph).PartAuthors = 
+                (this.generalRecord as Monograph).PartAuthors =
                     string.IsNullOrWhiteSpace(this.partAuthorTextBox.Text) ? null : this.partAuthorTextBox.Text;
                 this.generalRecord.Authors =
                     string.IsNullOrWhiteSpace(this.authorTextBox.Text) ? null : this.authorTextBox.Text;
@@ -610,7 +621,7 @@ namespace ScannerClient_obalkyknih
                     string.IsNullOrWhiteSpace(this.partIssnTextBox.Text) ? null : this.partIssnTextBox.Text;
             }
             //cnb
-            if(this.generalRecord is Monograph)
+            if (this.generalRecord is Monograph)
             {
                 (this.generalRecord as Monograph).PartCnb =
                     string.IsNullOrWhiteSpace(this.partCnbTextBox.Text) ? null : this.partCnbTextBox.Text;
@@ -647,7 +658,7 @@ namespace ScannerClient_obalkyknih
                 (this.generalRecord as Monograph).PartCustom =
                     string.IsNullOrWhiteSpace(this.partSiglaTextBox.Text) ? null : this.partSiglaTextBox.Text;
             }
-            this.generalRecord.Custom = 
+            this.generalRecord.Custom =
                 string.IsNullOrWhiteSpace(this.siglaTextBox.Text) ? null : this.siglaTextBox.Text;
         }
 
@@ -709,7 +720,7 @@ namespace ScannerClient_obalkyknih
                         j++;
                     }
 
-                    // pokud je jako skenovany dokument zvoleny prvni zaznam, musi byt 
+                    // pokud je jako skenovany dokument zvoleny prvni zaznam, musi byt
                     if (partComboIndex == unionComboIndex) unionComboIndex = 0;
 
                     this.multipartIdentifierOwn.SelectedIndex = partComboIndex == -1 ? 1 : partComboIndex;
@@ -739,7 +750,7 @@ namespace ScannerClient_obalkyknih
                     this.urnNbnTextBox.Text = tmpRecord.PartUrn;
 
                     //is minor by default
-                    bool minorIsChecked = tmpRecord.listIdentifiers.Count>2 ? true : false;
+                    bool minorIsChecked = tmpRecord.listIdentifiers.Count > 2 ? true : false;
                     this.checkboxMinorPartName.IsChecked = minorIsChecked;
                     if (minorIsChecked)
                     {
@@ -771,16 +782,6 @@ namespace ScannerClient_obalkyknih
                 this.oclcTextBox.Text = record.Oclc;
                 this.cnbTextBox.Text = record.Cnb;
                 this.urnNbnTextBox.Text = record.Urn;
-                /*
-                this.isbnTextBox.Text = (record as Monograph).Isbn ?? (record as Monograph).PartIsbn;
-                this.oclcTextBox.Text = record.Oclc ?? (record as Monograph).PartOclc;
-                this.cnbTextBox.Text = record.Cnb ?? (record as Monograph).PartCnb;
-                this.urnNbnTextBox.Text = record.Urn ?? (record as Monograph).PartUrn;
-                this.partCnbTextBox.Text = (record as Monograph).PartCnb;
-                this.partOclcTextBox.Text = (record as Monograph).PartOclc;
-                this.partCnbTextBox.Text = (record as Monograph).PartCnb;
-                this.partOclcTextBox.Text = (record as Monograph).PartOclc;
-                */
             }
             // if all identifiers are empty, fill custom id
             if ((this.generalRecord is Periodical || !(this.generalRecord as Monograph).IsUnionRequested)
@@ -808,45 +809,110 @@ namespace ScannerClient_obalkyknih
                 }
             }
 
+            // automaticka korekce vstupu
+            Regex rgx = new Regex("\\((.*)\\)");
+            this.partIsbnTextBox.Text = rgx.Replace(this.partIsbnTextBox.Text, "");
+            this.isbnTextBox.Text = rgx.Replace(this.isbnTextBox.Text, "");
+            rgx = new Regex("\\]\\-");
+            // disabled
+            /*
+            this.partYearTextBox.Text = rgx.Replace(this.partYearTextBox.Text, "");
+            this.yearTextBox.Text = rgx.Replace(this.yearTextBox.Text, "");
+            rgx = new Regex("[\\]\\]\\?]");
+            */
+
             ValidateIdentifiers(null, null);
         }
 
         // Validates identifiers, highlights errors
         private void ValidateIdentifiers(object sender, TextChangedEventArgs e)
         {
+            bool warn = true;
+            bool warnTmp = true;
+            GeneralRecord record = this.generalRecord;
+            bool isMono = this.generalRecord is Monograph ? true : false;
+            bool isMonoSingle = (isMono && !this.unionTabVisible) ? true : false;
+            bool isMonoPart = (isMono && this.unionTabVisible) ? true : false;
+            bool isSerial = this.generalRecord is Periodical ? true : false;
+
             // set title to scanning tab
             this.thumbnailsTitleLabel.Content = this.partTitleTextBox.Text;
             // year [0-9,-]
-            ShowYearAndVolumeWarningControl(this.partYearTextBox, this.partYearWarning);
+            warnTmp = ShowYearAndVolumeWarningControl(this.partYearTextBox, this.partYearWarning);
+            warn = !warnTmp ? false : warn;
             // volume [0-9,-]
-            ShowYearAndVolumeWarningControl(this.partVolumeTextBox, this.partVolumeWarning);
+            warnTmp = ShowYearAndVolumeWarningControl(this.partVolumeTextBox, this.partVolumeWarning);
+            warn = !warnTmp ? false : warn;
             // year SZ [0-9,-]
-            ShowYearAndVolumeWarningControl(this.yearTextBox, this.yearWarning);
-            // year SZ [0-9,-]
-            ShowPartnoPartnameWarningControl(this.partNumberTextBox, this.partNameTextBox, this.partnoPartnameWarning);
+            warnTmp = ShowYearAndVolumeWarningControl(this.yearTextBox, this.yearWarning);
+            warn = (!warnTmp && isMonoPart) ? false : warn;
+            // part number and part name
+            warnTmp = ShowPartnoPartnameWarningControl(this.partNumberTextBox, this.partNameTextBox, this.partNumberWarning);
+            warn = (!warnTmp && (isMonoPart || isSerial)) ? false : warn;
             // ISBN - ISBN10 or ISBN13
-            ShowIdentifierWarningControl(IdentifierType.ISBN);
+            warnTmp = ShowIdentifierWarningControl(IdentifierType.ISBN);
+            warn = !warnTmp ? false : warn;
             // ISSN - 7 numbers + checksum
-            ShowIdentifierWarningControl(IdentifierType.ISSN);
+            warnTmp = ShowIdentifierWarningControl(IdentifierType.ISSN);
+            warn = !warnTmp ? false : warn;
             // EAN - 12 numbers + checksum
-            ShowIdentifierWarningControl(IdentifierType.EAN);
+            warnTmp = ShowIdentifierWarningControl(IdentifierType.EAN);
+            warn = !warnTmp ? false : warn;
             // CNB - cnb + 9 numbers
-            ShowIdentifierWarningControl(IdentifierType.CNB);
+            warnTmp = ShowIdentifierWarningControl(IdentifierType.CNB);
+            warn = !warnTmp ? false : warn;
             // OCLC - variable-length numeric string
-            ShowIdentifierWarningControl(IdentifierType.OCLC);
+            warnTmp = ShowIdentifierWarningControl(IdentifierType.OCLC);
+            warn = !warnTmp ? false : warn;
             // URN - no validation
-            ShowIdentifierWarningControl(IdentifierType.URN);
+            warnTmp = ShowIdentifierWarningControl(IdentifierType.URN);
+            warn = !warnTmp ? false : warn;
             // Custom - no validation
-            ShowIdentifierWarningControl(IdentifierType.CUSTOM);
+            warnTmp = ShowIdentifierWarningControl(IdentifierType.CUSTOM);
+            warn = !warnTmp ? false : warn;
+
+            this.inputCorrect = warn;
         }
 
         // Validate volume and year (only digits, coma and minus sign allowed)
-        private void ShowYearAndVolumeWarningControl(TextBox textbox, Image warning)
+        private bool ShowYearAndVolumeWarningControl(TextBox textbox, Image warning)
         {
+            bool ret = true;
             const string colorBorderError = "#A50100";
             const string colorBorderNormal = "#111111";
-            
-            if (textbox.Text.All(c => (char.IsWhiteSpace(c) || char.IsDigit(c) || '-'.Equals(c) || ','.Equals(c))))
+            string partYear = this.partYearTextBox.Text;
+            string partVol = this.partVolumeTextBox.Text;
+            string partNo = this.partNumberTextBox.Text;
+
+            if (this.generalRecord is Periodical && string.IsNullOrWhiteSpace(partYear) && string.IsNullOrWhiteSpace(partVol) && string.IsNullOrWhiteSpace(partNo))
+            {
+                warning.ToolTip = "Vyplňte prosím vstupní data rok, ročník, případně číslo";
+                warning.Visibility = Visibility.Visible;
+                textbox.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom(colorBorderError));
+                return false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(textbox.Text) && textbox.Name == "partVolumeTextBox" && partVol == partYear)
+            {
+                // v pripade, ze je rok zadan i na miste rocniku soucasne, chceme pouze zapis u roku
+                this.partYearTextBox.Text = this.partVolumeTextBox.Text;
+                this.partVolumeTextBox.Text = "";
+                MessageBoxDialogWindow.Show("Automatická oprava vstupních dat", "V případě stejného data v poli roku a ročníku periodika prosím nechte ročník periodika prázdný.",
+                    "OK", MessageBoxDialogWindow.Icons.Information);
+                ret = false;
+            }
+
+            if (!string.IsNullOrWhiteSpace(textbox.Text) && (
+                (textbox.Name == "partYearTextBox" && (partYear == partVol || partYear == partNo)) ||
+                (textbox.Name == "partVolumeTextBox" && (partVol == partYear))
+               ))
+            {
+                warning.ToolTip = "Rok, ročník, nebo číslo se nesmí shodovat";
+                warning.Visibility = Visibility.Visible;
+                textbox.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom(colorBorderError));
+                ret = false;
+            }
+            else if (textbox.Text.All(c => (char.IsWhiteSpace(c) || char.IsDigit(c) || '-'.Equals(c) || ','.Equals(c) || '['.Equals(c) || ']'.Equals(c) || '('.Equals(c) || ')'.Equals(c))))
             {
                 warning.ToolTip = null;
                 warning.Visibility = Visibility.Hidden;
@@ -857,17 +923,60 @@ namespace ScannerClient_obalkyknih
                 warning.ToolTip = "Pole musí obsahovat jenom číslice, čárky a pomlčky";
                 warning.Visibility = Visibility.Visible;
                 textbox.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom(colorBorderError));
+                ret = false;
             }
+
+            return ret;
         }
 
-        private void ShowPartnoPartnameWarningControl(TextBox partNo, TextBox partName, Image warning)
+        private bool ShowPartnoPartnameWarningControl(TextBox partNo, TextBox partName, Image warning)
         {
-            warning.Visibility = (partNo.Text=="" && partName.Text=="") ? Visibility.Visible : Visibility.Hidden;
+            bool ret = true;
+            string partYear = this.partYearTextBox.Text;
+            string partVol = this.partVolumeTextBox.Text;
+            const string colorBorderError = "#A50100";
+            const string colorBorderNormal = "#111111";
+
+            // kontrola na prazdny text
+            warning.Visibility = (partNo.Text == "" && partName.Text == "") ? Visibility.Visible : Visibility.Hidden;
+            if (!string.IsNullOrWhiteSpace(partNo.Text))
+            {
+                // kontrola na stejny text
+                warning.Visibility = (partNo.Text == partName.Text) ? Visibility.Visible : Visibility.Hidden;
+                ret = (partNo.Text == partName.Text) ? false : true;
+            }
+
+            if (this.generalRecord is Periodical && string.IsNullOrWhiteSpace(partYear) && string.IsNullOrWhiteSpace(partVol) && string.IsNullOrWhiteSpace(partNo.Text))
+            {
+                // pokud neni vyplneny rok, rocnik, ani cislo
+                warning.ToolTip = "Vyplňte prosím vstupní data rok, ročník, případně číslo";
+                warning.Visibility = Visibility.Visible;
+                partNo.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom(colorBorderError));
+                ret = false;
+            }
+            else
+            {
+                // normalni stav, je vyplnene alespon jedno z rok|rocnik|cislo
+                warning.Visibility = Visibility.Hidden;
+                partNo.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom(colorBorderNormal));
+            }
+
+            // v pripade, ze je rok zadan i na miste cisla chceme pouze zapis u roku
+            if (!string.IsNullOrWhiteSpace(partNo.Text) && partYear == partNo.Text)
+            {
+                this.partYearTextBox.Text = this.partNumberTextBox.Text;
+                this.partNumberTextBox.Text = "";
+                MessageBoxDialogWindow.Show("Automatická oprava vstupních dat", "V případě stejného data v poli ročníku a čísla periodika prosím nechte číslo periodika prázdné.",
+                    "OK", MessageBoxDialogWindow.Icons.Information);
+            }
+
+            return ret;
         }
 
         // Shows right control element (warning sign | left arrow | right arrow | double arrow | none)
-        private void ShowIdentifierWarningControl(IdentifierType identifierType)
+        private bool ShowIdentifierWarningControl(IdentifierType identifierType)
         {
+            bool ret = true;
             const string colorBorderError = "#A50100";
             const string colorBorderNormal = "#111111";
             const string imageWarning = "/ObalkyKnih-scanner;component/Images/ok-icon-warning.png";
@@ -891,54 +1000,59 @@ namespace ScannerClient_obalkyknih
                     partTextBox = this.partCnbTextBox;
                     partImage = this.partCnbWarning;
                     partError = ValidateCnb(partTextBox.Text);
-                    
-                    unionTextBox= this.cnbTextBox;
+
+                    unionTextBox = this.cnbTextBox;
                     unionImage = this.cnbWarning;
                     unionError = ValidateCnb(unionTextBox.Text);
+                    if (partError != null || unionError != null) ret = false;
                     break;
                 case IdentifierType.CUSTOM:
                     partTextBox = this.partSiglaTextBox;
                     partImage = this.partSiglaWarning;
-                    
-                    unionTextBox= this.siglaTextBox;
+
+                    unionTextBox = this.siglaTextBox;
                     break;
                 case IdentifierType.EAN:
                     partTextBox = this.partEanTextBox;
                     partImage = this.partEanWarning;
                     partError = ValidateEan(partTextBox.Text);
-                    
-                    unionTextBox= this.eanTextBox;
+
+                    unionTextBox = this.eanTextBox;
                     unionImage = this.eanWarning;
                     unionError = ValidateEan(unionTextBox.Text);
+                    if (partError != null || unionError != null) ret = false;
                     break;
                 case IdentifierType.ISBN:
                     partTextBox = this.partIsbnTextBox;
                     partImage = this.partIsbnWarning;
                     partError = ValidateIsbn(partTextBox.Text);
-                    
-                    unionTextBox= this.isbnTextBox;
+
+                    unionTextBox = this.isbnTextBox;
                     unionImage = this.isbnWarning;
                     unionError = ValidateIsbn(unionTextBox.Text);
+                    if (partError != null || unionError != null) ret = false;
                     break;
                 case IdentifierType.ISSN:
                     partTextBox = this.partIssnTextBox;
                     partImage = this.partIssnWarning;
                     partError = ValidateIssn(partTextBox.Text);
+                    if (partError != null) ret = false;
                     break;
                 case IdentifierType.OCLC:
                     partTextBox = this.partOclcTextBox;
                     partImage = this.partOclcWarning;
                     partError = ValidateOclc(partTextBox.Text);
-                    
-                    unionTextBox= this.oclcTextBox;
+
+                    unionTextBox = this.oclcTextBox;
                     unionImage = this.oclcWarning;
                     unionError = ValidateOclc(unionTextBox.Text);
+                    if (partError != null || unionError != null) ret = false;
                     break;
                 case IdentifierType.URN:
                     partTextBox = this.partUrnNbnTextBox;
                     partImage = this.partUrnWarning;
-                    
-                    unionTextBox= this.urnNbnTextBox;
+
+                    unionTextBox = this.urnNbnTextBox;
                     break;
                 default:
                     throw new ArgumentException("Argument " + identifierType + " is not supported");
@@ -989,13 +1103,14 @@ namespace ScannerClient_obalkyknih
             else
             {
                 // part identifier is incorrect - show warning icon
-               partImage.Source = new BitmapImage(
-                    new Uri(imageWarning, UriKind.Relative));
+                partImage.Source = new BitmapImage(
+                     new Uri(imageWarning, UriKind.Relative));
                 partImage.ToolTip = partError;
                 partImage.Cursor = Cursors.Arrow;
                 partImage.MouseLeftButtonDown -= PartImageWarning_Click;
                 partImage.Visibility = Visibility.Visible;
                 partTextBox.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom(colorBorderError));
+                ret = false;
             }
 
             //validate unionGrid textBox
@@ -1014,8 +1129,11 @@ namespace ScannerClient_obalkyknih
                     unionImage.ToolTip = unionError;
                     unionImage.Visibility = Visibility.Visible;
                     unionTextBox.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom(colorBorderError));
+                    ret = false;
                 }
             }
+
+            return ret;
         }
 
         // Validates given isbn, returns error message if invalid or null if valid
@@ -1195,12 +1313,40 @@ namespace ScannerClient_obalkyknih
         }
 
         // partNo and partName can't be null
-        private string ValidatePartnoPartname(string partNo, string partName)
+        private string ValidatePartMono(string partNo, string partName)
         {
-            if (string.IsNullOrWhiteSpace(partNo) && string.IsNullOrWhiteSpace(partName))
+            if (!string.IsNullOrWhiteSpace(partNo) && !string.IsNullOrWhiteSpace(partName))
             {
-                return "Vyplňte prosím číslo, nebo název části monografie";
+                return "Vyplňte prosím označení části, nebo číslo části.";
             }
+            else if (partNo == partName)
+            {
+                return "Označení části a název části nesmí být shodné.";
+            }
+
+            return null;
+        }
+
+        // partYear, partVol, partNo validation
+        private string ValidatePartSerial(string partYear, string partVol, string partNo)
+        {
+            if (string.IsNullOrWhiteSpace(partYear) && string.IsNullOrWhiteSpace(partVol) && string.IsNullOrWhiteSpace(partNo))
+            {
+                return "Vyplňte prosím rok+číslo, nebo ročník+číslo v případě periodika vycházejícího více krát v roce, nebo rok+ročník v případě ročenky.";
+            }
+            else if (!string.IsNullOrWhiteSpace(partYear) && !string.IsNullOrWhiteSpace(partVol) && partYear == partVol)
+            {
+                return "Označení roku a ročníku periodika nesmí být shodné.";
+            }
+            else if (!string.IsNullOrWhiteSpace(partYear) && !string.IsNullOrWhiteSpace(partNo) && partYear == partNo)
+            {
+                return "Označení roku a čísla periodika nesmí být shodné.";
+            }
+            else if (!string.IsNullOrWhiteSpace(partVol) && !string.IsNullOrWhiteSpace(partNo) && partVol == partNo && partVol.Length == 4)
+            {
+                return "Označení ročníku a čísla periodika nesmí být shodné. \nV případě, že se jedná a ročenku vyplňte pouze ročník a označení čísla periodika ponechte prázdné.";
+            }
+
             return null;
         }
 
@@ -1271,22 +1417,25 @@ namespace ScannerClient_obalkyknih
             bool isSerial = this.generalRecord is Periodical ? true : false;
             //validate
             string error = "";
-            string isbn       = isMonoPart ? this.isbnTextBox.Text : this.partIsbnTextBox.Text;
-            string issn       = isSerial ? this.partIssnTextBox.Text : null;
-            string partIsbn   = isMonoPart ? this.partIsbnTextBox.Text : null;
-            string oclc       = isMonoPart ? this.oclcTextBox.Text : this.partOclcTextBox.Text;
-            string partOclc   = isMonoPart ? this.partOclcTextBox.Text : null;
-            string ean        = isMonoPart ? this.eanTextBox.Text : this.partEanTextBox.Text;
-            string partEan    = isMonoPart ? this.partEanTextBox.Text : null;
-            string cnb        = isMonoPart ? this.cnbTextBox.Text : this.partCnbTextBox.Text;
-            string partCnb    = isMonoPart ? this.partCnbTextBox.Text : null;
-            string urn        = isMonoPart ? this.urnNbnTextBox.Text : this.partUrnNbnTextBox.Text;
-            string partUrn    = isMonoPart ? this.partUrnNbnTextBox.Text : null;
-            string custom     = isMonoPart ? this.siglaTextBox.Text : this.partSiglaTextBox.Text;
+            string isbn = isMonoPart ? this.isbnTextBox.Text : this.partIsbnTextBox.Text;
+            string issn = isSerial ? this.partIssnTextBox.Text : null;
+            string partIsbn = isMonoPart ? this.partIsbnTextBox.Text : null;
+            string oclc = isMonoPart ? this.oclcTextBox.Text : this.partOclcTextBox.Text;
+            string partOclc = isMonoPart ? this.partOclcTextBox.Text : null;
+            string ean = isMonoPart ? this.eanTextBox.Text : this.partEanTextBox.Text;
+            string partEan = isMonoPart ? this.partEanTextBox.Text : null;
+            string cnb = isMonoPart ? this.cnbTextBox.Text : this.partCnbTextBox.Text;
+            string partCnb = isMonoPart ? this.partCnbTextBox.Text : null;
+            string urn = isMonoPart ? this.urnNbnTextBox.Text : this.partUrnNbnTextBox.Text;
+            string partUrn = isMonoPart ? this.partUrnNbnTextBox.Text : null;
+            string custom = isMonoPart ? this.siglaTextBox.Text : this.partSiglaTextBox.Text;
             string partCustom = isMonoPart ? this.partSiglaTextBox.Text : null;
-            string partNo     = (isMonoPart || isSerial) ? this.partNumberTextBox.Text : null;
-            string partName   = isMonoPart ? this.partNameTextBox.Text : null;
-            if (isMonoPart) error += ValidatePartnoPartname(partNo, partName);
+            string partNo = (isMonoPart || isSerial) ? this.partNumberTextBox.Text : null;
+            string partName = isMonoPart ? this.partNameTextBox.Text : null;
+            string partYear = isSerial ? this.partYearTextBox.Text : null;
+            string partVol = isSerial ? this.partVolumeTextBox.Text : null;
+            if (isMonoPart) error += ValidatePartMono(partNo, partName);
+            if (isSerial) error += ValidatePartSerial(partYear, partVol, partNo);
 
             NameValueCollection nvc = new NameValueCollection();
             nvc.Add("login", Settings.UserName);
@@ -1425,7 +1574,7 @@ namespace ScannerClient_obalkyknih
             nvc.Add("ocr", (this.ocrCheckBox.IsChecked == true) ? "yes" : "no");
             string partTitle = isMonoPart ? this.partTitleTextBox.Text : null;
             string partAuthor = isMonoPart ? this.partAuthorTextBox.Text : null;
-            string partYear = (isMonoPart || isSerial) ? this.partYearTextBox.Text : null;
+            partYear = (isMonoPart || isSerial) ? this.partYearTextBox.Text : null;
             string partVolume = isSerial ? this.partVolumeTextBox.Text : null;
             if (partTitle != null) nvc.Add("part_title", partTitle);
             if (partAuthor != null) nvc.Add("part_authors", partAuthor);
@@ -1442,6 +1591,50 @@ namespace ScannerClient_obalkyknih
             string coverFileName = (this.coverGuid == Guid.Empty) ? null : this.imagesFilePaths[this.coverGuid];
             List<string> tocFileNames = new List<string>();
 
+            // Save working image in memory to file
+            if (this.workingImage.Key != Guid.Empty &&
+                this.imagesFilePaths.ContainsKey(this.workingImage.Key))
+            {
+                this.sendButton.IsEnabled = false;
+                try
+                {
+                    ImageTools.SaveToFile(this.workingImage.Value, this.imagesFilePaths[this.workingImage.Key]);
+                }
+                catch (Exception)
+                {
+                    MessageBoxDialogWindow.Show("Chyba!", "Nastal problém při ukládání obrázku do souboru.", "OK",
+                        MessageBoxDialogWindow.Icons.Error);
+                    this.sendButton.IsEnabled = true;
+                    return;
+                }
+                this.sendButton.IsEnabled = true;
+            }
+
+            // where to save local images copy
+            String uploadDirName = DateTime.Now.ToString("yyyyMMdd");
+            String mainIdentifier = DateTime.Now.ToString("HHmmss");
+            if (!string.IsNullOrEmpty(partIsbn)) mainIdentifier = partIsbn;
+            else if (!string.IsNullOrEmpty(isbn)) mainIdentifier = isbn;
+            else if (!string.IsNullOrEmpty(partEan)) mainIdentifier = partEan;
+            else if (!string.IsNullOrEmpty(ean)) mainIdentifier = ean;
+            else if (!string.IsNullOrEmpty(issn)) mainIdentifier = issn;
+            else if (!string.IsNullOrEmpty(partCnb)) mainIdentifier = partCnb;
+            else if (!string.IsNullOrEmpty(cnb)) mainIdentifier = cnb;
+            else if (!string.IsNullOrEmpty(partUrn)) mainIdentifier = partUrn;
+            else if (!string.IsNullOrEmpty(urn)) mainIdentifier = urn;
+            else if (!string.IsNullOrEmpty(partOclc)) mainIdentifier = partOclc;
+            else if (!string.IsNullOrEmpty(oclc)) mainIdentifier = oclc;
+            else if (!string.IsNullOrEmpty(partCustom)) mainIdentifier = partCustom;
+            else if (!string.IsNullOrEmpty(custom)) mainIdentifier = Settings.Sigla + '-' + custom;
+            uploadDirName = uploadDirName + '_' + mainIdentifier;
+            
+            String localUploadDir = Settings.ScanOutputDir;
+            localUploadDir = System.IO.Path.Combine(localUploadDir, uploadDirName);
+            if (Settings.EnableLocalImageCopy && !System.IO.Directory.Exists(localUploadDir))
+            {
+                System.IO.Directory.CreateDirectory(localUploadDir);
+            }
+
             //cover
             if (this.coverGuid == Guid.Empty && !Settings.DisableWithoutCoverNotification)
             {
@@ -1457,6 +1650,10 @@ namespace ScannerClient_obalkyknih
                 {
                     Settings.DisableWithoutCoverNotification = true;
                 }
+            }
+            if (this.coverGuid != Guid.Empty && Settings.EnableLocalImageCopy)
+            {
+                System.IO.File.Copy(this.imagesFilePaths[this.coverGuid], System.IO.Path.Combine(localUploadDir, mainIdentifier + ".tiff"), true);
             }
 
             //toc
@@ -1480,6 +1677,7 @@ namespace ScannerClient_obalkyknih
             }
             else
             {
+                int cnt = 1;
                 foreach (var grid in tocImagesList.Items)
                 {
                     Guid guid = Guid.Empty;
@@ -1488,6 +1686,12 @@ namespace ScannerClient_obalkyknih
                         if (record.Value.Equals(grid))
                         {
                             tocFileNames.Add(this.imagesFilePaths[record.Key]);
+
+                            if (Settings.EnableLocalImageCopy)
+                            {
+                                System.IO.File.Copy(this.imagesFilePaths[record.Key], System.IO.Path.Combine(localUploadDir, "toc-" + cnt.ToString().PadLeft(2, '0') + "-" + mainIdentifier + ".tiff"), true);
+                                cnt++;
+                            }
                         }
                     }
                 }
@@ -1556,25 +1760,6 @@ namespace ScannerClient_obalkyknih
             param.CoverFilePath = coverFileName;
             param.MetaXml = metaXml;
             param.Nvc = nvc;
-
-            // Save working image in memory to file
-            if (this.workingImage.Key != Guid.Empty &&
-                this.imagesFilePaths.ContainsKey(this.workingImage.Key))
-            {
-                this.sendButton.IsEnabled = false;
-                try
-                {
-                    ImageTools.SaveToFile(this.workingImage.Value, this.imagesFilePaths[this.workingImage.Key]);
-                }
-                catch (Exception)
-                {
-                    MessageBoxDialogWindow.Show("Chyba!", "Nastal problém při ukládání obrázku do souboru.", "OK",
-                        MessageBoxDialogWindow.Icons.Error);
-                    this.sendButton.IsEnabled = true;
-                    return;
-                }
-                this.sendButton.IsEnabled = true;
-            }
 
             //DEBUGLOG.AppendLine("SendToObalkyKnih part1: Total time: " + sw.ElapsedMilliseconds);
             this.uploaderBackgroundWorker.RunWorkerAsync(param);
@@ -1824,7 +2009,7 @@ namespace ScannerClient_obalkyknih
         #region scanning functionality
 
         // Scans image
-        private void ScanImage(DocumentType documentType)
+        private void ScanImage(DocumentType documentType, String format)
         {
             //Stopwatch totalTime = new Stopwatch();
             //Stopwatch partialTime = new Stopwatch();
@@ -1839,6 +2024,7 @@ namespace ScannerClient_obalkyknih
             }
 
             int dpi = (documentType == DocumentType.Cover) ? Settings.CoverDPI : Settings.TocDPI;
+            if (Settings.EnableScanLowRes) dpi = Settings.LowResDPI;
 
             Item item = activeScanner.Items[1];
 
@@ -1860,13 +2046,46 @@ namespace ScannerClient_obalkyknih
                         value = dpi;
                         property.set_Value(ref value);
                         break;
+                    case 4104: //BitsPerPixel
+                        value = 24;
+                        try { property.set_Value(ref value); } catch {}
+                        break;
+                    case 6151: //HorizontalExtent
+                        if (format == null) break;
+                        value = Settings.EnableScanLowRes ? 1720 : 2450; // A4, A5
+                        if (format == "A3") value = Settings.EnableScanLowRes ? 2300 : 3400;
+                        try { property.set_Value(ref value); } catch {}
+                        break;
+                    case 6152: // vertical extent
+                        if (format == null) break;
+                        value = Settings.EnableScanLowRes ? 2300 : 3400; // A4
+                        if (format == "A5")
+                            value = Settings.EnableScanLowRes ? 1200 : 1720;
+                        else if (format == "A3")
+                            value = Settings.EnableScanLowRes ? 3400 : 4800;
+                        try { property.set_Value(ref value); } catch {}
+                        break;
+                    case 6157: // rotation
+                        if (format == null) break;
+                        value = 0;
+                        if (format == "A5") value = 1;
+                        try { property.set_Value(ref value); } catch {}
+                        break;
+                    case 5130: //TimeDelay
+                        value = 0;
+                        try { property.set_Value(ref value); } catch {}
+                        break;
+                    case 6161: //LampWarmUpTime
+                        value = 0;
+                        try { property.set_Value(ref value); } catch {}
+                        break;
                 }
             }
 
             ImageFile image = null;
             try
             {
-                image = (ImageFile)dialog.ShowTransfer(item, FormatID.wiaFormatBMP, true);
+                image = (ImageFile)dialog.ShowTransfer(item, Settings.EnableScanLowDataFlow ? FormatID.wiaFormatJPEG : FormatID.wiaFormatBMP, true);
             }
             catch (System.Runtime.InteropServices.COMException)
             {
@@ -1935,7 +2154,7 @@ namespace ScannerClient_obalkyknih
             //DEBUGLOG.AppendLine("ScanImage: Total time: " + totalTime.ElapsedMilliseconds + "; scanning time: " + scanTime + "; conversion time:" + conversionTime + "; rest: " + partialTime.ElapsedMilliseconds);
         }
 
-        // Sets active scanner device automatically, show selection dialog, if more scanners, if no scanner device found, shows error window and returns false 
+        // Sets active scanner device automatically, show selection dialog, if more scanners, if no scanner device found, shows error window and returns false
         private bool setActiveScanner()
         {
             ICommonDialog dialog = new CommonDialog();
@@ -1943,16 +2162,25 @@ namespace ScannerClient_obalkyknih
             {
                 return true;
             }
+
             List<DeviceInfo> foundDevices = GetDevices();
             if (foundDevices.Count == 1 && foundDevices[0].Type == WiaDeviceType.ScannerDeviceType)
             {
-                activeScanner = foundDevices[0].Connect();
+                try
+                {
+                    activeScanner = foundDevices[0].Connect();
+                }
+                catch (Exception)
+                {
+                    activeScanner = dialog.ShowSelectDevice(WiaDeviceType.ScannerDeviceType, true, true);
+                }
                 return true;
             }
             try
             {
                 activeScanner = dialog.ShowSelectDevice(WiaDeviceType.ScannerDeviceType, true, true);
             }
+
             catch (System.Runtime.InteropServices.COMException)
             {
                 //Show error and return
@@ -1971,6 +2199,7 @@ namespace ScannerClient_obalkyknih
             foreach (WIA.DeviceInfo info in manager.DeviceInfos)
             {
                 devices.Add(info);
+                //MessageBoxDialogWindow.Show("Debug", info.DeviceID, "OK", MessageBoxDialogWindow.Icons.Information); //debug
             }
 
             return devices;
@@ -1980,21 +2209,51 @@ namespace ScannerClient_obalkyknih
         #region scanning tab controls
 
         #region Scanning controllers
-        
+
         // Scan cover image
         private void ScanCoverButton_Click(object sender, RoutedEventArgs e)
         {
-            ScanButtonClicked(DocumentType.Cover);
+            ScanButtonClicked(DocumentType.Cover, null);
+        }
+
+        private void scanA3CoverButton_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            ScanButtonClicked(DocumentType.Cover, "A3");
+        }
+
+        private void scanA4CoverButton_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            ScanButtonClicked(DocumentType.Cover, "A4");
+        }
+
+        private void scanA5CoverButton_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            ScanButtonClicked(DocumentType.Cover, "A5");
         }
 
         // Scan toc image
         private void ScanTocButton_Click(object sender, RoutedEventArgs e)
         {
-            ScanButtonClicked(DocumentType.Toc);
+            ScanButtonClicked(DocumentType.Toc, null);
+        }
+
+        private void scanA3TocButton_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            ScanButtonClicked(DocumentType.Toc, "A3");
+        }
+
+        private void scanA4TocButton_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            ScanButtonClicked(DocumentType.Toc, "A4");
+        }
+
+        private void scanA5TocButton_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            ScanButtonClicked(DocumentType.Toc, "A5");
         }
 
         // Unified scan function
-        private void ScanButtonClicked(DocumentType documentType)
+        private void ScanButtonClicked(DocumentType documentType, String format)
         {
             DisableImageControllers();
 
@@ -2004,7 +2263,7 @@ namespace ScannerClient_obalkyknih
                 string filePath = this.imagesFilePaths[this.coverGuid];
                 if (this.workingImage.Key == this.coverGuid)
                 {
-                    backupImage = new KeyValuePair<string,BitmapSource>(filePath,
+                    backupImage = new KeyValuePair<string, BitmapSource>(filePath,
                         this.workingImage.Value);
                 }
                 else
@@ -2015,7 +2274,7 @@ namespace ScannerClient_obalkyknih
                 SignalLoadedBackup();
             }
 
-            ScanImage(documentType);
+            ScanImage(documentType, format);
 
             EnableImageControllers();
         }
@@ -3677,6 +3936,37 @@ namespace ScannerClient_obalkyknih
             this.checkboxMinorChanger( (bool)this.checkboxMinorPartName.IsChecked );
         }
 
+        private void controlSameUnitButton_Click(object sender, RoutedEventArgs e)
+        {
+            // switch to first tab
+            tabControl.SelectedItem = this.metadataTabItem;
+
+            // remove cover
+            if (this.coverGuid != new Guid())
+            {
+                bool settingsOrig = Settings.DisableCoverDeletionNotification;
+                Settings.DisableCoverDeletionNotification = true;
+                CoverThumbnail_Delete(null, null);
+                Settings.DisableCoverDeletionNotification = settingsOrig;
+            }
+
+            // remove toc
+            int cnt = this.tocImagesList.Items.Count;
+            for (int i = 0; i < cnt; i++)
+            {
+                this.tocImagesList.SelectedIndex = i;
+                TocThumbnail_Delete(null, null);
+            }
+
+            // cleanup part info
+            this.partNumberTextBox.Text = null;
+            this.partNameTextBox.Text = null;
+        }
+
+        private void reloadCoverAndToc(object sender, RoutedEventArgs e)
+        {
+            DownloadCoverAndToc();
+        }
     }
 
     #region Custom WPF controls
