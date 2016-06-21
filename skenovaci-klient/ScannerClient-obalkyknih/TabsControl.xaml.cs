@@ -680,6 +680,16 @@ namespace ScannerClient_obalkyknih
                 this.partOclcTextBox.Text = record.Oclc;
                 this.partEanTextBox.Text = record.Ean;
                 this.partUrnNbnTextBox.Text = record.Urn;
+                // hide optional fields
+                this.partCnbTextBox.Visibility = Visibility.Hidden;
+                this.partOclcTextBox.Visibility = Visibility.Hidden;
+                this.partEanTextBox.Visibility = Visibility.Hidden;
+                this.partUrnNbnTextBox.Visibility = Visibility.Hidden;
+                this.partCnbLabel.Visibility = Visibility.Hidden;
+                this.partOclcLabel.Visibility = Visibility.Hidden;
+                this.partEanLabel.Visibility = Visibility.Hidden;
+                this.partUrnNbnLabel.Visibility = Visibility.Hidden;
+                this.optionalAtributesLink.Visibility = Visibility.Visible;
             }
             else if (this.generalRecord is Monograph && !(this.generalRecord as Monograph).IsUnionRequested)
             {
@@ -694,6 +704,16 @@ namespace ScannerClient_obalkyknih
                 this.partOclcTextBox.Text = tmpRecord.PartOclc;
                 this.partEanTextBox.Text = tmpRecord.PartEan;
                 this.partUrnNbnTextBox.Text = tmpRecord.PartUrn;
+                // show optional fields
+                this.partCnbTextBox.Visibility = Visibility.Visible;
+                this.partOclcTextBox.Visibility = Visibility.Visible;
+                this.partEanTextBox.Visibility = Visibility.Visible;
+                this.partUrnNbnTextBox.Visibility = Visibility.Visible;
+                this.partCnbLabel.Visibility = Visibility.Visible;
+                this.partOclcLabel.Visibility = Visibility.Visible;
+                this.partEanLabel.Visibility = Visibility.Visible;
+                this.partUrnNbnLabel.Visibility = Visibility.Visible;
+                this.optionalAtributesLink.Visibility = Visibility.Hidden;
 
                 // multipart monography
                 if (tmpRecord.listIdentifiers.Count > 2)
@@ -3966,6 +3986,20 @@ namespace ScannerClient_obalkyknih
         private void reloadCoverAndToc(object sender, RoutedEventArgs e)
         {
             DownloadCoverAndToc();
+        }
+
+        private void optionalAtributesLink_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            // show optional fields
+            this.partCnbTextBox.Visibility = Visibility.Visible;
+            this.partOclcTextBox.Visibility = Visibility.Visible;
+            this.partEanTextBox.Visibility = Visibility.Visible;
+            this.partUrnNbnTextBox.Visibility = Visibility.Visible;
+            this.partCnbLabel.Visibility = Visibility.Visible;
+            this.partOclcLabel.Visibility = Visibility.Visible;
+            this.partEanLabel.Visibility = Visibility.Visible;
+            this.partUrnNbnLabel.Visibility = Visibility.Visible;
+            this.optionalAtributesLink.Visibility = Visibility.Hidden;
         }
     }
 

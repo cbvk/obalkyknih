@@ -156,5 +156,25 @@ namespace ScannerClient_obalkyknih
                 this.monographIdentifierComboBox.SelectedIndex = 2;
             }
         }
+
+        private void periodicalIdentifierTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (Settings.DisableResolveIdentifier || this.periodicalIdentifierTextBox.Text.Length < 3)
+            {
+                return;
+            }
+            if (this.periodicalIdentifierTextBox.Text.Length == 8)
+            {
+                this.periodicalIdentifierComboBox.SelectedIndex = 1;
+            }
+            else if (this.periodicalIdentifierTextBox.Text.Length > 5 && this.periodicalIdentifierTextBox.Text.Substring(4, 1) == "-")
+            {
+                this.periodicalIdentifierComboBox.SelectedIndex = 1;
+            }
+            else if (this.periodicalIdentifierTextBox.Text.Substring(0, 3) == "cnb")
+            {
+                this.periodicalIdentifierComboBox.SelectedIndex = 2;
+            }
+        }
     }
 }

@@ -211,19 +211,10 @@ namespace ScannerClient_obalkyknih
         {
             if (!Settings.Version.ToString().Equals(Settings.VersionInfo))
             {
-                MessageBoxDialogWindow.Show("Verze 0.29",
-                      "Změny ve verzi 0.29:\n"
-                    + "* Bugfix známých problémů.\n\n"
-                    + "Změny ve verzi 0.28:\n"
-                    + "* Možnost ukládat naskenované obrázky do vlastního adresáře (nastavení 'přizpůsobení').\n"
-                    + "* V názvu souboru naskenovaných obálek a obsahů se vyskytují\n"
-                    + "  identifikátory isbn, issn, ean, čnb, oclc, nebo vlastný identifikátor.\n"
-                    + "* Bugfix známých problémů.\n\n"
-                    + "Změny ve verzi 0.27:\n"
-                    + "* Rozšířena podpora skenerů. Nová záložka nastavení 'kompatibilita' skenování.\n"
-                    + "* Pokud naleznete problém s Vaším skenerem, kontaktujte nás.\n"
-                    + "* Možnost ukládat naskenované obrázky do složky aplikace sken. klienta.\n"
-                    + "* Bugfix známých problémů.\n", "OK", MessageBoxDialogWindow.Icons.Information);
+                MessageBoxDialogWindow.Show("Verze 0.30",
+                      "Změny ve verzi 0.30:\n"
+                    + "* Udržovací vydání léto 2016.\n\n"
+                    + "* Ukrytí nepovinných identifikátorů pro skenování periodik.\n", "OK", MessageBoxDialogWindow.Icons.Information);
                 Settings.VersionInfo = Settings.Version.ToString();
             }
         }

@@ -55,7 +55,7 @@
                         <ComboBoxItem Content="URN:NBN" />
                     </ComboBox>
                     <TextBox Height="32" HorizontalAlignment="Left" Margin="115,47,0,0" Name="periodicalIdentifierTextBox" VerticalAlignment="Top" Width="138"
-                     KeyDown="IdentifierTextBox_KeyDown" VerticalContentAlignment="Center" />
+                     KeyDown="IdentifierTextBox_KeyDown" VerticalContentAlignment="Center" TextChanged="periodicalIdentifierTextBox_TextChanged" />
                     <Button Content="Založit" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,90,0,0" Style="{StaticResource MyButton}"
                     Name="periodicalNewUnitButton" Width="80" Height="25" Click="NewUnitButton_Click" Foreground="#CECECE" BorderBrush="#656565"
                                 BorderThickness="1" Cursor="Hand" ToolTip="Založit novou jednotku">

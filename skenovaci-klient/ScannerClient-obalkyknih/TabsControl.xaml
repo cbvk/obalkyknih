@@ -112,9 +112,9 @@
                             <Label Content="OCLC" FontFamily="Arial" Foreground="#858585"
                                     HorizontalAlignment="Left" Margin="13,400,0,0" VerticalAlignment="Top" Name="partOclcLabel" />
                             <Label Content="EAN" FontFamily="Arial" Foreground="#858585"
-                                    HorizontalAlignment="Left" Margin="13,444,0,0" VerticalAlignment="Top" />
+                                    HorizontalAlignment="Left" Margin="13,444,0,0" VerticalAlignment="Top" Name="partEanLabel" />
                             <Label Content="URN:NBN" FontFamily="Arial" Foreground="#858585"
-                                    HorizontalAlignment="Left" Margin="13,488,0,0" VerticalAlignment="Top" />
+                                    HorizontalAlignment="Left" Margin="13,488,0,0" VerticalAlignment="Top" Name="partUrnNbnLabel" />
                             <Label Content="Vlastní" FontFamily="Arial" Foreground="#858585"
                                     HorizontalAlignment="Left" Margin="13,532,0,0" VerticalAlignment="Top" />
                             <TextBox Height="22" Padding="0,2,0,0" Margin="16,45,36,0" Name="partTitleTextBox" FontFamily="Arial" Background="#363636"
@@ -207,6 +207,7 @@
                                     </LinearGradientBrush>
                                 </Button.Background>
                             </Button>
+                            <Label Content="Další nepovinné identifikátory" Cursor="Hand" FontFamily="Arial" Foreground="#858585" HorizontalAlignment="Left" Margin="13,356,0,0" Name="optionalAtributesLink" VerticalAlignment="Top" Visibility="Hidden" Width="167" MouseUp="optionalAtributesLink_MouseUp" />
                         </Grid>
                         <Grid Name="collectionRecordGrid" Visibility="Collapsed" Grid.Column="1">
                             <Label Content="Informace SZ" FontFamily="Arial" Foreground="#858585"
@@ -225,15 +226,15 @@
                                     HorizontalAlignment="Left" Margin="13,312,0,0" VerticalAlignment="Top"
                                     Visibility="Collapsed" IsEnabled="False" />
                             <Label Content="ČNB" FontFamily="Arial" Foreground="#858585"
-                                    HorizontalAlignment="Left" Margin="13,356,0,0" VerticalAlignment="Top" />
+                                    HorizontalAlignment="Left" Margin="13,356,0,0" VerticalAlignment="Top" Name="cnbTextLabel" />
                             <Label Content="OCLC" FontFamily="Arial" Foreground="#858585"
-                                    HorizontalAlignment="Left" Margin="13,400,0,0" VerticalAlignment="Top" />
+                                    HorizontalAlignment="Left" Margin="13,400,0,0" VerticalAlignment="Top" Name="oclcTextLabel" />
                             <Label Content="EAN" FontFamily="Arial" Foreground="#858585"
-                                    HorizontalAlignment="Left" Margin="13,444,0,0" VerticalAlignment="Top" />
+                                    HorizontalAlignment="Left" Margin="13,444,0,0" VerticalAlignment="Top" Name="eanTextLabel" />
                             <Label Content="URN:NBN" FontFamily="Arial" Foreground="#858585"
-                                    HorizontalAlignment="Left" Margin="13,488,0,0" VerticalAlignment="Top" />
+                                    HorizontalAlignment="Left" Margin="13,488,0,0" VerticalAlignment="Top" Name="urnNbnTextLabel" />
                             <Label Content="Vlastní" FontFamily="Arial" Foreground="#858585"
-                                    HorizontalAlignment="Left" Margin="13,532,0,0" VerticalAlignment="Top" />
+                                    HorizontalAlignment="Left" Margin="13,532,0,0" VerticalAlignment="Top" Name="siglaTextLabel" />
                             <TextBox Height="22" Padding="0,2,0,0" Margin="16,45,36,0" Name="titleTextBox" FontFamily="Arial" Background="#363636"
                                         Foreground="#c0c0c0" VerticalAlignment="Top" BorderBrush="#111111" TextChanged="ValidateIdentifiers" 
                                         ToolTip="Název díla"  />
