@@ -135,6 +135,9 @@
     <Compile Include="MetadataWindow.xaml.cs">
       <DependentUpon>MetadataWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="MoveScannedPageWindow.xaml.cs">
+      <DependentUpon>MoveScannedPageWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="SettingsWindow.xaml.cs">
       <DependentUpon>SettingsWindow.xaml</DependentUpon>
     </Compile>
@@ -185,6 +188,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="MetadataWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="MoveScannedPageWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -334,6 +341,12 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Images\arrow_partno_partname.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\ok-icon-up-down.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\ok-icon-crop-new.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

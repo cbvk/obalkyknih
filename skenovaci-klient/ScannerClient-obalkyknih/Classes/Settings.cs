@@ -961,7 +961,8 @@ namespace ScannerClient_obalkyknih
         internal const string UpdateServer = "https://obalkyknih.cz/obalkyknih-scanner";
 
         /// <summary>URL of import function on obalkyknih.</summary>
-        internal const string ImportLink = "https://obalkyknih.cz/api/import";
+        //internal const string ImportLink = "https://obalkyknih.cz/api/import";
+        internal const string ImportLink = "http://85.132.200.238:5060/api/import";
 
         /// <summary>Returns path to temporary folder, where are stored images opened in external editor and downloaded updates</summary>
         internal static string TemporaryFolder { get { return System.IO.Path.GetTempPath() + "ObalkyKnih-scanner\\"; } }
