@@ -104,6 +104,12 @@ namespace ScannerClient_obalkyknih
         // Is input correct
         private bool inputCorrect = false;
 
+        //Working with SaveSelected
+        private bool saveSelectedMode = false;
+        private int saveSelectedCount = 0;
+        private Grid newestThumbnail;
+        private Grid workingThumbnail;
+
         #endregion
 
         /// <summary>Constructor, creates new TabsControl based on given barcode</summary>
@@ -167,6 +173,8 @@ namespace ScannerClient_obalkyknih
                 this.partNumberTextBox.ToolTip = "Číslo periodika";
                 this.partVolumeTextBox.ToolTip = "Ročník (svazek)";
             }
+
+            this.saveSelectedButton.Visibility = System.Windows.Visibility.Hidden;
 
             #region key binding commands initialization
             //rotateLeft
@@ -2454,6 +2462,17 @@ namespace ScannerClient_obalkyknih
 
         #region Main transformation controllers (rotation, deskew, crop, flip)
 
+        // Save selected image
+        private void SaveSelectedButton_Clicked(object sender, RoutedEventArgs e)
+        {
+            SaveSelected();
+        }
+        // Switches SelecteDMode
+        private void SaveSelectedMode_Clicked(object sender, RoutedEventArgs e)
+        {
+            SwitchSaveSelectedMode();
+        }
+
         // Rotates selected image by 90 degrees left
         private void RotateLeft_Clicked(object sender, MouseButtonEventArgs e)
         {
@@ -2515,6 +2534,203 @@ namespace ScannerClient_obalkyknih
             //sw.Start();
             TransformImage(ImageTransforms.CorrectColors);
             //DEBUGLOG.AppendLine("Color correction: Total time: " + sw.ElapsedMilliseconds);
+        }
+
+        //Saves selection
+        private void SaveSelected()
+        {
+            if (saveSelectedMode == false || selectedImage.Source == coverThumbnail.Source)
+            {
+                return;
+            }
+
+            Guid selectedGuid = this.selectedImageGuid;
+            if (selectedGuid == Guid.Empty)
+            {
+                return;
+            }
+
+            string filePath = this.imagesFilePaths[selectedGuid];
+
+            // if working image is not selected image, save old working image and load new
+            if (selectedGuid != this.workingImage.Key)
+            {
+                if (this.workingImage.Key != Guid.Empty && this.imagesFilePaths.ContainsKey(this.workingImage.Key))
+                {
+                    try
+                    {
+                        ImageTools.SaveToFile(this.workingImage.Value, this.imagesFilePaths[this.workingImage.Key]);
+                    }
+                    catch (Exception)
+                    {
+                        MessageBoxDialogWindow.Show("Chyba!", "Nastal problém při ukládání obrázku do souboru.",
+                        "OK", MessageBoxDialogWindow.Icons.Error);
+                        EnableImageControllers();
+                        return;
+                    }
+                }
+                // freeze previous workingImage because it somehow decreases memory footprint
+                if (this.workingImage.Value != null && this.workingImage.Value.CanFreeze)
+                {
+                    this.workingImage.Value.Freeze();
+                }
+                this.workingImage = new KeyValuePair<Guid, BitmapSource>(selectedGuid, ImageTools.LoadFullSize(filePath));
+            }
+            // freeze previous workingImage because it somehow decreases memory footprint
+            if (this.workingImage.Value != null && this.workingImage.Value.CanFreeze)
+            {
+                this.workingImage.Value.Freeze();
+            }
+            // freeze previous backupImage because it somehow decreases memory footprint
+            if (this.backupImage.Value != null && this.backupImage.Value.CanFreeze)
+            {
+                this.backupImage.Value.Freeze();
+            }
+            // backup old image
+            backupImage = new KeyValuePair<string, BitmapSource>(filePath, this.workingImage.Value);
+            SignalLoadedBackup();
+
+            //get new guid
+            Guid guid = Guid.NewGuid();
+            while (this.imagesFilePaths.ContainsKey(guid))
+            {
+                guid = Guid.NewGuid();
+            }
+
+            //get new temporary filename
+            string newFileName = Settings.TemporaryFolder +
+                "obalkyknih-toc_"
+                + "_" + guid + ".tif";
+
+            BitmapSource originalSizeImage = null;
+            BitmapSource smallerSizeImage = null;
+            Size originalSize;
+
+            try
+            {
+                var croppedImage = cropper.BpsCrop(workingImage.Value);
+                originalSizeImage = croppedImage;
+                originalSize = new Size(originalSizeImage.PixelWidth, originalSizeImage.PixelHeight);
+
+                ImageTools.SaveToFile(originalSizeImage, newFileName);
+
+                smallerSizeImage = ImageTools.LoadGivenSizeFromBitmapSource((BitmapSource)originalSizeImage, 800);
+            }
+            catch (Exception ex)
+            {
+                MessageBoxDialogWindow.Show("Chyba načítání obrázku", "Nastala chyba během načítání souboru. Důvod: " + ex.Message,
+                    "OK", MessageBoxDialogWindow.Icons.Error);
+                return;
+            }
+
+            this.imagesFilePaths.Add(guid, newFileName);
+            this.imagesOriginalSizes.Add(guid, originalSize);
+
+            AddTocImage(smallerSizeImage, guid);
+            saveSelectedCount++;
+            newestThumbnail.IsEnabled = false;
+
+            if (this.workingImage.Key != Guid.Empty && this.imagesFilePaths.ContainsKey(this.workingImage.Key))
+            {
+                try
+                {
+                    ImageTools.SaveToFile(this.workingImage.Value, this.imagesFilePaths[this.workingImage.Key]);
+                }
+                catch (Exception)
+                {
+                    MessageBoxDialogWindow.Show("Chyba!", "Nastal problém při ukládání obrázku do souboru.",
+                        "OK", MessageBoxDialogWindow.Icons.Error);
+                    return;
+                }
+            }
+
+            GC.Collect();
+        }
+
+        private void SwitchSaveSelectedMode()
+        {
+            //not working with toc
+            if (workingImage.Value == null || selectedImage.Source == coverThumbnail.Source)
+            {
+                return;
+            }
+
+            if (!saveSelectedMode)
+            {
+                workingThumbnail = (Grid)tocImagesList.SelectedItem;
+
+                saveSelecteModeButton.ToolTip = "Vypnout výsekový režim";
+                saveSelecteModeButton.Content = "Hotovo";
+                saveSelectedCount = 0;
+
+                saveSelectedButton.Visibility = System.Windows.Visibility.Visible;
+
+                //SaveSelectedMode is set to true when user is saving cropped part of image, false otherwise
+                saveSelectedMode = true;
+
+                //Disable controls that changes workingImage
+                scanCoverButton.IsEnabled = false;
+                scanCoverA5.IsEnabled = false;
+                scanCoverA4.IsEnabled = false;
+                scanCoverA3.IsEnabled = false;
+                scanTocButton.IsEnabled = false;
+                scanTocA5.IsEnabled = false;
+                scanTocA4.IsEnabled = false;
+                scanTocA3.IsEnabled = false;
+                loadFromFileLabel.IsEnabled = false;
+                sendButton.IsEnabled = false;
+
+                coverThumbnail.IsEnabled = false;
+
+                foreach (var grid in this.tocThumbnailGridsDictionary.Values)
+                {
+                    grid.IsEnabled = false;
+                }
+
+                foreach (var imageControl in workingThumbnail.Children.OfType<Image>())
+                {
+                    imageControl.Visibility = System.Windows.Visibility.Hidden;
+                }
+            }
+            else
+            {
+                saveSelecteModeButton.ToolTip = "Zapnout výsekový režim";
+                saveSelecteModeButton.Content = "Výsekový režim";
+
+                saveSelectedButton.Visibility = System.Windows.Visibility.Hidden;
+
+                //SaveSelectedMode is set to true when user is saving cropped part of image, false otherwise
+                saveSelectedMode = false;
+
+                //Enable controls that changes workingImage
+                scanCoverButton.IsEnabled = true;
+                scanCoverA5.IsEnabled = true;
+                scanCoverA4.IsEnabled = true;
+                scanCoverA3.IsEnabled = true;
+                scanTocButton.IsEnabled = true;
+                scanTocA5.IsEnabled = true;
+                scanTocA4.IsEnabled = true;
+                scanTocA3.IsEnabled = true;
+                loadFromFileLabel.IsEnabled = true;
+                sendButton.IsEnabled = true;
+
+                coverThumbnail.IsEnabled = true;
+
+                foreach (var grid in this.tocThumbnailGridsDictionary.Values)
+                {
+                    grid.IsEnabled = true;
+                }
+
+                foreach (var imageControl in workingThumbnail.Children.OfType<Image>())
+                {
+                    imageControl.Visibility = System.Windows.Visibility.Visible;
+                }
+
+                if (saveSelectedCount > 0)
+                {
+                    delete(tocImagesList.Items.IndexOf(workingThumbnail));
+                }
+            }
         }
 
         // Applies given transformation to selected image
@@ -2735,8 +2951,15 @@ namespace ScannerClient_obalkyknih
 
             Border tocImageBorder = new Border();
             tocImageBorder.BorderThickness = new Thickness(4);
-            //green border
-            tocImageBorder.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#6D8527"));
+            if (!saveSelectedMode)
+            {
+                //green border
+                tocImageBorder.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#6D8527"));
+            }
+            else
+            {
+                tocImageBorder.BorderBrush = Brushes.Transparent;
+            }
             tocImageBorder.Margin = new Thickness(50, 0, 50, 0);
 
             Image deleteImage = new Image();
@@ -2771,18 +2994,33 @@ namespace ScannerClient_obalkyknih
             moveDownImage.VerticalAlignment = VerticalAlignment.Top;
             moveDownImage.HorizontalAlignment = HorizontalAlignment.Right;
             moveDownImage.Source = new BitmapImage(new Uri("/ObalkyKnih-scanner;component/Images/ok-icon-down.png", UriKind.Relative));
-            moveDownImage.Margin = new Thickness(0, 50, 26, 0);
+            moveDownImage.Margin = new Thickness(0, 50, 26, 0); // 0 50 26 0
             moveDownImage.Width = 18;
             moveDownImage.Stretch = Stretch.None;
             moveDownImage.Cursor = Cursors.Hand;
             moveDownImage.MouseLeftButtonDown += TocThumbnail_MoveDown;
             moveDownImage.Visibility = Visibility.Hidden;
+            
+            Image moveIntoImage = new Image();
+            moveIntoImage.Name = "moveIntoThumbnail";
+            moveIntoImage.VerticalAlignment = VerticalAlignment.Top;
+            moveIntoImage.HorizontalAlignment = HorizontalAlignment.Right;
+            moveIntoImage.Source = new BitmapImage(new Uri("/ObalkyKnih-scanner;component/Images/ok-icon-up-down.png", UriKind.Relative));
+            moveIntoImage.Margin = new Thickness(0, 75, 23, 0); //init
+            moveIntoImage.Width = 23;
+            moveIntoImage.Cursor = Cursors.Hand;
+            moveIntoImage.MouseLeftButtonDown += TocThumbnail_MoveInto;
+            if (tocImagesList.Items.Count < 2)
+            {
+                moveIntoImage.Visibility = Visibility.Hidden;
+            }
 
             Grid gridWrapper = new Grid();
             gridWrapper.Margin = new Thickness(0, 10, 0, 10);
             gridWrapper.Name = "guid_" + guid.ToString().Replace("-", "");
             tocImageBorder.Child = tocImage;
             gridWrapper.Children.Add(tocImageBorder);
+            gridWrapper.Children.Add(moveIntoImage);
             gridWrapper.Children.Add(moveUpImage);
             gridWrapper.Children.Add(moveDownImage);
             gridWrapper.Children.Add(deleteImage);
@@ -2801,19 +3039,33 @@ namespace ScannerClient_obalkyknih
                 }
             }
 
-            RemoveAllBorders();
+            if (!saveSelectedMode)
+            {
+                RemoveAllBorders();
+            }
             HideAllThumbnailControls();
 
             // add to list
             this.tocImagesList.Items.Add(gridWrapper);
-            this.tocImagesList.SelectedItem = gridWrapper;
+
+            if (!saveSelectedMode)
+            {
+                this.tocImagesList.SelectedItem = gridWrapper;
+            }
+            else
+            {
+                //its saved so it can be disabled upon adding to list when working with other mode
+                newestThumbnail = gridWrapper;
+            }
 
             // assign "pointers" to these elements into dictionaries
-            this.selectedImageGuid = guid;
-            this.selectedImage.Source = bitmapSource;
+            if (!saveSelectedMode)
+            {
+                this.selectedImageGuid = guid;
+                this.selectedImage.Source = bitmapSource;
+            }
             this.tocThumbnailGridsDictionary.Add(guid, gridWrapper);
             SetAppropriateCrop(Size.Empty, this.selectedImage.RenderSize, true);
-
             string pages = "";
             int pagesNumber = this.tocImagesList.Items.Count;
             switch (pagesNumber)
@@ -2870,7 +3122,7 @@ namespace ScannerClient_obalkyknih
             (LogicalTreeHelper.FindLogicalNode(grid, "deleteThumbnail") as Image).Visibility = Visibility.Visible;
             Image moveUp = LogicalTreeHelper.FindLogicalNode(grid, "moveUpThumbnail") as Image;
             Image moveDown = LogicalTreeHelper.FindLogicalNode(grid, "moveDownThumbnail") as Image;
-
+            Image moveInto = LogicalTreeHelper.FindLogicalNode(grid, "moveIntoThumbnail") as Image;
             if(!grid.Equals(this.tocImagesList.Items.GetItemAt(0)))
             {
                 moveUp.Visibility = Visibility.Visible;
@@ -2881,6 +3133,10 @@ namespace ScannerClient_obalkyknih
                 moveDown.Visibility = Visibility.Visible;
             }
 
+            if (tocImagesList.Items.Count > 2)
+            {
+                moveInto.Visibility = Visibility.Visible;
+            }
         }
 
         // Sets the selectedImage
@@ -2965,6 +3221,32 @@ namespace ScannerClient_obalkyknih
             SetThumbnailControls(this.selectedImageGuid);
         }
 
+        //Sets selected TOC image from list of all TOC images
+        private void TocThumbnail_MoveInto(object sender, MouseButtonEventArgs e)
+        {
+            int selectedIndex = this.tocImagesList.SelectedIndex;
+            // get the grid
+            var tmp = this.tocImagesList.Items.GetItemAt(selectedIndex);
+
+            //asks user for input
+            MoveScannedPageWindow window = new MoveScannedPageWindow(tocImagesList.Items.Count);
+            window.ShowDialog();
+
+
+            //move it to selected position if input value is valid
+            if (window.DialogResult.HasValue && window.DialogResult.Value)
+            {
+                int theValue = window.moveIntoValue;
+                tocImagesList.Items.RemoveAt(selectedIndex);
+                tocImagesList.Items.Insert(--theValue, tmp);
+                tocImagesList.SelectedIndex = theValue;
+
+                HideAllThumbnailControls();
+                SetThumbnailControls(selectedImageGuid);
+            }
+            
+        }
+
         //Removes image from thumbnails
         private void TocThumbnail_Delete(object sender, MouseButtonEventArgs e)
         {
@@ -2989,109 +3271,7 @@ namespace ScannerClient_obalkyknih
             }
             if (result == true)
             {
-                DisableImageControllers();
-
-                Guid guid = (from record in tocThumbnailGridsDictionary.ToList()
-                             where record.Value.Equals(this.tocImagesList.Items.GetItemAt(selectedIndex))
-                             select record.Key).First();
-
-                if (guid != Guid.Empty)
-                {
-                    if (guid != this.workingImage.Key)
-                    {
-                        this.backupImage = new KeyValuePair<string, BitmapSource>(this.imagesFilePaths[guid],
-                            ImageTools.LoadFullSize(this.imagesFilePaths[guid]));
-                    }
-                    else
-                    {
-                        this.backupImage = new KeyValuePair<string, BitmapSource>(this.imagesFilePaths[guid], this.workingImage.Value);
-                    }
-                    SignalLoadedBackup();
-                }
-
-                try
-                {
-                    if (File.Exists(this.imagesFilePaths[guid]))
-                    {
-                        File.Delete(this.imagesFilePaths[guid]);
-                    }
-                }
-                catch (Exception)
-                {
-                    MessageBoxDialogWindow.Show("Chyba mazání souboru.", "Nebylo možné zmazat soubor z disku.",
-                        "OK", MessageBoxDialogWindow.Icons.Error);
-                }
-
-                this.tocImagesList.Items.RemoveAt(selectedIndex);
-                this.tocThumbnailGridsDictionary.Remove(guid);
-                this.imagesFilePaths.Remove(guid);
-                this.imagesOriginalSizes.Remove(guid);
-
-                HideAllThumbnailControls();
-
-                if (!this.tocImagesList.HasItems)
-                {
-                    if (this.coverGuid == Guid.Empty)
-                    {
-                        // set default image
-                        this.selectedImageGuid = Guid.Empty;
-                        this.selectedImage.Source = new BitmapImage(
-                            new Uri("/ObalkyKnih-scanner;component/Images/default-icon.png", UriKind.Relative));
-
-                        Mouse.OverrideCursor = null;
-                    }
-                    else
-                    {
-                        this.selectedImageGuid = this.coverGuid;
-                        (this.coverThumbnail.Parent as Border).BorderBrush = (SolidColorBrush)(new BrushConverter()
-                            .ConvertFrom("#6D8527"));
-                        this.deleteCoverIcon.Visibility = Visibility.Visible;
-                        this.selectedImage.Source = coverThumbnail.Source;
-
-                        EnableImageControllers();
-                    }
-                    this.ocrCheckBox.IsChecked = false;
-                }
-                else
-                {
-
-                    Grid grid = this.tocImagesList.Items.GetItemAt(tocImagesList.Items.Count - 1) as Grid;
-                    Image thumbnail = LogicalTreeHelper.FindLogicalNode(grid, "tocThumbnail") as Image;
-                    this.selectedImage.Source = thumbnail.Source;
-                    foreach (var guidKey in this.imagesFilePaths.Keys)
-                    {
-                        if (grid.Name.Contains(guidKey.ToString().Replace("-", "")))
-                        {
-                            this.selectedImageGuid = guidKey;
-                        }
-                    }
-
-                    SetThumbnailControls(this.selectedImageGuid);
-                    this.tocThumbnailGridsDictionary[this.selectedImageGuid].Children.OfType<Border>().First()
-                        .BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#6D8527"));
-
-                    this.tocImagesList.SelectedItem = this.tocThumbnailGridsDictionary[this.selectedImageGuid];
-                    EnableImageControllers();
-                }
-
-                // set numer of pages
-                string pages = "";
-                int pagesNumber = this.tocImagesList.Items.Count;
-                switch (pagesNumber)
-                {
-                    case 1:
-                        pages = "strana";
-                        break;
-                    case 2:
-                    case 3:
-                    case 4:
-                        pages = "strany";
-                        break;
-                    default:
-                        pages = "stran";
-                        break;
-                }
-                this.tocPagesNumber.Content = pagesNumber + " " + pages;
+                delete(selectedIndex);
             }
         }
 
@@ -3171,6 +3351,113 @@ namespace ScannerClient_obalkyknih
                 Mouse.OverrideCursor = null;
             }
         }
+
+        //delete toc image at index
+        private void delete(int index)
+        {
+            DisableImageControllers();
+
+            Guid guid = (from record in tocThumbnailGridsDictionary.ToList()
+                         where record.Value.Equals(this.tocImagesList.Items.GetItemAt(index))
+                         select record.Key).First();
+
+            if (guid != Guid.Empty)
+            {
+                if (guid != this.workingImage.Key)
+                {
+                    this.backupImage = new KeyValuePair<string, BitmapSource>(this.imagesFilePaths[guid],
+                        ImageTools.LoadFullSize(this.imagesFilePaths[guid]));
+                }
+                else
+                {
+                    this.backupImage = new KeyValuePair<string, BitmapSource>(this.imagesFilePaths[guid], this.workingImage.Value);
+                }
+                SignalLoadedBackup();
+            }
+
+            try
+            {
+                if (File.Exists(this.imagesFilePaths[guid]))
+                {
+                    File.Delete(this.imagesFilePaths[guid]);
+                }
+            }
+            catch (Exception)
+            {
+                MessageBoxDialogWindow.Show("Chyba mazání souboru.", "Nebylo možné zmazat soubor z disku.",
+                    "OK", MessageBoxDialogWindow.Icons.Error);
+            }
+
+            this.tocImagesList.Items.RemoveAt(index);
+            this.tocThumbnailGridsDictionary.Remove(guid);
+            this.imagesFilePaths.Remove(guid);
+            this.imagesOriginalSizes.Remove(guid);
+
+            HideAllThumbnailControls();
+
+            if (!this.tocImagesList.HasItems)
+            {
+                if (this.coverGuid == Guid.Empty)
+                {
+                    // set default image
+                    this.selectedImageGuid = Guid.Empty;
+                    this.selectedImage.Source = new BitmapImage(
+                        new Uri("/ObalkyKnih-scanner;component/Images/default-icon.png", UriKind.Relative));
+
+                    Mouse.OverrideCursor = null;
+                }
+                else
+                {
+                    this.selectedImageGuid = this.coverGuid;
+                    (this.coverThumbnail.Parent as Border).BorderBrush = (SolidColorBrush)(new BrushConverter()
+                        .ConvertFrom("#6D8527"));
+                    this.deleteCoverIcon.Visibility = Visibility.Visible;
+                    this.selectedImage.Source = coverThumbnail.Source;
+
+                    EnableImageControllers();
+                }
+                this.ocrCheckBox.IsChecked = false;
+            }
+            else
+            {
+                Grid grid = this.tocImagesList.Items.GetItemAt(tocImagesList.Items.Count - 1) as Grid;
+                Image thumbnail = LogicalTreeHelper.FindLogicalNode(grid, "tocThumbnail") as Image;
+                this.selectedImage.Source = thumbnail.Source;
+                foreach (var guidKey in this.imagesFilePaths.Keys)
+                {
+                    if (grid.Name.Contains(guidKey.ToString().Replace("-", "")))
+                    {
+                        this.selectedImageGuid = guidKey;
+                    }
+                }
+                SetThumbnailControls(this.selectedImageGuid);
+                this.tocThumbnailGridsDictionary[this.selectedImageGuid].Children.OfType<Border>().First()
+                    .BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#6D8527"));
+
+                this.tocImagesList.SelectedItem = this.tocThumbnailGridsDictionary[this.selectedImageGuid];
+                EnableImageControllers();
+            }
+
+            // set numer of pages
+            string pages = "";
+            int pagesNumber = this.tocImagesList.Items.Count;
+            switch (pagesNumber)
+            {
+                case 1:
+                    pages = "strana";
+                    break;
+                case 2:
+                case 3:
+                case 4:
+                    pages = "strany";
+                    break;
+                default:
+                    pages = "stran";
+                    break;
+            }
+            this.tocPagesNumber.Content = pagesNumber + " " + pages;
+        }
+
         #endregion
 
         #region Undo/Redo
