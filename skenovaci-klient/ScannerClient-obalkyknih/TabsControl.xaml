@@ -439,10 +439,6 @@
                                Name="cropIcon" Source="/ObalkyKnih-scanner;component/Images/ok-icon-crop.png" IsEnabled="False"
                                MouseLeftButtonDown="Crop_Clicked" MouseEnter="Icon_MouseEnter" MouseLeave="Icon_MouseLeave"
                                ToolTip="Ořezat obrázek (Ctrl+C)" Cursor="Hand" />
-                        <Image Height="55" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="140,117,0,0" Stretch="Uniform" Width="55" 
-                               Name="saveSelectedButton" Source="/ObalkyKnih-scanner;component/Images/ok-icon-crop-new.png"
-                               MouseLeftButtonDown="SaveSelectedButton_Clicked" MouseEnter="Icon_MouseEnter" MouseLeave="Icon_MouseLeave"
-                               ToolTip="Uložit vybranou část (Ctrl+H)" Cursor="Hand"/>
                     </Grid>
                     <!--Brightness and contrast-->
                     <Grid Margin="0,200,0,0" VerticalAlignment="Top" HorizontalAlignment="Center">
@@ -541,17 +537,6 @@
                                   VerticalAlignment="Top" HorizontalAlignment="Center" ToolTip="Použít OCR na odeslaný obsah" Visibility="Hidden" IsChecked="True" />
                     </Grid>
                     <Separator Height="5" HorizontalAlignment="Left" Margin="36,524,0,0" Name="separator3" VerticalAlignment="Top" Width="163" />
-                    <Button Name="saveSelecteModeButton" Content="Výsekový režim" Height="21" Click="SaveSelectedMode_Clicked"
-                                HorizontalAlignment="Center" Margin="9,174,94.8,0" Foreground="#CECECE" BorderBrush="#656565"
-                                VerticalAlignment="Top" Width="129" BorderThickness="1" Style="{StaticResource MyButton}"
-                                Cursor="Hand" ToolTip="Zapnout výsekový režim">
-                        <Button.Background>
-                            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                <GradientStop Color="#535353" Offset="0.0" />
-                                <GradientStop Color="#3d3d3d" Offset="1.0" />
-                            </LinearGradientBrush>
-                        </Button.Background>
-                    </Button>
                 </Grid>
             </Grid>
         </TabItem>

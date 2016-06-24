@@ -28,6 +28,7 @@ namespace ScannerClient_obalkyknih
             this.GeneralRecord = generalRecord;
             InitializeComponent();
             this.identifierTextBox.Focus();
+
             // close on Esc
             CommandBinding cb = new CommandBinding(closeCommand, CloseExecuted, CloseCanExecute);
             this.CommandBindings.Add(cb);
