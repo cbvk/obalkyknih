@@ -93,7 +93,7 @@ namespace ScannerClient_obalkyknih
         private BackgroundWorker uploaderBackgroundWorker = new BackgroundWorker();
 
         // Window that informs that upload is in progress
-        private UploadWindow uploadWindow = null;
+       // private UploadWindow uploadWindow = null;
 
         // WebClient for downloading of pdf version of toc
         private WebClient tocPdfWebClient = new WebClient();
@@ -1792,8 +1792,11 @@ namespace ScannerClient_obalkyknih
             //DEBUGLOG.AppendLine("SendToObalkyKnih part1: Total time: " + sw.ElapsedMilliseconds);
             this.uploaderBackgroundWorker.RunWorkerAsync(param);
 
-            this.uploadWindow = new UploadWindow();
-            this.uploadWindow.ShowDialog();
+            /*this.uploadWindow = new UploadWindow();
+            this.uploadWindow.ShowDialog();*/
+            tabControl.SelectedItem = controlTabItem;
+            metadataTabItem.IsEnabled = false;
+            scanningTabItem.IsEnabled = false;
         }
 
         // Method for uploading multipart/form-data
@@ -1928,6 +1931,7 @@ namespace ScannerClient_obalkyknih
                 foreach (var tocRecord in tocDescriptionsDictionary)
                 {
                     GC.Collect();
+
                     byte[] buffer = File.ReadAllBytes(tocRecord.Key);
                     s.Write(tocRecord.Value, 0, tocRecord.Value.Length);
                     s.Write(buffer, 0, buffer.Length);
@@ -1940,8 +1944,6 @@ namespace ScannerClient_obalkyknih
                 s.Write(lastBoundaryStringLineBytes, 0, lastBoundaryStringLineBytes.Length);
             }
 
-
-
             //DEBUGLOG.AppendLine("UploadFilesToRemoteUrl (upload data): Total time: " + sw.ElapsedMilliseconds);
 
             // Grab the response from the server. WebException will be thrown
@@ -1950,6 +1952,25 @@ namespace ScannerClient_obalkyknih
             StreamReader responseReader = new StreamReader(response.GetResponseStream());
             e.Result = responseReader.ReadToEnd();
             //DEBUGLOG.AppendLine("UploadFilesToRemoteUrl: Total time: " + sw.ElapsedMilliseconds);
+
+            //delete sent files
+            foreach (var tocRecord in tocDescriptionsDictionary)
+            {
+                GC.Collect();
+
+                if (File.Exists(tocRecord.Key))
+                {
+                    File.Delete(tocRecord.Key);
+                }
+            }
+
+            if (coverFileName != null)
+            {
+                if (File.Exists(coverFileName))
+                {
+                    File.Delete(coverFileName);
+                }
+            }
         }
 
         // Uploads files to obalkyknih in new thread
@@ -1970,8 +1991,8 @@ namespace ScannerClient_obalkyknih
                 //DEBUGLOG.Clear();
             //}
 
-            this.uploadWindow.isClosable = true;
-            this.uploadWindow.Close();
+         /*   this.uploadWindow.isClosable = true;
+            this.uploadWindow.Close();*/
             if (e.Error != null)
             {
                 if (e.Error is WebException)
@@ -2053,8 +2074,21 @@ namespace ScannerClient_obalkyknih
 
             int dpi = (documentType == DocumentType.Cover) ? Settings.CoverDPI : Settings.TocDPI;
             if (Settings.EnableScanLowRes) dpi = Settings.LowResDPI;
+            Item item;
 
-            Item item = activeScanner.Items[1];
+            try
+            {
+                item = activeScanner.Items[1];
+            }
+            catch (System.Runtime.InteropServices.COMException e)
+            {
+                if (e.ErrorCode.ToString("X").Equals("8021006B"))
+                {
+                    MessageBoxDialogWindow.Show("Chyba!", "Nenalezen skener! \nProsím postupujte podle následujících kroků: \n1. Připojte skener.\n2. Restartujte aplikaci.", "OK", MessageBoxDialogWindow.Icons.Error);
+                    return;
+                }
+                throw;
+            }
 
             //Setting configuration of scanner (dpi, color)
             Object value;
@@ -2208,11 +2242,13 @@ namespace ScannerClient_obalkyknih
             {
                 activeScanner = dialog.ShowSelectDevice(WiaDeviceType.ScannerDeviceType, true, true);
             }
-
-            catch (System.Runtime.InteropServices.COMException)
+            //System.Runtime.InteropServices.COMException
+            catch (System.Runtime.InteropServices.COMException e)
             {
-                //Show error and return
-                MessageBoxDialogWindow.Show("Chyba!", "Nenalezen skener.", "OK", MessageBoxDialogWindow.Icons.Error);
+                //Show error and return 
+                //Errors  : 0x80210015 - device not found / WIA disabled
+                MessageBoxDialogWindow.Show("Chyba!", "Nenalezen skener." + e.ErrorCode.ToString("X"), "OK", MessageBoxDialogWindow.Icons.Error);
+                Console.WriteLine(e.ErrorCode.ToString("X"));
                 return false;
             }
             return true;
@@ -3247,6 +3283,33 @@ namespace ScannerClient_obalkyknih
             
         }
 
+        private void TocThumbnail_DeleteNoRemove()
+        {
+            int selectedIndex = this.tocImagesList.SelectedIndex;
+            // sanity check
+            if (selectedIndex < 0 || selectedIndex >= this.tocImagesList.Items.Count)
+            {
+                return;
+            }
+
+            bool dontShowAgain;
+            bool? result = true;
+            if (!Settings.DisableTocDeletionNotification)
+            {
+                result = MessageBoxDialogWindow.Show("Potvrzení odstranění", "Opravdu chcete odstranit vybraný obsah?",
+                    out dontShowAgain, "Příště se neptat a rovnou odstranit", "Ano", "Ne", false,
+                    MessageBoxDialogWindow.Icons.Question);
+                if (result == true && dontShowAgain)
+                {
+                    Settings.DisableTocDeletionNotification = true;
+                }
+            }
+            if (result == true)
+            {
+                delete(selectedIndex, false);
+            }
+        }
+
         //Removes image from thumbnails
         private void TocThumbnail_Delete(object sender, MouseButtonEventArgs e)
         {
@@ -3273,6 +3336,53 @@ namespace ScannerClient_obalkyknih
             {
                 delete(selectedIndex);
             }
+        }
+
+        private void CoverThumbnail_DeleteNoRemove()
+        {
+            (this.coverThumbnail.Parent as Border).BorderBrush = Brushes.Transparent;
+
+            if (this.coverGuid != this.workingImage.Key)
+            {
+                this.backupImage = new KeyValuePair<string, BitmapSource>(this.imagesFilePaths[this.coverGuid],
+                    ImageTools.LoadFullSize(this.imagesFilePaths[this.coverGuid]));
+            }
+            else
+            {
+                this.backupImage = new KeyValuePair<string, BitmapSource>(
+                    this.imagesFilePaths[this.coverGuid], this.workingImage.Value);
+            }
+            SignalLoadedBackup();
+
+            this.imagesFilePaths.Remove(this.coverGuid);
+            this.imagesOriginalSizes.Remove(this.coverGuid);
+            this.coverGuid = Guid.Empty;
+            this.coverThumbnail.IsEnabled = false;
+            this.deleteCoverIcon.Visibility = Visibility.Hidden;
+            this.coverThumbnail.Source = new BitmapImage(
+                    new Uri("/ObalkyKnih-scanner;component/Images/default-icon.png", UriKind.Relative));
+
+            if (this.tocThumbnailGridsDictionary.Keys.Count > 0)
+            {
+                this.selectedImageGuid = this.tocThumbnailGridsDictionary.Keys.Last();
+                this.selectedImage.Source = (LogicalTreeHelper.FindLogicalNode(
+                    this.tocThumbnailGridsDictionary.Values.Last(), "tocThumbnail") as Image).Source;
+
+                this.tocImagesList.SelectedItem = this.tocThumbnailGridsDictionary[this.selectedImageGuid];
+                this.tocThumbnailGridsDictionary[this.selectedImageGuid].Children.OfType<Border>().First()
+                    .BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#6D8527"));
+                SetThumbnailControls(this.selectedImageGuid);
+
+            }
+            else
+            {
+                // set default image
+                this.selectedImageGuid = Guid.Empty;
+                this.selectedImage.Source = new BitmapImage(
+                    new Uri("/ObalkyKnih-scanner;component/Images/default-icon.png", UriKind.Relative));
+            }
+            Mouse.OverrideCursor = null;
+
         }
 
         private void CoverThumbnail_Delete(object sender, MouseButtonEventArgs e)
@@ -3353,7 +3463,7 @@ namespace ScannerClient_obalkyknih
         }
 
         //delete toc image at index
-        private void delete(int index)
+        private void delete(int index, bool removeFiles = true)
         {
             DisableImageControllers();
 
@@ -3377,7 +3487,7 @@ namespace ScannerClient_obalkyknih
 
             try
             {
-                if (File.Exists(this.imagesFilePaths[guid]))
+                if (removeFiles && File.Exists(this.imagesFilePaths[guid]))
                 {
                     File.Delete(this.imagesFilePaths[guid]);
                 }
@@ -4251,10 +4361,11 @@ namespace ScannerClient_obalkyknih
             // remove cover
             if (this.coverGuid != new Guid())
             {
-                bool settingsOrig = Settings.DisableCoverDeletionNotification;
+                /*bool settingsOrig = Settings.DisableCoverDeletionNotification;
                 Settings.DisableCoverDeletionNotification = true;
                 CoverThumbnail_Delete(null, null);
-                Settings.DisableCoverDeletionNotification = settingsOrig;
+                Settings.DisableCoverDeletionNotification = settingsOrig;*/
+                CoverThumbnail_DeleteNoRemove();
             }
 
             // remove toc
@@ -4262,7 +4373,8 @@ namespace ScannerClient_obalkyknih
             for (int i = 0; i < cnt; i++)
             {
                 this.tocImagesList.SelectedIndex = i;
-                TocThumbnail_Delete(null, null);
+                TocThumbnail_DeleteNoRemove();
+             //   TocThumbnail_Delete(null, null);
             }
 
             // cleanup part info

@@ -296,7 +296,7 @@ namespace ScannerClient_obalkyknih
         // Opens CreateNewUnitWindow
         internal void ShowNewUnitWindow()
         {
-            try
+         /*   try
             {
                 foreach (string fileName in Directory.GetFiles(Settings.TemporaryFolder))
                 {
@@ -309,7 +309,7 @@ namespace ScannerClient_obalkyknih
                 }
             }
             // don't care if some file can't be deleted right now
-            catch (Exception) { }
+            catch (Exception) { }*/
 
             if (this.isVersionCheckFinished && Settings.NeverDownloadUpdates && isAllowedVersion != false) isAllowedVersion = true; //debug
             if (isAllowedVersion == null)
