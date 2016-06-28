@@ -2071,12 +2071,12 @@ namespace ScannerClient_obalkyknih
                     coverThumbnail.Source = new BitmapImage(
                     new Uri("/ObalkyKnih-scanner;component/Images/default-icon.png", UriKind.Relative));
                     int cnt = this.tocImagesList.Items.Count;
-                    for (int i = 0; i < cnt; i++)
+                    for (int i = cnt - 1; i >= 0; i--)
                     {
+                        object gg = this.tocImagesList.Items.GetItemAt(i);
                         Guid guid = (from record in tocThumbnailGridsDictionary.ToList()
-                                     where record.Value.Equals(this.tocImagesList.Items.GetItemAt(i))
+                                     where record.Value.Equals(gg)
                                      select record.Key).First();
-
                         this.tocImagesList.Items.RemoveAt(i);
                         this.tocThumbnailGridsDictionary.Remove(guid);
                         this.imagesFilePaths.Remove(guid);
