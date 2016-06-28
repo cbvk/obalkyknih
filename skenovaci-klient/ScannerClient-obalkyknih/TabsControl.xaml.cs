@@ -2073,9 +2073,8 @@ namespace ScannerClient_obalkyknih
                     int cnt = this.tocImagesList.Items.Count;
                     for (int i = cnt - 1; i >= 0; i--)
                     {
-                        object gg = this.tocImagesList.Items.GetItemAt(i);
                         Guid guid = (from record in tocThumbnailGridsDictionary.ToList()
-                                     where record.Value.Equals(gg)
+                                     where record.Value.Equals(this.tocImagesList.Items.GetItemAt(i))
                                      select record.Key).First();
                         this.tocImagesList.Items.RemoveAt(i);
                         this.tocThumbnailGridsDictionary.Remove(guid);
