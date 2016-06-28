@@ -595,7 +595,7 @@
                                VerticalAlignment="Top" HorizontalAlignment="Left" />
                         <Grid Name="controlIdentifiersGrid" Margin="10,120,0,0"/>
                     </Grid>
-                    <Image Source="/ObalkyKnih-scanner;component/Images/ok-icon-done.png" Margin="0,300,0,0" Stretch="Uniform"
+                    <Image Name="controlTabDoneIcon" Source="/ObalkyKnih-scanner;component/Images/ok-icon-hourglass.png" Margin="0,300,0,0" Stretch="Uniform"
                            VerticalAlignment="Top" HorizontalAlignment="Center" Width="89"/>
                     <Button Name="controlNewUnitButton" Content="Nový záznam" Height="30" Cursor="Hand"
                                 HorizontalAlignment="Left" Margin="22,450,0,0" Background="#5E5E5E" Foreground="#CECECE" 

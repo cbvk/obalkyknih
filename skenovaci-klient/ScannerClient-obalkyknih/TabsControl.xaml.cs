@@ -92,8 +92,8 @@ namespace ScannerClient_obalkyknih
         // Background worker for downloading of metadata and cover and toc images
         private BackgroundWorker uploaderBackgroundWorker = new BackgroundWorker();
 
-        // Window that informs that upload is in progress
-       // private UploadWindow uploadWindow = null;
+        private Dictionary<string, byte[]> tocDescriptionsDictionaryToDelete;
+        private string coverFileNameToDelete;
 
         // WebClient for downloading of pdf version of toc
         private WebClient tocPdfWebClient = new WebClient();
@@ -504,7 +504,13 @@ namespace ScannerClient_obalkyknih
         // Actions after cover image was downloaded - shows image
         void CoverDownloadCompleted(object sender, OpenReadCompletedEventArgs e)
         {
-            /*(Window.GetWindow(this) as MainWindow).RemoveMessageFromStatusBar("Stahuji obálku.");
+            //if user created new record
+            if (Window.GetWindow(this) == null)
+            {
+                return;
+            }
+
+            (Window.GetWindow(this) as MainWindow).RemoveMessageFromStatusBar("Stahuji obálku.");
             if (e.Error == null && !e.Cancelled)
             {
                 BitmapImage imgsrc = new BitmapImage();
@@ -519,13 +525,18 @@ namespace ScannerClient_obalkyknih
                 {
                     this.originalCoverImage.Source = imgsrc;
                 }
-            }*/
+            }
         }
 
         // Actions after toc image was downloaded - shows image
         void TocDownloadCompleted(object sender, OpenReadCompletedEventArgs e)
         {
-            /*MainWindow win = (Window.GetWindow(this) as MainWindow);
+            //if user created new record
+            if (Window.GetWindow(this) == null)
+            {
+                return;
+            }
+            MainWindow win = (Window.GetWindow(this) as MainWindow);
             if (win.IsInitialized) win.RemoveMessageFromStatusBar("Stahuji obsah.");
             if (e.Error == null && !e.Cancelled)
             {
@@ -543,7 +554,7 @@ namespace ScannerClient_obalkyknih
                     this.originalTocImage.Source = imgsrc;
                     this.originalTocImage.IsEnabled = true;
                 }
-            }*/
+            }
         }
 
         // Actions after pdf file was downloaded - opens it in default viewer
@@ -1430,6 +1441,13 @@ namespace ScannerClient_obalkyknih
         // Checks everything and calls uploadWorker to upload to obalkyknih
         private void SendToObalkyKnih()
         {
+            if (uploaderBackgroundWorker.IsBusy)
+            {
+                MessageBoxDialogWindow.Show("Odesílání skenu", "Počkejte, než se dokončí předchozí odesílání.",
+                    "OK", MessageBoxDialogWindow.Icons.Error);
+                return;
+            }
+
             //Stopwatch sw = new Stopwatch();
             //sw.Start();
             if (string.IsNullOrWhiteSpace(Settings.UserName))
@@ -1794,6 +1812,7 @@ namespace ScannerClient_obalkyknih
 
             /*this.uploadWindow = new UploadWindow();
             this.uploadWindow.ShowDialog();*/
+            controlTabItem.IsEnabled = true;
             tabControl.SelectedItem = controlTabItem;
         }
 
@@ -1947,29 +1966,21 @@ namespace ScannerClient_obalkyknih
 
             // Grab the response from the server. WebException will be thrown
             // when a HTTP OK status is not returned
+            tocDescriptionsDictionaryToDelete = tocDescriptionsDictionary;
+            coverFileNameToDelete = coverFileName;
             WebResponse response = requestToServer.GetResponse();
             StreamReader responseReader = new StreamReader(response.GetResponseStream());
             e.Result = responseReader.ReadToEnd();
             //DEBUGLOG.AppendLine("UploadFilesToRemoteUrl: Total time: " + sw.ElapsedMilliseconds);
+        }
 
-            //delete sent files
-            foreach (var tocRecord in tocDescriptionsDictionary)
-            {
-                GC.Collect();
-
-                if (File.Exists(tocRecord.Key))
-                {
-                    File.Delete(tocRecord.Key);
-                }
-            }
-
-            if (coverFileName != null)
-            {
-                if (File.Exists(coverFileName))
-                {
-                    File.Delete(coverFileName);
-                }
-            }
+        private BitmapImage getIconSource(string uri)
+        {
+            BitmapImage newIcon = new BitmapImage();
+            newIcon.BeginInit();
+            newIcon.UriSource = new Uri("pack://application:,,,/" + uri);
+            newIcon.EndInit();
+            return newIcon;
         }
 
         // Uploads files to obalkyknih in new thread
@@ -1994,6 +2005,7 @@ namespace ScannerClient_obalkyknih
             this.uploadWindow.Close();*/
             if (e.Error != null)
             {
+                controlTabDoneIcon.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-icon-ban.png");
                 if (e.Error is WebException)
                 {
                     string message = "";
@@ -2031,6 +2043,27 @@ namespace ScannerClient_obalkyknih
                 string response = (e.Result as string) ?? "";
                 if ("OK".Equals(response))
                 {
+                    controlTabDoneIcon.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-icon-done.png");
+
+                    //delete sent files
+                    foreach (var tocRecord in tocDescriptionsDictionaryToDelete)
+                    {
+                        GC.Collect();
+
+                        if (File.Exists(tocRecord.Key))
+                        {
+                            File.Delete(tocRecord.Key);
+                        }
+                    }
+
+                    if (coverFileNameToDelete != null)
+                    {
+                        if (File.Exists(coverFileNameToDelete))
+                        {
+                            File.Delete(coverFileNameToDelete);
+                        }
+                    }
+
                     FillControlMetadata();
                     this.controlTabItem.IsEnabled = true;
                     this.tabControl.SelectedItem = this.controlTabItem;
@@ -2046,6 +2079,7 @@ namespace ScannerClient_obalkyknih
                 }
                 else
                 {
+                    controlTabDoneIcon.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-icon-ban.png");
                     MessageBoxDialogWindow.Show("Zpracování nepotvrzené",
                         "Server nepotvrdil zpracování dat. Je možné, že data nebyla zpracována správně." + response,
                         "OK", MessageBoxDialogWindow.Icons.Warning);
@@ -3756,7 +3790,7 @@ namespace ScannerClient_obalkyknih
         // Sends to ObalkyKnih
         private void SendButton_Click(object sender, RoutedEventArgs e)
         {
-            //this.controlTabItem.IsEnabled = false;
+            controlTabDoneIcon.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-icon-hourglass.png");
             SendToObalkyKnih();
         }
 
