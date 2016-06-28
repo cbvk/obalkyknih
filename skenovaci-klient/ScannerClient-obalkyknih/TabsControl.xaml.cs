@@ -504,7 +504,7 @@ namespace ScannerClient_obalkyknih
         // Actions after cover image was downloaded - shows image
         void CoverDownloadCompleted(object sender, OpenReadCompletedEventArgs e)
         {
-            (Window.GetWindow(this) as MainWindow).RemoveMessageFromStatusBar("Stahuji obálku.");
+            /*(Window.GetWindow(this) as MainWindow).RemoveMessageFromStatusBar("Stahuji obálku.");
             if (e.Error == null && !e.Cancelled)
             {
                 BitmapImage imgsrc = new BitmapImage();
@@ -519,13 +519,13 @@ namespace ScannerClient_obalkyknih
                 {
                     this.originalCoverImage.Source = imgsrc;
                 }
-            }
+            }*/
         }
 
         // Actions after toc image was downloaded - shows image
         void TocDownloadCompleted(object sender, OpenReadCompletedEventArgs e)
         {
-            MainWindow win = (Window.GetWindow(this) as MainWindow);
+            /*MainWindow win = (Window.GetWindow(this) as MainWindow);
             if (win.IsInitialized) win.RemoveMessageFromStatusBar("Stahuji obsah.");
             if (e.Error == null && !e.Cancelled)
             {
@@ -543,7 +543,7 @@ namespace ScannerClient_obalkyknih
                     this.originalTocImage.Source = imgsrc;
                     this.originalTocImage.IsEnabled = true;
                 }
-            }
+            }*/
         }
 
         // Actions after pdf file was downloaded - opens it in default viewer
@@ -1795,8 +1795,6 @@ namespace ScannerClient_obalkyknih
             /*this.uploadWindow = new UploadWindow();
             this.uploadWindow.ShowDialog();*/
             tabControl.SelectedItem = controlTabItem;
-            metadataTabItem.IsEnabled = false;
-            scanningTabItem.IsEnabled = false;
         }
 
         // Method for uploading multipart/form-data
@@ -1804,6 +1802,7 @@ namespace ScannerClient_obalkyknih
         private void UploadFilesToRemoteUrl(string url, string coverFileName, List<string> tocFileNames,
             string metaXml, NameValueCollection nvc, DoWorkEventArgs e)
         {
+            System.Threading.Thread.Sleep(5000);
             //Stopwatch sw = new Stopwatch();
             //sw.Start();
             // Check version
@@ -3757,7 +3756,7 @@ namespace ScannerClient_obalkyknih
         // Sends to ObalkyKnih
         private void SendButton_Click(object sender, RoutedEventArgs e)
         {
-            this.controlTabItem.IsEnabled = false;
+            //this.controlTabItem.IsEnabled = false;
             SendToObalkyKnih();
         }
 
