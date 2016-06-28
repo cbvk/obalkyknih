@@ -296,20 +296,19 @@ namespace ScannerClient_obalkyknih
         // Opens CreateNewUnitWindow
         internal void ShowNewUnitWindow()
         {
-         /*   try
+            try
             {
                 foreach (string fileName in Directory.GetFiles(Settings.TemporaryFolder))
                 {
-                    // remove all previous image files
-                    if (fileName.EndsWith(".tif") || fileName.EndsWith(".bmp")
-                        || fileName.Equals("obalkyknih-scanner_setup.exe"))
+                    // images handled after uploading
+                    if (fileName.Equals("obalkyknih-scanner_setup.exe"))
                     {
                         File.Delete(fileName);
                     }
                 }
             }
             // don't care if some file can't be deleted right now
-            catch (Exception) { }*/
+            catch (Exception) { }
 
             if (this.isVersionCheckFinished && Settings.NeverDownloadUpdates && isAllowedVersion != false) isAllowedVersion = true; //debug
             if (isAllowedVersion == null)

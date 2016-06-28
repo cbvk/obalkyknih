@@ -2064,6 +2064,31 @@ namespace ScannerClient_obalkyknih
                         }
                     }
 
+                    //remove working images  
+                    tocPagesNumber.Content = "0 stran";
+                    coverThumbnail.IsEnabled = false;
+                    coverGuid = Guid.Empty;
+                    coverThumbnail.Source = new BitmapImage(
+                    new Uri("/ObalkyKnih-scanner;component/Images/default-icon.png", UriKind.Relative));
+                    int cnt = this.tocImagesList.Items.Count;
+                    for (int i = 0; i < cnt; i++)
+                    {
+                        Guid guid = (from record in tocThumbnailGridsDictionary.ToList()
+                                     where record.Value.Equals(this.tocImagesList.Items.GetItemAt(i))
+                                     select record.Key).First();
+
+                        this.tocImagesList.Items.RemoveAt(i);
+                        this.tocThumbnailGridsDictionary.Remove(guid);
+                        this.imagesFilePaths.Remove(guid);
+                        this.imagesOriginalSizes.Remove(guid);
+                    }
+                    //tocImagesList = new MyListView();
+                    imagesFilePaths = new Dictionary<Guid, string>();
+                    tocThumbnailGridsDictionary = new Dictionary<Guid, Grid>();
+                    this.selectedImageGuid = Guid.Empty;
+                    this.selectedImage.Source = new BitmapImage(
+                        new Uri("/ObalkyKnih-scanner;component/Images/default-icon.png", UriKind.Relative));
+
                     FillControlMetadata();
                     this.controlTabItem.IsEnabled = true;
                     this.tabControl.SelectedItem = this.controlTabItem;
@@ -3254,7 +3279,7 @@ namespace ScannerClient_obalkyknih
             {
                 return;
             }
-
+            
             // get the grid
             var tmp = this.tocImagesList.Items.GetItemAt(selectedIndex);
             // move it
