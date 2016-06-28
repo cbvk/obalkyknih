@@ -1821,7 +1821,6 @@ namespace ScannerClient_obalkyknih
         private void UploadFilesToRemoteUrl(string url, string coverFileName, List<string> tocFileNames,
             string metaXml, NameValueCollection nvc, DoWorkEventArgs e)
         {
-            System.Threading.Thread.Sleep(5000);
             //Stopwatch sw = new Stopwatch();
             //sw.Start();
             // Check version
@@ -2003,6 +2002,7 @@ namespace ScannerClient_obalkyknih
 
          /*   this.uploadWindow.isClosable = true;
             this.uploadWindow.Close();*/
+            uploadProgressBar.Visibility = System.Windows.Visibility.Hidden;
             if (e.Error != null)
             {
                 controlTabDoneIcon.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-icon-ban.png");
@@ -3791,6 +3791,7 @@ namespace ScannerClient_obalkyknih
         private void SendButton_Click(object sender, RoutedEventArgs e)
         {
             controlTabDoneIcon.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-icon-hourglass.png");
+            uploadProgressBar.Visibility = System.Windows.Visibility.Visible;
             SendToObalkyKnih();
         }
 
