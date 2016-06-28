@@ -33,7 +33,7 @@
                         </LinearGradientBrush>
                     </Setter.Value>
                 </Setter>
-                
+
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type TabItem}">
@@ -360,14 +360,14 @@
                         <ImageBrush Viewport="0,0,204,204" ViewportUnits="Absolute" Stretch="None" TileMode="Tile"
                                     ImageSource="/ObalkyKnih-scanner;component/Images/ok-background-left.png"/>
                     </Grid.Background>
-                <Label HorizontalAlignment="Left" Margin="10,10,0,0" Name="thumbnailsTitleLabel" VerticalAlignment="Top" 
+                    <Label HorizontalAlignment="Left" Margin="10,10,0,0" Name="thumbnailsTitleLabel" VerticalAlignment="Top" 
                                FontFamily="Arial" Foreground="#CECECE" />
-                <src:MyScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden" Margin="0,40,0,0">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                    <src:MyScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden" Margin="0,40,0,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
                             <Label Content="Obálka" Foreground="#CECECE" HorizontalAlignment="Center"
                                    VerticalAlignment="Top" Height="25" Grid.Row="0" />
                             <Border BorderThickness="4" VerticalAlignment="Top" HorizontalAlignment="Center"
@@ -379,19 +379,19 @@
                             <Image Source="/ObalkyKnih-scanner;component/Images/ok-icon-delete.png" Width="18" Stretch="Uniform"
                                    Name="deleteCoverIcon" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="26,30"
                                    Visibility="Hidden" Cursor="Hand" MouseLeftButtonDown="CoverThumbnail_Delete"/>
-                                <Label Content="Obsah" Foreground="#CECECE" HorizontalAlignment="Center"
+                            <Label Content="Obsah" Foreground="#CECECE" HorizontalAlignment="Center"
                                VerticalAlignment="Top" Height="25" FontFamily="Arial" Grid.Row="1" />
-                        <Label Name="tocPagesNumber" Content="0 stran" Foreground="#B6B6B6" Margin="0,15" HorizontalAlignment="Center"
+                            <Label Name="tocPagesNumber" Content="0 stran" Foreground="#B6B6B6" Margin="0,15" HorizontalAlignment="Center"
                                VerticalAlignment="Top" Height="25" FontFamily="Arial" Grid.Row="1" />
-                        <src:MyListView x:Name="tocImagesList" VerticalAlignment="Stretch" Margin="0,40" Grid.Row="1"
+                            <src:MyListView x:Name="tocImagesList" VerticalAlignment="Stretch" Margin="0,40" Grid.Row="1"
                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled" Background="Transparent" BorderThickness="0">
-                        <src:MyListView.Resources>
-                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}">Transparent</SolidColorBrush>
-                            <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}">Transparent</SolidColorBrush>
-                        </src:MyListView.Resources>
-                    </src:MyListView>
-                </Grid>
-                </src:MyScrollViewer>
+                                <src:MyListView.Resources>
+                                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}">Transparent</SolidColorBrush>
+                                    <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}">Transparent</SolidColorBrush>
+                                </src:MyListView.Resources>
+                            </src:MyListView>
+                        </Grid>
+                    </src:MyScrollViewer>
                 </Grid>
                 <!--Middle pannel-->
                 <Grid Grid.Column="2">
@@ -562,7 +562,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="30*" MinWidth="300" />
                 </Grid.ColumnDefinitions>
-                
+
                 <!--Splitter-->
                 <GridSplitter HorizontalAlignment="Center" VerticalAlignment="Stretch" Grid.Column="1"
                   Width="5" ResizeBehavior="PreviousAndNext">
@@ -595,7 +595,8 @@
                                VerticalAlignment="Top" HorizontalAlignment="Left" />
                         <Grid Name="controlIdentifiersGrid" Margin="10,120,0,0"/>
                     </Grid>
-                    <Image Name="controlTabDoneIcon" Source="/ObalkyKnih-scanner;component/Images/ok-icon-hourglass.png" Margin="0,300,0,0" Stretch="Uniform"
+                    <ProgressBar Name="uploadProgressBar" Height="16" HorizontalAlignment="Center" Margin="26,375,20.4,0" VerticalAlignment="Top" Width="184" IsIndeterminate="True" />
+                    <Image Name="controlTabDoneIcon" Source="/ObalkyKnih-scanner;component/Images/ok-icon-hourglass.png" Margin="73,270,68.4,0" Stretch="Uniform"
                            VerticalAlignment="Top" HorizontalAlignment="Center" Width="89"/>
                     <Button Name="controlNewUnitButton" Content="Nový záznam" Height="30" Cursor="Hand"
                                 HorizontalAlignment="Left" Margin="22,450,0,0" Background="#5E5E5E" Foreground="#CECECE" 
