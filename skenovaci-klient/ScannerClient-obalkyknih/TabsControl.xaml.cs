@@ -2071,7 +2071,7 @@ namespace ScannerClient_obalkyknih
                     //Metadata m = GetMetadataFromTextBoxes();
                     //metadataReceiverBackgroundWorker.RunWorkerAsync(m);
                     //coverAndTocReceiverBackgroundWorker.RunWorkerAsync(generalRecord);
-                    System.Threading.Thread.Sleep(3000);
+                    //System.Threading.Thread.Sleep(3000);
                     this.DownloadCoverAndToc();
 
                     MessageBoxDialogWindow.Show("Odesláno", "Odesílání úspěšné.",
