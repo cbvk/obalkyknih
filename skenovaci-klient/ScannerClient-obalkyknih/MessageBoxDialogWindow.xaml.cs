@@ -21,7 +21,7 @@ namespace ScannerClient_obalkyknih
     public partial class MessageBoxDialogWindow : Window
     {
         public MessageBoxDialogWindow(string title, string message, string checkBoxLabel,
-            string buttonTrueLabel, string buttonFalseLabel, bool defaultChoice, Icons icon)
+            string buttonTrueLabel, string buttonFalseLabel, bool defaultChoice, Icons icon, string hyperlinkLabel)
         {
             InitializeComponent();
 
@@ -171,11 +171,49 @@ namespace ScannerClient_obalkyknih
             string buttonTrueLabel, string buttonFalseLabel, bool defaultChoice, Icons icon)
         {
             MessageBoxDialogWindow msgBox = new MessageBoxDialogWindow(title, message, checkBoxLabel,
-                buttonTrueLabel, buttonFalseLabel, defaultChoice, icon);
+                buttonTrueLabel, buttonFalseLabel, defaultChoice, icon, null);
 
             bool? returnValue = msgBox.ShowDialog();
             isCheckBoxChecked = (bool)msgBox.checkBox.IsChecked;
             return returnValue;
+        }
+
+        public static bool ShowHyperlink(string title, string message,
+            string hyperlinkLabel, string buttonTrueLabel, Icons icon)
+        {
+            // creates an additional TextBlock for hyperlink
+            MessageBoxDialogWindow msgBox = new MessageBoxDialogWindow(title, message, null, buttonTrueLabel, null, false, icon, hyperlinkLabel);
+            TextBlock hypertextBlock = new TextBlock();
+            Mouse.OverrideCursor = Cursors.Arrow;
+            hypertextBlock.Inlines.Add(hyperlinkLabel);
+            hypertextBlock.TextWrapping = TextWrapping.Wrap;
+            hypertextBlock.Margin = new Thickness(60, 35, 20, 60);
+            hypertextBlock.VerticalAlignment = VerticalAlignment.Top;
+            hypertextBlock.HorizontalAlignment = HorizontalAlignment.Center;
+            hypertextBlock.Foreground = System.Windows.Media.Brushes.Blue;
+            hypertextBlock.MouseUp += new MouseButtonEventHandler(Hyperlink_Click);
+            hypertextBlock.MouseEnter += new MouseEventHandler(MouseEnterTextArea);
+            hypertextBlock.MouseLeave += new MouseEventHandler(MouseLeaveTextArea);
+            hypertextBlock.Visibility = Visibility.Visible;
+
+            msgBox.grid.Children.Add(hypertextBlock);
+            msgBox.ShowDialog();
+            return true;
+        }
+
+        private static void Hyperlink_Click(object sender, MouseButtonEventArgs e)
+        {
+            System.Diagnostics.Process.Start("https://github.com/cbvk/obalkyknih/wiki/FAQ-skenovaci-klient");
+        }
+
+        private static void MouseEnterTextArea(object sender, MouseEventArgs e)
+        {
+            Mouse.OverrideCursor = Cursors.Hand;
+        }
+
+        private static void MouseLeaveTextArea(object sender, MouseEventArgs e)
+        {
+            Mouse.OverrideCursor = Cursors.Arrow;
         }
     }
 }

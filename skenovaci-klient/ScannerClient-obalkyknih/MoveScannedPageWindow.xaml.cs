@@ -45,7 +45,7 @@ namespace ScannerClient_obalkyknih
         //disable certain commands
         private void textBox_PreviewExecuted(object sender, ExecutedRoutedEventArgs e)
         {
-            if  (e.Command == ApplicationCommands.Copy ||
+            if (e.Command == ApplicationCommands.Copy ||
                 e.Command == ApplicationCommands.Cut ||
                 e.Command == ApplicationCommands.Paste)
             {
@@ -72,7 +72,7 @@ namespace ScannerClient_obalkyknih
 
             try
             {
-                 moveIntoValue = Convert.ToInt32(InputTextBox.Text);
+                moveIntoValue = Convert.ToInt32(InputTextBox.Text);
                 if (moveIntoValue > maxItemCount || moveIntoValue < 1)
                 {
                     MessageBoxDialogWindow.Show("Chyba!", "Zadané číslo je mimo rozsahu!", "Ok", MessageBoxDialogWindow.Icons.Error);
@@ -84,7 +84,7 @@ namespace ScannerClient_obalkyknih
                 MessageBoxDialogWindow.Show("Chyba!", "Nesprávný formát čísla!", "Ok", MessageBoxDialogWindow.Icons.Error);
                 return;
             }
-            DialogResult = true; 
+            DialogResult = true;
         }
     }
 }

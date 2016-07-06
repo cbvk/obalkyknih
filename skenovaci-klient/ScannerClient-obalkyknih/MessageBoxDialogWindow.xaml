@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="" SizeToContent="WidthAndHeight" MaxWidth="600" WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize" Foreground="#5e5e5e" FontFamily="Arial">
-    <Grid>
+    <Grid Name="grid">
         <Grid.Background>
             <ImageBrush Viewport="0,0,218,218" ViewportUnits="Absolute" Stretch="None" TileMode="Tile"
                         ImageSource="/ObalkyKnih-scanner;component/Images/ok-background-center.png"/>

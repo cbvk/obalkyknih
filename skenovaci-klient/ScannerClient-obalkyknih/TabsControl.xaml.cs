@@ -2064,7 +2064,7 @@ namespace ScannerClient_obalkyknih
                         }
                     }
 
-                    //remove working images  
+                    //remove working images and reset controls
                     tocPagesNumber.Content = "0 stran";
                     coverThumbnail.IsEnabled = false;
                     coverGuid = Guid.Empty;
@@ -2095,7 +2095,6 @@ namespace ScannerClient_obalkyknih
                     //Metadata m = GetMetadataFromTextBoxes();
                     //metadataReceiverBackgroundWorker.RunWorkerAsync(m);
                     //coverAndTocReceiverBackgroundWorker.RunWorkerAsync(generalRecord);
-                    //System.Threading.Thread.Sleep(3000);
                     this.DownloadCoverAndToc();
 
                     MessageBoxDialogWindow.Show("Odesláno", "Odesílání úspěšné.",
@@ -2139,12 +2138,10 @@ namespace ScannerClient_obalkyknih
             }
             catch (System.Runtime.InteropServices.COMException e)
             {
-                if (e.ErrorCode.ToString("X").Equals("8021006B"))
-                {
-                    MessageBoxDialogWindow.Show("Chyba!", "Nenalezen skener! \nProsím postupujte podle následujících kroků: \n1. Připojte skener.\n2. Restartujte aplikaci.", "OK", MessageBoxDialogWindow.Icons.Error);
-                    return;
-                }
-                throw;
+                MessageBoxDialogWindow.ShowHyperlink("Chyba!", "Nepodařilo se připojit skenovací zařízení.", "Zobrazit nápovědu.", "OK", MessageBoxDialogWindow.Icons.Error);
+                //tmp; known errors : 8021006B - this exception is thrown when you disconnect printer while application is running
+                //after disconnecting the printer the application needs to be restarted otherwise this exception will be caught again
+                return;
             }
 
             //Setting configuration of scanner (dpi, color)
@@ -2299,13 +2296,10 @@ namespace ScannerClient_obalkyknih
             {
                 activeScanner = dialog.ShowSelectDevice(WiaDeviceType.ScannerDeviceType, true, true);
             }
-            //System.Runtime.InteropServices.COMException
-            catch (System.Runtime.InteropServices.COMException e)
+            catch (System.Runtime.InteropServices.COMException)
             {
-                //Show error and return 
-                //Errors  : 0x80210015 - device not found / WIA disabled
-                MessageBoxDialogWindow.Show("Chyba!", "Nenalezen skener." + e.ErrorCode.ToString("X"), "OK", MessageBoxDialogWindow.Icons.Error);
-                Console.WriteLine(e.ErrorCode.ToString("X"));
+                // known errors  : 0x80210015 - device not found / WIA disabled
+                MessageBoxDialogWindow.ShowHyperlink("Chyba!", "Skenovací zařízení nebylo nalezeno.", "Zobrazit nápovědu.", "OK", MessageBoxDialogWindow.Icons.Error);
                 return false;
             }
             return true;
