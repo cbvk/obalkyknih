@@ -25,6 +25,7 @@ using System.Xml.Linq;
 using System.Security.Cryptography;
 using System.Net.Sockets;
 using ScannerClient_obalkyknih.Classes;
+using Newtonsoft.Json;
 
 namespace ScannerClient_obalkyknih
 {
@@ -80,6 +81,9 @@ namespace ScannerClient_obalkyknih
         // Dictionary containing Guid of TOC image and its thumbnail with wrapping Grid
         private Dictionary<Guid, Grid> tocThumbnailGridsDictionary = new Dictionary<Guid, Grid>();
 
+        // Dictionary containing Guid of AUTH image and its thumbnail with wrapping Grid
+        private Dictionary<Guid, Grid> authThumbnailGridsDictionary = new Dictionary<Guid, Grid>();
+
         // Object responsible for cropping of images
         private CroppingAdorner cropper;
 
@@ -92,7 +96,11 @@ namespace ScannerClient_obalkyknih
         // Background worker for downloading of metadata and cover and toc images
         private BackgroundWorker uploaderBackgroundWorker = new BackgroundWorker();
 
+        // Background worker for downloading covers
+        private BackgroundWorker okczCoverBackgroundWorker = new BackgroundWorker();
+
         private Dictionary<string, byte[]> tocDescriptionsDictionaryToDelete;
+        private Dictionary<string, byte[]> authDescriptionsDictionaryToDelete;
         private string coverFileNameToDelete;
 
         // WebClient for downloading of pdf version of toc
@@ -104,7 +112,7 @@ namespace ScannerClient_obalkyknih
         // Is input correct
         private bool inputCorrect = false;
 
-        //Working with SaveSelected
+        // Working with SaveSelected
         private bool saveSelectedMode = false;
         private int saveSelectedCount = 0;
         private Grid newestThumbnail;
@@ -345,7 +353,7 @@ namespace ScannerClient_obalkyknih
                     // download images of cover and toc
                     if (this.generalRecord is Monograph)
                     {
-                        DownloadCoverAndToc();
+                        this.DownloadCoverAndToc();
                     }
                 }
             }
@@ -392,6 +400,11 @@ namespace ScannerClient_obalkyknih
             metadataReceiverBackgroundWorker.WorkerReportsProgress = false;
             metadataReceiverBackgroundWorker.DoWork += new DoWorkEventHandler(MetadataReceiverBW_DoWork);
             metadataReceiverBackgroundWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(MetadataReceiverBW_RunWorkerCompleted);
+
+            okczCoverBackgroundWorker.WorkerSupportsCancellation = false;
+            okczCoverBackgroundWorker.WorkerReportsProgress = false;
+            okczCoverBackgroundWorker.DoWork += new DoWorkEventHandler(RetrieveOriginalCoverAndTocInformation);
+            okczCoverBackgroundWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(RetrieveOriginalCoverAndTocInformation_Completed);
         }
 
         // Starts retrieving of metadata on background
@@ -455,12 +468,200 @@ namespace ScannerClient_obalkyknih
                         if (this.generalRecord is Monograph)
                         {
                             // download images of cover and toc
-                            DownloadCoverAndToc();
+                            this.DownloadCoverAndToc();
 
                             // show union tab
                             if ((this.generalRecord as Monograph).listIdentifiers.Count > 2) showUnionTab();
                         }
                     }
+                }
+            }
+        }
+
+        private void RetrieveOriginalCoverAndTocInformation(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker worker = sender as BackgroundWorker;
+            GeneralRecord record = e.Argument as GeneralRecord;
+            
+            if (record == null)
+            {
+                return;
+            }
+
+            // union record has no cover or toc data
+            if ((record is Monograph) && (record as Monograph).IsUnionRequested)
+            {
+                return;
+            }
+
+            RequestObject3 requestObject = new RequestObject3();
+
+            if (record is Monograph)
+            {
+                var tmpRecord = record as Monograph;
+                requestObject.isbn = string.IsNullOrWhiteSpace(tmpRecord.PartIsbn) ? null : tmpRecord.PartIsbn;
+                if (string.IsNullOrEmpty(requestObject.isbn))
+                {
+                    requestObject.isbn = (string.IsNullOrWhiteSpace(tmpRecord.PartEan)) ? null : tmpRecord.PartEan;
+                }
+                requestObject.oclc = (string.IsNullOrWhiteSpace(tmpRecord.PartOclc)) ? null : tmpRecord.PartOclc;
+                if (!string.IsNullOrWhiteSpace(tmpRecord.PartCnb))
+                {
+                    requestObject.nbn = tmpRecord.PartCnb;
+                }
+                else if (!string.IsNullOrWhiteSpace(tmpRecord.PartUrn))
+                {
+                    requestObject.nbn = tmpRecord.PartUrn;
+                }
+                else if (!string.IsNullOrWhiteSpace(tmpRecord.PartCustom))
+                {
+                    requestObject.nbn = Settings.Sigla + "-" + tmpRecord.PartCustom;
+                }
+                requestObject.part_no = (string.IsNullOrWhiteSpace(record.PartNo)) ? null : record.PartNo;
+                requestObject.part_name = (string.IsNullOrWhiteSpace(record.PartName)) ? null : record.PartName;
+            }
+            if (record is Periodical)
+            {
+                requestObject.isbn = (string.IsNullOrWhiteSpace(((Periodical)record).Issn)) ? null : ((Periodical)record).Issn;
+                if (string.IsNullOrEmpty(requestObject.isbn))
+                {
+                    requestObject.isbn = (string.IsNullOrWhiteSpace(record.Ean)) ? null : record.Ean;
+                }
+                requestObject.oclc = (string.IsNullOrWhiteSpace(record.Oclc)) ? null : record.Oclc;
+                if (!string.IsNullOrWhiteSpace(record.Cnb))
+                {
+                    requestObject.nbn = record.Cnb;
+                }
+                else if (!string.IsNullOrWhiteSpace(record.Urn))
+                {
+                    requestObject.nbn = record.Urn;
+                }
+                else if (!string.IsNullOrWhiteSpace(record.Custom))
+                {
+                    requestObject.nbn = Settings.Sigla + "-" + record.Custom;
+                }
+                requestObject.part_year = (string.IsNullOrWhiteSpace(record.PartYear)) ? null : record.PartYear;
+                requestObject.part_no = (string.IsNullOrWhiteSpace(record.PartNo)) ? null : record.PartNo;
+                requestObject.part_volume = (string.IsNullOrWhiteSpace((record as Periodical).PartVolume)) ? null : (record as Periodical).PartVolume;
+            }
+
+            string jsonData = JsonConvert.SerializeObject(requestObject, Formatting.None,
+            new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+
+            //http://www.obalkyknih.cz/api/books?books=[{"bibinfo":{"isbn":"9770231582002","part_year":"1976","part_volume":"1976","part_no":"2"}}]
+            string urlParams = Uri.EscapeDataString(jsonData);
+            //urlParams += "&type=medium&encsigla=" + Uri.EscapeDataString(EcryptSigla(Settings.Sigla));
+
+            /*string urlCover = "http://cache.obalkyknih.cz/api/cover?multi=" + urlParams;
+            string urlToc = "http://cache.obalkyknih.cz/api/toc/thumbnail?multi=" + urlParams;
+            string urlPdf = "http://cache.obalkyknih.cz/api/toc/pdf?multi=" + urlParams;
+
+            record.OriginalCoverImageLink = urlCover;
+            record.OriginalTocThumbnailLink = urlToc;
+            record.OriginalTocPdfLink = urlPdf;*/
+
+            string urlString = "http://www.obalkyknih.cz/api/books?books=[{\"bibinfo\":" + jsonData + "}]";
+
+            using (WebClient webClient = new WebClient())
+            {
+                webClient.Headers.Add("Referer", Settings.Z39ServerUrl ?? Settings.XServerUrl);
+                Stream stream = webClient.OpenRead(urlString);
+                StreamReader reader = new StreamReader(stream);
+                string responseJson = reader.ReadToEnd();
+                char[] endTrimChars = { '\n', ')', ']', ';' };
+                //remove unwanted characters, from beginning remove string "obalky.callback([" and from end, it should remove string "]);\n"
+                responseJson = responseJson.Replace("obalky.callback([", "").TrimEnd(endTrimChars);
+                ResponseObject responseObject = JsonConvert.DeserializeObject<ResponseObject>(responseJson);
+                if (responseObject != null)
+                {
+                    //assign values
+                    record.OriginalCoverImageLink = responseObject.cover_medium_url;
+                    record.OriginalTocThumbnailLink = responseObject.toc_thumbnail_url;
+                    record.OriginalTocPdfLink = responseObject.toc_pdf_url;
+
+                    if (this.generalRecord.AuthList.Count > 0)
+                    {
+                        var firstAuth = this.generalRecord.AuthList.First();
+                        var urlStringAuth = "http://www.obalkyknih.cz/api/auth?auth=[{\"authinfo\":{\"auth_id\":\"" + firstAuth.Key + "\"}}]";
+
+                        using (WebClient webClientAuth = new WebClient())
+                        {
+                            webClientAuth.Headers.Add("Referer", Settings.Z39ServerUrl ?? Settings.XServerUrl);
+                            Stream streamAuth = webClientAuth.OpenRead(urlStringAuth);
+                            StreamReader readerAuth = new StreamReader(streamAuth);
+                            string responseJsonAuth = readerAuth.ReadToEnd();
+                            char[] endTrimCharsAuth = { '\n', ')', ']', ';' };
+                            //remove unwanted characters, from beginning remove string "obalky.callback([" and from end, it should remove string "]);\n"
+                            responseJsonAuth = responseJsonAuth.Replace("obalky.callback([", "").TrimEnd(endTrimCharsAuth);
+                            ResponseObject responseObjectAuth = JsonConvert.DeserializeObject<ResponseObject>(responseJsonAuth);
+                            if (responseObjectAuth != null)
+                            {
+                                //assign values
+                                record.OriginalAuthImageLink = responseObjectAuth.cover_medium_url;
+                                e.Result = record;
+                            }
+                        }
+                    }
+
+                    e.Result = record;
+                }
+            }
+        }
+
+        private void RetrieveOriginalCoverAndTocInformation_Completed(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Error == null && !e.Cancelled)
+            {
+                GeneralRecord generalRecord = e.Result as GeneralRecord;
+                if (generalRecord != null)
+                {
+
+                    if (generalRecord.OriginalCoverImageLink != null)
+                    {
+                        if ((Window.GetWindow(this) as MainWindow) != null) (Window.GetWindow(this) as MainWindow).AddMessageToStatusBar("Stahuji obálku.");
+                        using (WebClient coverWc = new WebClient())
+                        {
+                            coverWc.OpenReadCompleted += new OpenReadCompletedEventHandler(CoverDownloadCompleted);
+                            coverWc.OpenReadAsync(new Uri(generalRecord.OriginalCoverImageLink));
+                        }
+                    }
+                    else
+                    {
+                        this.originalCoverImage.Source = new BitmapImage();
+                    }
+
+                    if (generalRecord.OriginalTocThumbnailLink != null)
+                    {
+                        if ((Window.GetWindow(this) as MainWindow) != null) (Window.GetWindow(this) as MainWindow).AddMessageToStatusBar("Stahuji obsah.");
+                        using (WebClient tocWc = new WebClient())
+                        {
+                            tocWc.OpenReadCompleted += new OpenReadCompletedEventHandler(TocDownloadCompleted);
+                            tocWc.OpenReadAsync(new Uri(generalRecord.OriginalTocThumbnailLink));
+                        }
+                    }
+                    else
+                    {
+                        this.originalTocImage.Source = new BitmapImage();
+                    }
+
+                    if (generalRecord.OriginalAuthImageLink != null)
+                    {
+                        if ((Window.GetWindow(this) as MainWindow) != null) (Window.GetWindow(this) as MainWindow).AddMessageToStatusBar("Stahuji foto autora.");
+                        using (WebClient authWc = new WebClient())
+                        {
+                            authWc.OpenReadCompleted += new OpenReadCompletedEventHandler(AuthDownloadCompleted);
+                            authWc.OpenReadAsync(new Uri(generalRecord.OriginalAuthImageLink));
+                        }
+                    }
+                    else
+                    {
+                        this.originalCoverImage.Source = new BitmapImage();
+                    }
+                }
+                else
+                {
+                    this.originalCoverImage.Source = new BitmapImage();
+                    this.originalTocImage.Source = new BitmapImage();
                 }
             }
         }
@@ -480,24 +681,9 @@ namespace ScannerClient_obalkyknih
                 }
             }
 
-            MetadataRetriever.RetrieveOriginalCoverAndTocInformation(this.generalRecord);
-            if (this.generalRecord.OriginalCoverImageLink != null)
+            if (!okczCoverBackgroundWorker.IsBusy)
             {
-                if ((Window.GetWindow(this) as MainWindow) != null) (Window.GetWindow(this) as MainWindow).AddMessageToStatusBar("Stahuji obálku.");
-                using (WebClient coverWc = new WebClient())
-                {
-                    coverWc.OpenReadCompleted += new OpenReadCompletedEventHandler(CoverDownloadCompleted);
-                    coverWc.OpenReadAsync(new Uri(this.generalRecord.OriginalCoverImageLink));
-                }
-            }
-            if (this.generalRecord.OriginalTocThumbnailLink != null)
-            {
-                if ((Window.GetWindow(this) as MainWindow) != null) (Window.GetWindow(this) as MainWindow).AddMessageToStatusBar("Stahuji obsah.");
-                using (WebClient tocWc = new WebClient())
-                {
-                    tocWc.OpenReadCompleted += new OpenReadCompletedEventHandler(TocDownloadCompleted);
-                    tocWc.OpenReadAsync(new Uri(this.generalRecord.OriginalTocThumbnailLink));
-                }
+                okczCoverBackgroundWorker.RunWorkerAsync(this.generalRecord);
             }
         }
 
@@ -553,6 +739,33 @@ namespace ScannerClient_obalkyknih
                 {
                     this.originalTocImage.Source = imgsrc;
                     this.originalTocImage.IsEnabled = true;
+                }
+            }
+        }
+
+        // Actions after cover image was downloaded - shows image
+        void AuthDownloadCompleted(object sender, OpenReadCompletedEventArgs e)
+        {
+            //if user created new record
+            if (Window.GetWindow(this) == null)
+            {
+                return;
+            }
+
+            (Window.GetWindow(this) as MainWindow).RemoveMessageFromStatusBar("Stahuji foto autora.");
+            if (e.Error == null && !e.Cancelled)
+            {
+                BitmapImage imgsrc = new BitmapImage();
+                imgsrc.BeginInit();
+                imgsrc.StreamSource = e.Result;
+                imgsrc.EndInit();
+                if (this.tabControl.SelectedItem == this.controlTabItem)
+                {
+                    this.controlAuthImage.Source = imgsrc;
+                }
+                else
+                {
+                    this.originalAuthImage.Source = imgsrc;
                 }
             }
         }
@@ -1636,6 +1849,7 @@ namespace ScannerClient_obalkyknih
             string metaXml = null;
             string coverFileName = (this.coverGuid == Guid.Empty) ? null : this.imagesFilePaths[this.coverGuid];
             List<string> tocFileNames = new List<string>();
+            List<string> authFileNames = new List<string>();
 
             // Save working image in memory to file
             if (this.workingImage.Key != Guid.Empty &&
@@ -1743,6 +1957,33 @@ namespace ScannerClient_obalkyknih
                 }
             }
 
+            //authority
+            if (this.authImagesList.HasItems)
+            {
+                int cnt = 1;
+                foreach (var grid in authImagesList.Items)
+                {
+                    Guid guid = Guid.Empty;
+                    foreach (var record in this.authThumbnailGridsDictionary)
+                    {
+                        if (record.Value.Equals(grid))
+                        {
+                            authFileNames.Add(this.imagesFilePaths[record.Key]);
+
+                            if (Settings.EnableLocalImageCopy)
+                            {
+                                System.IO.File.Copy(this.imagesFilePaths[record.Key], System.IO.Path.Combine(localUploadDir, "auth-" + cnt.ToString().PadLeft(2, '0') + "-" + mainIdentifier + ".tiff"), true);
+                                cnt++;
+                            }
+                        }
+                    }
+                    var firstAuth = this.generalRecord.AuthList.First();
+                    nvc.Add("auth_id", firstAuth.Key);
+                    nvc.Add("auth_name", firstAuth.Value);
+                    break;
+                }
+            }
+
             //metastream
             try
             {
@@ -1789,6 +2030,12 @@ namespace ScannerClient_obalkyknih
                     tocElement.Add(new XElement("pages", this.tocImagesList.Items.Count));
                     rootElement.Add(tocElement);
                 }
+                if (this.authImagesList.Items.Count > 0)
+                {
+                    XElement authElement = new XElement("auth");
+                    authElement.Add(new XElement("images", this.authImagesList.Items.Count));
+                    rootElement.Add(authElement);
+                }
                 XDocument xmlDoc = new XDocument(
                 new XDeclaration("1.0", "utf-8", "yes"), rootElement);
                 metaXml = xmlDoc.ToString();
@@ -1803,6 +2050,7 @@ namespace ScannerClient_obalkyknih
             UploadParameters param = new UploadParameters();
             param.Url = Settings.ImportLink;
             param.TocFilePaths = tocFileNames;
+            param.AuthFilePaths = authFileNames;
             param.CoverFilePath = coverFileName;
             param.MetaXml = metaXml;
             param.Nvc = nvc;
@@ -1818,7 +2066,7 @@ namespace ScannerClient_obalkyknih
 
         // Method for uploading multipart/form-data
         // url where will be data posted, login, password
-        private void UploadFilesToRemoteUrl(string url, string coverFileName, List<string> tocFileNames,
+        private void UploadFilesToRemoteUrl(string url, string coverFileName, List<string> tocFileNames, List<string> authFileNames,
             string metaXml, NameValueCollection nvc, DoWorkEventArgs e)
         {
             //Stopwatch sw = new Stopwatch();
@@ -1906,6 +2154,27 @@ namespace ScannerClient_obalkyknih
                 counter++;
             }
 
+            // AUTH PARAMETERS
+            counter = 1;
+            Dictionary<string, byte[]> authDescriptionsDictionary = new Dictionary<string, byte[]>();
+            long authSize = 0;
+            foreach (var fileName in authFileNames)
+            {
+                string authDescription = boundaryStringLine
+                    + String.Format(
+                "Content-Disposition: form-data; name=\"{0}\"; "
+                 + "filename=\"{1}\"\r\nContent-Type: {2}\r\n\r\n",
+                "auth_" + counter, "auth_" + counter + ".tif", "image/tif");
+                byte[] authDescriptionBytes = utf8.GetBytes(authDescription);
+
+                FileInfo fi = new FileInfo(fileName);
+                authSize += fi.Length + authDescriptionBytes.Length;
+
+                authDescriptionsDictionary.Add(fileName, authDescriptionBytes);
+                counter++;
+                break;
+            }
+
             // META PARAMETER
             string metaDataString = boundaryStringLine
                 + String.Format(
@@ -1921,6 +2190,7 @@ namespace ScannerClient_obalkyknih
                 + formDataBytes.Length
                 + coverSize
                 + tocSize
+                + authSize
                 +metaDataBytes.Length;
 
             // And indicate the value as the HTTP request content length
@@ -1954,6 +2224,16 @@ namespace ScannerClient_obalkyknih
                     s.Write(buffer, 0, buffer.Length);
                 }
 
+                // Send auth
+                foreach (var authRecord in authDescriptionsDictionary)
+                {
+                    GC.Collect();
+
+                    byte[] buffer = File.ReadAllBytes(authRecord.Key);
+                    s.Write(authRecord.Value, 0, authRecord.Value.Length);
+                    s.Write(buffer, 0, buffer.Length);
+                }
+
                 // Send meta
                 s.Write(metaDataBytes, 0, metaDataBytes.Length);
 
@@ -1966,6 +2246,7 @@ namespace ScannerClient_obalkyknih
             // Grab the response from the server. WebException will be thrown
             // when a HTTP OK status is not returned
             tocDescriptionsDictionaryToDelete = tocDescriptionsDictionary;
+            authDescriptionsDictionaryToDelete = authDescriptionsDictionary;
             coverFileNameToDelete = coverFileName;
             WebResponse response = requestToServer.GetResponse();
             StreamReader responseReader = new StreamReader(response.GetResponseStream());
@@ -1987,7 +2268,7 @@ namespace ScannerClient_obalkyknih
         {
             BackgroundWorker worker = sender as BackgroundWorker;
             UploadParameters up = e.Argument as UploadParameters;
-            UploadFilesToRemoteUrl(up.Url, up.CoverFilePath, up.TocFilePaths, up.MetaXml, up.Nvc, e);
+            UploadFilesToRemoteUrl(up.Url, up.CoverFilePath, up.TocFilePaths, up.AuthFilePaths, up.MetaXml, up.Nvc, e);
         }
 
         // Shows result of uploading process (OK or error message)
@@ -2231,9 +2512,21 @@ namespace ScannerClient_obalkyknih
                 guid = Guid.NewGuid();
             }
 
-            string newFileName = Settings.TemporaryFolder +
-                ((documentType == DocumentType.Cover) ? "obalkyknih-cover_" : "obalkyknih-toc_")
-                + "_" + guid + ".tif";
+            string filePrefix = "";
+            if (documentType == DocumentType.Cover)
+            {
+                filePrefix = "obalkyknih-cover_";
+            }
+            else if (documentType == DocumentType.Toc)
+            {
+                filePrefix = "obalkyknih-toc_";
+            }
+            else if (documentType == DocumentType.Auth)
+            {
+                filePrefix = "obalkyknih-auth_";
+            }
+
+            string newFileName = Settings.TemporaryFolder + filePrefix + "_" + guid + ".tif";
 
             Size originalSize = new Size(originalSizeImage.PixelWidth, originalSizeImage.PixelHeight);
 
@@ -2244,9 +2537,13 @@ namespace ScannerClient_obalkyknih
             {
                 AddCoverImage(smallerSizeImage, guid);
             }
-            else
+            else if (documentType == DocumentType.Toc)
             {
                 AddTocImage(smallerSizeImage, guid);
+            }
+            else if (documentType == DocumentType.Auth)
+            {
+                AddAuthImage(smallerSizeImage, guid);
             }
 
             //set workingImage and save previous to file
@@ -2370,6 +2667,19 @@ namespace ScannerClient_obalkyknih
         // Unified scan function
         private void ScanButtonClicked(DocumentType documentType, String format)
         {
+            if (documentType == DocumentType.Auth && this.authImagesList.Items.Count > 0)
+            {
+                MessageBoxDialogWindow.Show("Autority",
+                        "V současné verzi skenovacího klienta je možné posílat pouze foto prvního autora.",
+                        "OK", MessageBoxDialogWindow.Icons.Warning);
+
+                if (this.generalRecord.AuthList.Count > 0)
+                {
+                    var firstAuth = this.generalRecord.AuthList.First();
+                    this.authName.Content = firstAuth.Value;
+                }
+            }
+
             DisableImageControllers();
 
             // backup old cover
@@ -2413,9 +2723,25 @@ namespace ScannerClient_obalkyknih
             {
                 documentType = DocumentType.Cover;
             }
-            else
+            else if ((sender as Image).Name.Equals("tocImage"))
             {
                 documentType = DocumentType.Toc;
+            }
+            else
+            {
+                documentType = DocumentType.Auth;
+                if (this.authImagesList.Items.Count > 0)
+                {
+                    MessageBoxDialogWindow.Show("Autority",
+                            "V současné verzi skenovacího klienta je možné posílat pouze foto prvního autora.",
+                            "OK", MessageBoxDialogWindow.Icons.Warning);
+
+                    if (this.generalRecord.AuthList.Count > 0)
+                    {
+                        var firstAuth = this.generalRecord.AuthList.First();
+                        this.authName.Content = firstAuth.Value;
+                    }
+                }
             }
 
             // backup old cover
@@ -2472,9 +2798,21 @@ namespace ScannerClient_obalkyknih
             //totalSW.Start();
             //partialSW.Start();
 
-            string newFileName = Settings.TemporaryFolder +
-                ((documentType == DocumentType.Cover) ? "obalkyknih-cover_" : "obalkyknih-toc_")
-                + "_" + guid + ".tif";
+            string filePrefix = "";
+            if (documentType == DocumentType.Cover)
+            {
+                filePrefix = "obalkyknih-cover_";
+            }
+            else if (documentType == DocumentType.Toc)
+            {
+                filePrefix = "obalkyknih-toc_";
+            }
+            else
+            {
+                filePrefix = "obalkyknih-auth_";
+            }
+
+            string newFileName = Settings.TemporaryFolder + filePrefix + "_" + guid + ".tif";
             BitmapSource originalSizeImage = null;
             BitmapSource smallerSizeImage = null;
             Size originalSize;
@@ -2523,9 +2861,13 @@ namespace ScannerClient_obalkyknih
             {
                 AddCoverImage(smallerSizeImage, guid);
             }
-            else
+            else if (documentType == DocumentType.Toc)
             {
                 AddTocImage(smallerSizeImage, guid);
+            }
+            else
+            {
+                AddAuthImage(smallerSizeImage, guid);
             }
 
             if (this.workingImage.Key != Guid.Empty && this.imagesFilePaths.ContainsKey(this.workingImage.Key))
@@ -2917,10 +3259,15 @@ namespace ScannerClient_obalkyknih
             {
                 this.coverThumbnail.Source = this.selectedImage.Source;
             }
-            else
+            else if (this.tocThumbnailGridsDictionary.ContainsKey(this.selectedImageGuid))
             {
                 (LogicalTreeHelper.FindLogicalNode(this.tocThumbnailGridsDictionary[this.selectedImageGuid],
                     "tocThumbnail") as Image).Source = this.selectedImage.Source;
+            }
+            else if (this.authThumbnailGridsDictionary.ContainsKey(this.selectedImageGuid))
+            {
+                (LogicalTreeHelper.FindLogicalNode(this.authThumbnailGridsDictionary[this.selectedImageGuid],
+                    "authThumbnail") as Image).Source = this.selectedImage.Source;
             }
 
             // set new width and height
@@ -3178,6 +3525,93 @@ namespace ScannerClient_obalkyknih
             (Window.GetWindow(this) as MainWindow).DeactivateRedo();
         }
 
+        // Adds new AUTH image to list of AUTH images
+        private void AddAuthImage(BitmapSource bitmapSource, Guid guid)
+        {
+            #region construction of ListItem
+            Image authImage = new Image();
+            authImage.Name = "authThumbnail";
+            authImage.MouseLeftButtonDown += Thumbnail_Clicked;
+            authImage.Source = bitmapSource;
+            authImage.Cursor = Cursors.Hand;
+            authImage.MouseEnter += Icon_MouseEnter;
+            authImage.MouseLeave += Icon_MouseLeave;
+
+            Border authImageBorder = new Border();
+            authImageBorder.BorderThickness = new Thickness(4);
+            if (!saveSelectedMode)
+            {
+                //green border
+                authImageBorder.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#6D8527"));
+            }
+            else
+            {
+                authImageBorder.BorderBrush = Brushes.Transparent;
+            }
+            authImageBorder.Margin = new Thickness(50, 0, 50, 0);
+
+            Image deleteImage = new Image();
+            deleteImage.Name = "deleteThumbnail";
+            deleteImage.VerticalAlignment = VerticalAlignment.Top;
+            deleteImage.HorizontalAlignment = HorizontalAlignment.Right;
+            deleteImage.Source = new BitmapImage(new Uri("/ObalkyKnih-scanner;component/Images/ok-icon-delete.png", UriKind.Relative));
+            deleteImage.Margin = new Thickness(0, 0, 26, 0);
+            deleteImage.Width = 18;
+            deleteImage.Stretch = Stretch.None;
+            deleteImage.Cursor = Cursors.Hand;
+            deleteImage.MouseLeftButtonDown += AuthThumbnail_Delete;
+
+            Grid gridWrapper = new Grid();
+            gridWrapper.Margin = new Thickness(0, 10, 0, 10);
+            gridWrapper.Name = "guid_" + guid.ToString().Replace("-", "");
+            authImageBorder.Child = authImage;
+            gridWrapper.Children.Add(authImageBorder);
+            gridWrapper.Children.Add(deleteImage);
+            #endregion
+
+            // edit previously last item - enable moveDown arrow
+            if (this.authImagesList.HasItems)
+            {
+                var lastItem = this.authImagesList.Items.OfType<Grid>().LastOrDefault();
+                foreach (Image item in lastItem.Children.OfType<Image>())
+                {
+                    item.IsEnabled = true;
+                }
+            }
+
+            if (!saveSelectedMode)
+            {
+                RemoveAllBorders();
+            }
+            HideAllThumbnailControls();
+
+            // add to list
+            this.authImagesList.Items.Add(gridWrapper);
+
+            if (!saveSelectedMode)
+            {
+                this.authImagesList.SelectedItem = gridWrapper;
+            }
+            else
+            {
+                //its saved so it can be disabled upon adding to list when working with other mode
+                newestThumbnail = gridWrapper;
+            }
+
+            // assign "pointers" to these elements into dictionaries
+            if (!saveSelectedMode)
+            {
+                this.selectedImageGuid = guid;
+                this.selectedImage.Source = bitmapSource;
+            }
+            this.authThumbnailGridsDictionary.Add(guid, gridWrapper);
+            SetAppropriateCrop(Size.Empty, this.selectedImage.RenderSize, true);
+            EnableImageControllers();
+
+            (Window.GetWindow(this) as MainWindow).DeactivateUndo();
+            (Window.GetWindow(this) as MainWindow).DeactivateRedo();
+        }
+
         // Removes colored border from all thumbnails
         private void RemoveAllBorders()
         {
@@ -3199,10 +3633,17 @@ namespace ScannerClient_obalkyknih
                     imageControl.Visibility = Visibility.Hidden;
                 }
             }
+            foreach (var grid in this.authThumbnailGridsDictionary.Values)
+            {
+                foreach (var imageControl in grid.Children.OfType<Image>())
+                {
+                    imageControl.Visibility = Visibility.Hidden;
+                }
+            }
         }
 
         // Makes appropriate controls of toc thumbnail visible
-        private void SetThumbnailControls(Guid guid)
+        private void SetTocThumbnailControls(Guid guid)
         {
             Grid grid = this.tocThumbnailGridsDictionary[guid];
             // set delete icon visible
@@ -3224,6 +3665,14 @@ namespace ScannerClient_obalkyknih
             {
                 moveInto.Visibility = Visibility.Visible;
             }
+        }
+
+        // Makes appropriate controls of authority thumbnail visible
+        private void SetAuthThumbnailControls(Guid guid)
+        {
+            Grid grid = this.authThumbnailGridsDictionary[guid];
+            // set delete icon visible
+            (LogicalTreeHelper.FindLogicalNode(grid, "deleteThumbnail") as Image).Visibility = Visibility.Visible;
         }
 
         // Sets the selectedImage
@@ -3255,7 +3704,14 @@ namespace ScannerClient_obalkyknih
                     }
                 }
                 border.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#6D8527"));
-                SetThumbnailControls(this.selectedImageGuid);
+                if (image.Name.Contains("tocThumbnail"))
+                {
+                    SetTocThumbnailControls(this.selectedImageGuid);
+                }
+                else
+                {
+                    SetAuthThumbnailControls(this.selectedImageGuid);
+                }
             }
 
             EnableImageControllers();
@@ -3282,7 +3738,7 @@ namespace ScannerClient_obalkyknih
             this.tocImagesList.SelectedIndex = selectedIndex - 1;
 
             HideAllThumbnailControls();
-            SetThumbnailControls(this.selectedImageGuid);
+            SetTocThumbnailControls(this.selectedImageGuid);
         }
 
         // Sets selected TOC image from list of all TOC images
@@ -3305,7 +3761,7 @@ namespace ScannerClient_obalkyknih
             this.tocImagesList.SelectedIndex = selectedIndex + 1;
 
             HideAllThumbnailControls();
-            SetThumbnailControls(this.selectedImageGuid);
+            SetTocThumbnailControls(this.selectedImageGuid);
         }
 
         //Sets selected TOC image from list of all TOC images
@@ -3329,7 +3785,7 @@ namespace ScannerClient_obalkyknih
                 tocImagesList.SelectedIndex = theValue;
 
                 HideAllThumbnailControls();
-                SetThumbnailControls(selectedImageGuid);
+                SetTocThumbnailControls(selectedImageGuid);
             }
             
         }
@@ -3361,7 +3817,7 @@ namespace ScannerClient_obalkyknih
             }
         }
 
-        //Removes image from thumbnails
+        //Removes image from TOC thumbnails
         private void TocThumbnail_Delete(object sender, MouseButtonEventArgs e)
         {
             int selectedIndex = this.tocImagesList.SelectedIndex;
@@ -3386,6 +3842,34 @@ namespace ScannerClient_obalkyknih
             if (result == true)
             {
                 delete(selectedIndex);
+            }
+        }
+
+        //Removes image from AUTH thumbnails
+        private void AuthThumbnail_Delete(object sender, MouseButtonEventArgs e)
+        {
+            int selectedIndex = this.authImagesList.SelectedIndex;
+            // sanity check
+            if (selectedIndex < 0 || selectedIndex >= this.authImagesList.Items.Count)
+            {
+                return;
+            }
+
+            bool dontShowAgain;
+            bool? result = true;
+            if (!Settings.DisableTocDeletionNotification)
+            {
+                result = MessageBoxDialogWindow.Show("Potvrzení odstranění", "Opravdu chcete odstranit vybraného autora?",
+                    out dontShowAgain, "Příště se neptat a rovnou odstranit", "Ano", "Ne", false,
+                    MessageBoxDialogWindow.Icons.Question);
+                if (result == true && dontShowAgain)
+                {
+                    Settings.DisableTocDeletionNotification = true;
+                }
+            }
+            if (result == true)
+            {
+                authDelete(selectedIndex);
             }
         }
 
@@ -3422,7 +3906,7 @@ namespace ScannerClient_obalkyknih
                 this.tocImagesList.SelectedItem = this.tocThumbnailGridsDictionary[this.selectedImageGuid];
                 this.tocThumbnailGridsDictionary[this.selectedImageGuid].Children.OfType<Border>().First()
                     .BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#6D8527"));
-                SetThumbnailControls(this.selectedImageGuid);
+                SetTocThumbnailControls(this.selectedImageGuid);
 
             }
             else
@@ -3498,7 +3982,7 @@ namespace ScannerClient_obalkyknih
                     this.tocImagesList.SelectedItem = this.tocThumbnailGridsDictionary[this.selectedImageGuid];
                     this.tocThumbnailGridsDictionary[this.selectedImageGuid].Children.OfType<Border>().First()
                         .BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#6D8527"));
-                    SetThumbnailControls(this.selectedImageGuid);
+                    SetTocThumbnailControls(this.selectedImageGuid);
 
                     EnableImageControllers();
                 }
@@ -3513,7 +3997,7 @@ namespace ScannerClient_obalkyknih
             }
         }
 
-        //delete toc image at index
+        //delete TOC image at index
         private void delete(int index, bool removeFiles = true)
         {
             DisableImageControllers();
@@ -3577,7 +4061,6 @@ namespace ScannerClient_obalkyknih
 
                     EnableImageControllers();
                 }
-                this.ocrCheckBox.IsChecked = false;
             }
             else
             {
@@ -3591,7 +4074,7 @@ namespace ScannerClient_obalkyknih
                         this.selectedImageGuid = guidKey;
                     }
                 }
-                SetThumbnailControls(this.selectedImageGuid);
+                SetTocThumbnailControls(this.selectedImageGuid);
                 this.tocThumbnailGridsDictionary[this.selectedImageGuid].Children.OfType<Border>().First()
                     .BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#6D8527"));
 
@@ -3617,6 +4100,92 @@ namespace ScannerClient_obalkyknih
                     break;
             }
             this.tocPagesNumber.Content = pagesNumber + " " + pages;
+        }
+
+        //delete AUTH image at index
+        private void authDelete(int index, bool removeFiles = true)
+        {
+            DisableImageControllers();
+
+            Guid guid = (from record in authThumbnailGridsDictionary.ToList()
+                         where record.Value.Equals(this.authImagesList.Items.GetItemAt(index))
+                         select record.Key).First();
+
+            if (guid != Guid.Empty)
+            {
+                if (guid != this.workingImage.Key)
+                {
+                    this.backupImage = new KeyValuePair<string, BitmapSource>(this.imagesFilePaths[guid],
+                        ImageTools.LoadFullSize(this.imagesFilePaths[guid]));
+                }
+                else
+                {
+                    this.backupImage = new KeyValuePair<string, BitmapSource>(this.imagesFilePaths[guid], this.workingImage.Value);
+                }
+                SignalLoadedBackup();
+            }
+
+            try
+            {
+                if (removeFiles && File.Exists(this.imagesFilePaths[guid]))
+                {
+                    File.Delete(this.imagesFilePaths[guid]);
+                }
+            }
+            catch (Exception)
+            {
+                MessageBoxDialogWindow.Show("Chyba mazání souboru.", "Nebylo možné zmazat soubor z disku.",
+                    "OK", MessageBoxDialogWindow.Icons.Error);
+            }
+
+            this.authImagesList.Items.RemoveAt(index);
+            this.authThumbnailGridsDictionary.Remove(guid);
+            this.imagesFilePaths.Remove(guid);
+            this.imagesOriginalSizes.Remove(guid);
+
+            HideAllThumbnailControls();
+
+            if (!this.authImagesList.HasItems)
+            {
+                if (this.coverGuid == Guid.Empty)
+                {
+                    // set default image
+                    this.selectedImageGuid = Guid.Empty;
+                    this.selectedImage.Source = new BitmapImage(
+                        new Uri("/ObalkyKnih-scanner;component/Images/default-icon.png", UriKind.Relative));
+
+                    Mouse.OverrideCursor = null;
+                }
+                else
+                {
+                    this.selectedImageGuid = this.coverGuid;
+                    (this.coverThumbnail.Parent as Border).BorderBrush = (SolidColorBrush)(new BrushConverter()
+                        .ConvertFrom("#6D8527"));
+                    this.deleteCoverIcon.Visibility = Visibility.Visible;
+                    this.selectedImage.Source = coverThumbnail.Source;
+
+                    EnableImageControllers();
+                }
+            }
+            else
+            {
+                Grid grid = this.authImagesList.Items.GetItemAt(authImagesList.Items.Count - 1) as Grid;
+                Image thumbnail = LogicalTreeHelper.FindLogicalNode(grid, "authThumbnail") as Image;
+                this.selectedImage.Source = thumbnail.Source;
+                foreach (var guidKey in this.imagesFilePaths.Keys)
+                {
+                    if (grid.Name.Contains(guidKey.ToString().Replace("-", "")))
+                    {
+                        this.selectedImageGuid = guidKey;
+                    }
+                }
+                SetAuthThumbnailControls(this.selectedImageGuid);
+                this.authThumbnailGridsDictionary[this.selectedImageGuid].Children.OfType<Border>().First()
+                    .BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#6D8527"));
+
+                this.authImagesList.SelectedItem = this.authThumbnailGridsDictionary[this.selectedImageGuid];
+                EnableImageControllers();
+            }
         }
 
         #endregion
@@ -4283,7 +4852,7 @@ namespace ScannerClient_obalkyknih
 
         private void downloadCoverAndTocButton_Click(object sender, RoutedEventArgs e)
         {
-            DownloadCoverAndToc();
+            this.DownloadCoverAndToc();
         }
 
         private void checkboxMinorPartName_Click(object sender, RoutedEventArgs e)
@@ -4391,7 +4960,10 @@ namespace ScannerClient_obalkyknih
             if (selected == -1) return;
             this.partIsbnTextBox.Text = tmpRecord.listIdentifiers[selected].IdentifierCode;
             //this.partNameTextBox.Text = tmpRecord.listIdentifiers[selected].IdentifierDescription;
-            DownloadCoverAndToc();
+            if (multipartIdentifierOwn.IsDropDownOpen || multipartIdentifierUnion.IsDropDownOpen)
+            {
+                this.DownloadCoverAndToc();
+            }
         }
 
         private void multipartIdentifierUnion_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -4436,7 +5008,7 @@ namespace ScannerClient_obalkyknih
 
         private void reloadCoverAndToc(object sender, RoutedEventArgs e)
         {
-            DownloadCoverAndToc();
+            this.DownloadCoverAndToc();
         }
 
         private void optionalAtributesLink_MouseUp(object sender, MouseButtonEventArgs e)
@@ -4451,6 +5023,26 @@ namespace ScannerClient_obalkyknih
             this.partEanLabel.Visibility = Visibility.Visible;
             this.partUrnNbnLabel.Visibility = Visibility.Visible;
             this.optionalAtributesLink.Visibility = Visibility.Hidden;
+        }
+
+        private void scanAuthorButton_Click(object sender, RoutedEventArgs e)
+        {
+            ScanButtonClicked(DocumentType.Auth, null);
+        }
+
+        private void scanAuthorA5_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            ScanButtonClicked(DocumentType.Auth, "A5");
+        }
+
+        private void scanAuthorA4_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            ScanButtonClicked(DocumentType.Auth, "A4");
+        }
+
+        private void scanAuthorA3_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            ScanButtonClicked(DocumentType.Auth, "A3");
         }
     }
 

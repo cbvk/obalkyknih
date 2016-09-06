@@ -16,7 +16,8 @@
     public enum DocumentType
     {
         Cover,
-        Toc
+        Toc,
+        Auth
     }
 
     /// <summary>

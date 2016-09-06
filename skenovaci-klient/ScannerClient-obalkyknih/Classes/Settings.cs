@@ -958,10 +958,11 @@ namespace ScannerClient_obalkyknih
         internal static Version Version { get { return Assembly.GetEntryAssembly().GetName().Version; } }
 
         /// <summary>URL of folder containing update-info.xml file</summary>
-        internal const string UpdateServer = "https://obalkyknih.cz/obalkyknih-scanner";
+        internal const string UpdateServer = "http://www.obalkyknih.cz/obalkyknih-scanner";
 
         /// <summary>URL of import function on obalkyknih.</summary>
-        internal const string ImportLink = "https://obalkyknih.cz/api/import";
+        //internal const string ImportLink = "http://www.obalkyknih.cz/api/import";
+        internal const string ImportLink = "http://10.89.56.102/api/import";
 
         /// <summary>Returns path to temporary folder, where are stored images opened in external editor and downloaded updates</summary>
         internal static string TemporaryFolder { get { return System.IO.Path.GetTempPath() + "ObalkyKnih-scanner\\"; } }
@@ -983,8 +984,8 @@ namespace ScannerClient_obalkyknih
             {
                 return new List<KeyValuePair<int, IEnumerable<char>>> 
                 { 
-                    new KeyValuePair<int, IEnumerable<char>>(100, new List<char> { 'a', 'b' }),
-                    new KeyValuePair<int, IEnumerable<char>>(700, new List<char> { 'a', 'b' })
+                    new KeyValuePair<int, IEnumerable<char>>(100, new List<char> { 'a', 'b', '7' }),
+                    new KeyValuePair<int, IEnumerable<char>>(700, new List<char> { 'a', 'b', '7' })
                 };
             }
         }

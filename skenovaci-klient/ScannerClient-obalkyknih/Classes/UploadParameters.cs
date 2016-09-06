@@ -25,6 +25,11 @@ namespace ScannerClient_obalkyknih
         public List<string> TocFilePaths { get; set; }
 
         /// <summary>
+        /// Stream containing tiff with auth images
+        /// </summary>
+        public List<string> AuthFilePaths { get; set; }
+
+        /// <summary>
         /// Stream containing meta informations
         /// </summary>
         public string MetaXml { get; set; }

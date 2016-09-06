@@ -211,9 +211,13 @@ namespace ScannerClient_obalkyknih
         {
             if (!Settings.Version.ToString().Equals(Settings.VersionInfo))
             {
-                MessageBoxDialogWindow.Show("Verze 0.30",
-                      "Změny ve verzi 0.30:\n"
-                    + "* Udržovací vydání léto 2016.\n\n"
+                MessageBoxDialogWindow.Show("Verze 0.31",
+                      "Změny ve verzi 0.31:\n"
+                    + "* Podpora skenování dvojstran.\n"
+                    + "* Možnost přesunu skenovaných stránek TOC na libovolnou pozici.\n"
+                    + "* Urychlení odesílání skenovaných dokumentů na server.\n\n"
+                    + "Změny ve verzi 0.30:\n"
+                    + "* Udržovací vydání léto 2016.\n"
                     + "* Ukrytí nepovinných identifikátorů pro skenování periodik.\n", "OK", MessageBoxDialogWindow.Icons.Information);
                 Settings.VersionInfo = Settings.Version.ToString();
             }

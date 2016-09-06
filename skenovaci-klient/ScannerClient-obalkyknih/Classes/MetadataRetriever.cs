@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.ComponentModel;
+using System.Windows;
+using System.Windows.Controls;
 using System.Net;
 using System.Xml.Linq;
 using System.IO;
@@ -66,85 +69,8 @@ namespace ScannerClient_obalkyknih.Classes
                 bool isUnion = (generalRecord is Monograph && (generalRecord as Monograph).IsUnionRequested);
                 metadata = RetrieveMetadataByZ39(generalRecord.IdentifierType, identifierValue, isUnion);
             }
+
             return metadata;
-        }
-
-        public static void RetrieveOriginalCoverAndTocInformation(GeneralRecord record)
-        {
-            if (record == null)
-            {
-                return;
-            }
-
-            // union record has no cover or toc data
-            if ((record is Monograph) && (record as Monograph).IsUnionRequested)
-            {
-                return;
-            }
-
-            RequestObject3 requestObject = new RequestObject3();
-
-            if (record is Monograph)
-            {
-                var tmpRecord = record as Monograph;
-                requestObject.isbn = string.IsNullOrWhiteSpace(tmpRecord.PartIsbn) ? null : tmpRecord.PartIsbn;
-                if (string.IsNullOrEmpty(requestObject.isbn))
-                {
-                    requestObject.isbn = (string.IsNullOrWhiteSpace(tmpRecord.PartEan)) ? null : tmpRecord.PartEan;
-                }
-                requestObject.oclc = (string.IsNullOrWhiteSpace(tmpRecord.PartOclc)) ? null : tmpRecord.PartOclc;
-                if (!string.IsNullOrWhiteSpace(tmpRecord.PartCnb))
-                {
-                    requestObject.nbn = tmpRecord.PartCnb;
-                }
-                else if (!string.IsNullOrWhiteSpace(tmpRecord.PartUrn))
-                {
-                    requestObject.nbn = tmpRecord.PartUrn;
-                }
-                else if (!string.IsNullOrWhiteSpace(tmpRecord.PartCustom))
-                {
-                    requestObject.nbn = Settings.Sigla + "-" + tmpRecord.PartCustom;
-                }                
-                requestObject.part_no = (string.IsNullOrWhiteSpace(record.PartNo)) ? null : record.PartNo;
-                requestObject.part_name = (string.IsNullOrWhiteSpace(record.PartName)) ? null : record.PartName;
-            }
-            if (record is Periodical)
-            {
-                requestObject.isbn = (string.IsNullOrWhiteSpace(((Periodical)record).Issn)) ? null : ((Periodical)record).Issn;
-                if (string.IsNullOrEmpty(requestObject.isbn))
-                {
-                    requestObject.isbn = (string.IsNullOrWhiteSpace(record.Ean)) ? null : record.Ean;
-                }
-                requestObject.oclc = (string.IsNullOrWhiteSpace(record.Oclc)) ? null : record.Oclc;
-                if (!string.IsNullOrWhiteSpace(record.Cnb))
-                {
-                    requestObject.nbn = record.Cnb;
-                }
-                else if (!string.IsNullOrWhiteSpace(record.Urn))
-                {
-                    requestObject.nbn = record.Urn;
-                }
-                else if (!string.IsNullOrWhiteSpace(record.Custom))
-                {
-                    requestObject.nbn = Settings.Sigla + "-" + record.Custom;
-                }
-                requestObject.part_year = (string.IsNullOrWhiteSpace(record.PartYear)) ? null : record.PartYear;
-                requestObject.part_no = (string.IsNullOrWhiteSpace(record.PartNo)) ? null : record.PartNo;
-                requestObject.part_volume = (string.IsNullOrWhiteSpace((record as Periodical).PartVolume)) ? null : (record as Periodical).PartVolume;
-            }
-
-            string jsonData = JsonConvert.SerializeObject(requestObject, Formatting.None,
-                new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
-
-            string urlParams = Uri.EscapeDataString(jsonData);
-            urlParams += "&type=medium&encsigla=" + Uri.EscapeDataString(EcryptSigla(Settings.Sigla));
-            string urlCover = "http://cache.obalkyknih.cz/api/cover?multi=" + urlParams;
-            string urlToc = "http://cache.obalkyknih.cz/api/toc/thumbnail?multi=" + urlParams;
-            string urlPdf = "http://cache.obalkyknih.cz/api/toc/pdf?multi=" + urlParams;
-
-            record.OriginalCoverImageLink = urlCover;
-            record.OriginalTocThumbnailLink = urlToc;
-            record.OriginalTocPdfLink = urlPdf;
         }
 
         // Retrieves metadata from X-Server

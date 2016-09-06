@@ -55,8 +55,13 @@ namespace ScannerClient_obalkyknih.Classes
         /// <summary> Download link of toc pdf from obalkyknih for this record </summary>
         public string OriginalTocPdfLink { get; set; }
 
-        /// Download link for thumbnail of toc pfd from obalkyknih for this record </summary>
+        /// <summary> Download link for thumbnail of toc pfd from obalkyknih for this record </summary>
         public string OriginalTocThumbnailLink { get; set; }
+
+        public string OriginalAuthImageLink { get; set; }
+
+        /// <summary> Authority ID and personal name key-value list </summary>
+        public Dictionary<string, string> AuthList { get; set; }
 
         /// <summary>Imports title, authors, year and identifiers of union record from metadata</summary>
         /// <param name="metadata">Metadata of union record</param>
@@ -107,22 +112,34 @@ namespace ScannerClient_obalkyknih.Classes
         protected string ParseAuthors(Metadata metadata)
         {
             List<string> authorResults = new List<string>();
+            String lastAuthorName = "<neznamy autor>";
+            this.AuthList = new Dictionary<string,string>();
+
             foreach (var settingsField in Settings.MetadataAuthorFields)
             {
                 authorResults.AddRange(metadata.VariableFields.Where(varField => settingsField.Key.ToString("D3").Equals(varField.TagName))
                                 .SelectMany(varField => varField.Subfields)
                                 .Where(subfield => settingsField.Value.Any(settingsValue => settingsValue.ToString().Equals(subfield.Key)))
-                                .Select(subfield => subfield.Value.TrimEnd('/', ' ', ',')));
+                                .Select(subfield => subfield.Key + subfield.Value.TrimEnd('/', ' ', ',')));  // first char = subtag, continues by value
                 for (int i = 0; i < authorResults.Count(); i++)
                 {
-                    var authorPartNames = authorResults[i].Split(',');
-                    if (authorPartNames.Length > 1)
+                    var subtag = authorResults[i].Substring(0, 1);
+                    var authorPartNames = authorResults[i].Substring(1).Split(',');
+                    if (authorPartNames.Length > 1 && subtag != "7")
                     {
                         var tmp = authorPartNames[0];
                         authorPartNames[0] = authorPartNames[1];
                         authorPartNames[1] = tmp;
                     }
                     authorResults[i] = string.Join(" ", authorPartNames);
+                    if (subtag != "7")
+                    {
+                        lastAuthorName = authorResults[i];
+                    }
+                    else
+                    {
+                        this.AuthList.Add(authorResults[i], lastAuthorName);
+                    }
                 }
             }
             if (authorResults != null && authorResults.Count > 0)
