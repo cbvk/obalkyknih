@@ -77,21 +77,25 @@ foreach my $eshop (DB->resultset('Eshop')->all) {
 	system("rm -rf $TMP_DIR-$name"); mkdir "$TMP_DIR-$name" or die;
 
 	eval { @list = $factory->crawl($storable,$from,$to,"$TMP_DIR-$name",
-		   $eshop->xmlfeed_url) };
+		   $eshop->xmlfeed_url,$eshop) };
 	warn $factory."->crawl(): $@" if($@);
 	warn "Got list of ".scalar(@list)." products\n" if($DEBUG);
 
 	store $storable, "$SESSION_DIR/$name.str" if(keys %$storable);
 
+	my $i = 0;
 	foreach(@list) {
-		my($bibinfo,$media,$product_url) = @$_;
+		my($bibinfo,$media,$product_url,$covers_uncommited,$eans) = @$_;
 		next unless (defined $bibinfo);
 		warn $name." found ".$bibinfo->to_some_id."\n" if($DEBUG);
 		$found{$name}++;
 
-		$eshop->add_product($bibinfo,$media,$product_url);
+		$eshop->add_product($bibinfo,$media,$product_url,$covers_uncommited,$eans);
+		
+		$i++;
+		warn 'add_product #'.$i if ($i % 50 and $ENV{OBALKY_ESHOP});
 	}
-	warn $name.": found ".$found{$name}."\n" if($DEBUG);#if($found{name});
+	warn $name.": found ".$found{$name}."\n" if($DEBUG);
 
 	system("rm -rf $TMP_DIR-$name");
 

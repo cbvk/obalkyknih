@@ -71,7 +71,9 @@ while(my $book = $books->next) {
 	my $found = 0;
 	foreach my $factory (@eshops) {
 		my $bibinfo = $book->bibinfo;
-warn Dumper($bibinfo->ean13) if ($factory->name eq 'LibraryThing');
+		
+		warn Dumper($bibinfo->ean13) if ($factory->name eq 'LibraryThing');
+		
 		my $name = $factory->name;
 		my $eshop = DB->resultset('Eshop')->find_by_name($name);
 		next unless($ENV{DEBUG} or $factory->can_harvest);
