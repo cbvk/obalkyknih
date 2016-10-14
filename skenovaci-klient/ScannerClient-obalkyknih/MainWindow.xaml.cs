@@ -211,9 +211,15 @@ namespace ScannerClient_obalkyknih
         {
             if (!Settings.Version.ToString().Equals(Settings.VersionInfo))
             {
-                MessageBoxDialogWindow.Show("Verze 0.31",
-                      "Změny ve verzi 0.31:\n"
-                    + "* Podpora skenování dvojstran.\n"
+                MessageBoxDialogWindow.Show("Verze 0.34",
+                      "Změny ve verzi 0.34:\n"
+                    + "* Podpora UPC kódu jako identifikátora záznamu.\n\n"
+                    + "Změny ve verzi 0.33:\n"
+                    + "* Skenování fotek hlavních autorů.\n\n"
+                    + "Změny ve verzi 0.32:\n"
+                    + "* Opravné vydání.\n\n"
+                    + "Změny ve verzi 0.31:\n"
+                    + "* Podpora skenování dvojstran.\n\n"
                     + "* Možnost přesunu skenovaných stránek TOC na libovolnou pozici.\n"
                     + "* Urychlení odesílání skenovaných dokumentů na server.\n\n"
                     + "Změny ve verzi 0.30:\n"

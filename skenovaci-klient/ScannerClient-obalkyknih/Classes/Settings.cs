@@ -961,8 +961,8 @@ namespace ScannerClient_obalkyknih
         internal const string UpdateServer = "http://www.obalkyknih.cz/obalkyknih-scanner";
 
         /// <summary>URL of import function on obalkyknih.</summary>
-        //internal const string ImportLink = "http://www.obalkyknih.cz/api/import";
-        internal const string ImportLink = "http://10.89.56.102/api/import";
+        internal const string ImportLink = "http://www.obalkyknih.cz/api/import";
+        //internal const string ImportLink = "http://10.89.56.102/api/import";
 
         /// <summary>Returns path to temporary folder, where are stored images opened in external editor and downloaded updates</summary>
         internal static string TemporaryFolder { get { return System.IO.Path.GetTempPath() + "ObalkyKnih-scanner\\"; } }
@@ -1059,6 +1059,15 @@ namespace ScannerClient_obalkyknih
             get
             {
                 return new Tuple<int, char, char?, char?>(24, 'a', '3', null);
+            }
+        }
+
+        /// <summary>UPC field in Marc21 (field, subfield, ind1, ind2)</summary>
+        internal static Tuple<int, char, char?, char?> MetadataUpcField
+        {
+            get
+            {
+                return new Tuple<int, char, char?, char?>(24, 'a', '1', null);
             }
         }
         

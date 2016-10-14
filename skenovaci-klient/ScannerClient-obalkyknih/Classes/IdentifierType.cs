@@ -13,6 +13,7 @@ namespace ScannerClient_obalkyknih.Classes
         OCLC,
         URN,
         EAN,
+        UPC,
         BARCODE,
         CUSTOM
     }

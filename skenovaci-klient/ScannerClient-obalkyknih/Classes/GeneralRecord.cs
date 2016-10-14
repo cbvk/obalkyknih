@@ -76,6 +76,8 @@ namespace ScannerClient_obalkyknih.Classes
 
             // Parse CNB
             this.Cnb = ParseIdentifier(metadata, Settings.MetadataCnbField).FirstOrDefault();
+            // Parse UPC
+            this.Ean = ParseIdentifier(metadata, Settings.MetadataUpcField).FirstOrDefault();
             // Parse EAN
             this.Ean = ParseIdentifier(metadata, Settings.MetadataEanField).FirstOrDefault();
             // Parse OCLC
@@ -112,11 +114,13 @@ namespace ScannerClient_obalkyknih.Classes
         protected string ParseAuthors(Metadata metadata)
         {
             List<string> authorResults = new List<string>();
+            List<string> authorOutput = new List<string>();
             String lastAuthorName = "<neznamy autor>";
             this.AuthList = new Dictionary<string,string>();
 
             foreach (var settingsField in Settings.MetadataAuthorFields)
             {
+                authorResults.Clear();
                 authorResults.AddRange(metadata.VariableFields.Where(varField => settingsField.Key.ToString("D3").Equals(varField.TagName))
                                 .SelectMany(varField => varField.Subfields)
                                 .Where(subfield => settingsField.Value.Any(settingsValue => settingsValue.ToString().Equals(subfield.Key)))
@@ -125,26 +129,28 @@ namespace ScannerClient_obalkyknih.Classes
                 {
                     var subtag = authorResults[i].Substring(0, 1);
                     var authorPartNames = authorResults[i].Substring(1).Split(',');
-                    if (authorPartNames.Length > 1 && subtag != "7")
+                    if (authorPartNames.Length > 1)
                     {
                         var tmp = authorPartNames[0];
                         authorPartNames[0] = authorPartNames[1];
                         authorPartNames[1] = tmp;
                     }
-                    authorResults[i] = string.Join(" ", authorPartNames);
+                    
                     if (subtag != "7")
                     {
-                        lastAuthorName = authorResults[i];
+                        var joinedAuthorName = string.Join(" ", authorPartNames);
+                        authorOutput.Add(joinedAuthorName);
+                        lastAuthorName = joinedAuthorName;
                     }
                     else
                     {
-                        this.AuthList.Add(authorResults[i], lastAuthorName);
+                        this.AuthList.Add(authorResults[i].Substring(1), lastAuthorName);
                     }
                 }
             }
-            if (authorResults != null && authorResults.Count > 0)
+            if (authorOutput != null && authorOutput.Count > 0)
             {
-                return string.Join(", ", authorResults);
+                return string.Join(", ", authorOutput);
             }
             return null;
         }

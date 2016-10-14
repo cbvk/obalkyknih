@@ -1073,6 +1073,17 @@ namespace ScannerClient_obalkyknih
             rgx = new Regex("[\\]\\]\\?]");
             */
 
+            // nazev autora
+            if (this.generalRecord.AuthList.Count > 0)
+            {
+                var firstAuth = this.generalRecord.AuthList.First();
+                this.authName.Content = firstAuth.Value;
+            }
+            else
+            {
+                this.authName.Content = "";
+            }
+
             ValidateIdentifiers(null, null);
         }
 
@@ -1424,6 +1435,7 @@ namespace ScannerClient_obalkyknih
                         errorText = "Nesedí kontrolní znak";
                     }
                     break;
+                case 12:
                 case 13:
                     sumIsbn = 0;
                     for (int i = 0; i < 13; i += 2)
@@ -1613,7 +1625,8 @@ namespace ScannerClient_obalkyknih
             string errorText = null;
 
             ean = ean.Replace("-", "").Trim();
-            ean = String.Join("", ean.Where(c => !char.IsWhiteSpace(c)));// remove all white spaces
+            ean = String.Join("", ean.Where(c => !char.IsWhiteSpace(c))); // remove all white spaces
+            if (ean.Length == 12) ean = "0" + ean; // UPC is part of EAN
             char[] eanArray = ean.ToCharArray();
             if (ean.Length == 13)
             {
@@ -1641,7 +1654,7 @@ namespace ScannerClient_obalkyknih
             }
             else
             {
-                errorText = "EAN musí mít 13 číslic.";
+                errorText = "EAN musí mít 13 číslic. UPC musí mít 12 číslic.";
             }
 
             return errorText;
@@ -2667,16 +2680,21 @@ namespace ScannerClient_obalkyknih
         // Unified scan function
         private void ScanButtonClicked(DocumentType documentType, String format)
         {
-            if (documentType == DocumentType.Auth && this.authImagesList.Items.Count > 0)
+            if (documentType == DocumentType.Auth)
             {
-                MessageBoxDialogWindow.Show("Autority",
-                        "V současné verzi skenovacího klienta je možné posílat pouze foto prvního autora.",
-                        "OK", MessageBoxDialogWindow.Icons.Warning);
+                if (this.authImagesList.Items.Count > 0) {
+                    MessageBoxDialogWindow.Show("Autority",
+                            "V současné verzi skenovacího klienta je možné posílat pouze foto prvního autora.",
+                            "OK", MessageBoxDialogWindow.Icons.Warning);
+                    return;
+                }
 
-                if (this.generalRecord.AuthList.Count > 0)
+                if (this.generalRecord.AuthList.Count == 0)
                 {
-                    var firstAuth = this.generalRecord.AuthList.First();
-                    this.authName.Content = firstAuth.Value;
+                    MessageBoxDialogWindow.Show("Autority",
+                            "Dokument nemá autora (tag 100, nebo 700).",
+                            "OK", MessageBoxDialogWindow.Icons.Warning);
+                    return;
                 }
             }
 
@@ -2736,11 +2754,15 @@ namespace ScannerClient_obalkyknih
                             "V současné verzi skenovacího klienta je možné posílat pouze foto prvního autora.",
                             "OK", MessageBoxDialogWindow.Icons.Warning);
 
-                    if (this.generalRecord.AuthList.Count > 0)
-                    {
-                        var firstAuth = this.generalRecord.AuthList.First();
-                        this.authName.Content = firstAuth.Value;
-                    }
+                    return;
+                }
+
+                if (this.generalRecord.AuthList.Count == 0)
+                {
+                    MessageBoxDialogWindow.Show("Autority",
+                            "Dokument nemá autora (tag 100, nebo 700).",
+                            "OK", MessageBoxDialogWindow.Icons.Warning);
+                    return;
                 }
             }
 

@@ -111,7 +111,7 @@
                                     HorizontalAlignment="Left" Margin="13,356,0,0" VerticalAlignment="Top" Name="partCnbLabel" />
                             <Label Content="OCLC" FontFamily="Arial" Foreground="#858585"
                                     HorizontalAlignment="Left" Margin="13,400,0,0" VerticalAlignment="Top" Name="partOclcLabel" />
-                            <Label Content="EAN" FontFamily="Arial" Foreground="#858585"
+                            <Label Content="EAN / UPC" FontFamily="Arial" Foreground="#858585"
                                     HorizontalAlignment="Left" Margin="13,444,0,0" VerticalAlignment="Top" Name="partEanLabel" />
                             <Label Content="URN:NBN" FontFamily="Arial" Foreground="#858585"
                                     HorizontalAlignment="Left" Margin="13,488,0,0" VerticalAlignment="Top" Name="partUrnNbnLabel" />
@@ -229,7 +229,7 @@
                                     HorizontalAlignment="Left" Margin="13,356,0,0" VerticalAlignment="Top" Name="cnbTextLabel" />
                             <Label Content="OCLC" FontFamily="Arial" Foreground="#858585"
                                     HorizontalAlignment="Left" Margin="13,400,0,0" VerticalAlignment="Top" Name="oclcTextLabel" />
-                            <Label Content="EAN" FontFamily="Arial" Foreground="#858585"
+                            <Label Content="EAN / UPC" FontFamily="Arial" Foreground="#858585"
                                     HorizontalAlignment="Left" Margin="13,444,0,0" VerticalAlignment="Top" Name="eanTextLabel" />
                             <Label Content="URN:NBN" FontFamily="Arial" Foreground="#858585"
                                     HorizontalAlignment="Left" Margin="13,488,0,0" VerticalAlignment="Top" Name="urnNbnTextLabel" />

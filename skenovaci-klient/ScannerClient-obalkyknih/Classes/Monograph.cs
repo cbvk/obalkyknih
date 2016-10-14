@@ -82,6 +82,7 @@ namespace ScannerClient_obalkyknih.Classes
 
             //Parse identifiers
             SetPartIdentfier(metadata, IdentifierType.CNB, Settings.MetadataCnbField);
+            SetPartIdentfier(metadata, IdentifierType.UPC, Settings.MetadataUpcField);
             SetPartIdentfier(metadata, IdentifierType.EAN, Settings.MetadataEanField);
             SetPartIdentfier(metadata, IdentifierType.OCLC, Settings.MetadataOclcField);
             this.Custom = metadata.Sysno;
@@ -132,7 +133,10 @@ namespace ScannerClient_obalkyknih.Classes
                     this.PartCnb = second;
                     break;
                 case IdentifierType.EAN:
-                    this.PartEan = second;
+                    if (string.IsNullOrWhiteSpace(this.PartEan)) this.PartEan = second;
+                    break;
+                case IdentifierType.UPC:
+                    if (string.IsNullOrWhiteSpace(this.PartEan)) this.PartEan = second;
                     break;
                 case IdentifierType.OCLC:
                     this.PartOclc = second;

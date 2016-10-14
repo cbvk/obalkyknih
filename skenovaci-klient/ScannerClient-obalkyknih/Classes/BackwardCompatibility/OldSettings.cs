@@ -217,6 +217,21 @@ namespace ScannerClient_obalkyknih
         internal const char MetadataEanFirstIndicator = '3';
 
         /// <summary>
+        /// Tag of UPC field in Marc21
+        /// </summary>
+        internal const int MetadataUpcField = 24;
+
+        /// <summary>
+        /// Tag of UPC subfield in Marc21
+        /// </summary>
+        internal const char MetadataUpcSubfield = 'a';
+
+        /// <summary>
+        /// Tag of first indicator of UPC field in Marc21
+        /// </summary>
+        internal const char MetadataUpcFirstIndicator = '1';
+
+        /// <summary>
         /// PPI used for scanning of cover
         /// </summary>
         internal const int CoverDPI = 300;
