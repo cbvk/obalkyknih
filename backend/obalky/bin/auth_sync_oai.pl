@@ -34,8 +34,8 @@ my $harvester = Net::OAI::Harvester->new(
 my $records = $harvester->listRecords(
 	'metadataPrefix'  => 'marc21',
 	'set'             => 'AUT',
-	'from'            => '2016-03-01T00:00:00Z',
-	'until'           => '2019-03-01T23:59:59Z',
+	'from'            => '2012-07-01T00:00:00Z',
+	'until'           => '2012-12-31T23:59:59Z',
 	'metadataHandler' => 'MarcOAI'
 );
 
@@ -47,9 +47,11 @@ while ( ! $finished ) {
 		my $metadata = $record->metadata();
 		$lastDateStamp = $header->{datestamp};
 		if (defined $metadata->{marc}) {
+			
 			#print "\n\n------------[ $cntTotal ]-------------\n\n";
 			#print "identifier: ", $header->identifier(), "\n";
 			#print $metadata->{marc}->as_formatted;
+			
 			if ($metadata->{marc} and $metadata->{marc}->field('100') and $metadata->{marc}->field('001')) {
 				my %rec;
 				$rec->{'id'} = $metadata->{marc}->field('001')->data;
@@ -64,12 +66,59 @@ while ( ! $finished ) {
 				$rec->{'nkp_aut_url'} = $metadata->{marc}->subfield('998', 'a');
 				
 				# id must be unique (and XML might contain malformed data which will colide)
-				if (my $row = DB->resultset('Auth')->find($rec->{'id'})) {
-					#$rec->{'id'} = '_(' . $rec->{'id'} . ')_' . unique_id
-					warn "###### DUPLICITA [$rec->{id}] ######";
-					DB->resultset('AuthOaiTmp')->create($rec);
-				} else {
-					warn "NEW [$rec->{id}]";
+				if (my $row = DB->resultset('Auth')->find($rec->{'id'}))
+				{				
+					if ($metadata->{marc}->field('500')) {
+						foreach my $t500 ($metadata->{marc}->field('500')) {
+							
+							# vyhledat, jestli tato vazba uz neexistuje
+							my $authRelId = $t500->subfield('7');
+							next unless ($authRelId);
+							my $authRel = DB->resultset('AuthRelation500')->search({
+								-or => [
+									{ auth_id_source => $rec->{'id'}, auth_id_relation => $authRelId },
+									{ auth_id_source => $authRelId,   auth_id_relation => $rec->{'id'} }
+								]
+							});
+							# pokud neexistuje vazba, poznacit
+							unless ($authRel->next) {
+								DB->resultset('AuthRelation500')->create({
+									auth_id_source => $rec->{'id'},
+									auth_id_relation => $authRelId
+								});
+							}
+						}
+					}
+					
+					if ($row->get_column('auth_datestamp') ne $rec->{auth_datestamp} or
+					    $row->get_column('oai_datestamp') ne $rec->{oai_datestamp} or
+						$row->get_column('auth_biography') ne $rec->{auth_biography} or
+					    $row->get_column('auth_occupation') ne $rec->{auth_occupation} or
+					    $row->get_column('auth_activity') ne $rec->{auth_activity} or
+					    $row->get_column('auth_date') ne $rec->{auth_date} or
+					    $row->get_column('auth_name') ne $rec->{auth_name})
+					{
+						$row->update({
+							auth_datestamp => $rec->{auth_datestamp},
+							oai_datestamp => $rec->{oai_datestamp},
+							auth_biography => $rec->{auth_biography},
+							auth_occupation => $rec->{auth_occupation},
+							auth_activity => $rec->{auth_activity},
+							auth_date => $rec->{auth_date},
+							auth_name => $rec->{auth_name}
+						});
+						DB->resultset('FeSync')->auth_sync_remove($rec->{id});
+						
+						warn "###### ZMENA ZAZNAMU [$rec->{id}] ######";
+						warn Dumper($row->{_column_data});
+						warn Dumper($rec);
+					}
+					
+				}
+				
+				# NOVY ZAZNAM AUTORITY
+				else {
+					warn "NEW [$rec->{id}]  auth_datestamp:$rec->{auth_datestamp}  oai_datestamp:$rec->{oai_datestamp}";
 					DB->resultset('Auth')->create($rec);
 				}
 
@@ -90,7 +139,7 @@ while ( ! $finished ) {
 		$finished = 1;
 	}
 	
-	print $lastDateStamp, "    >> Pocet zaznamu: ", $cntTotal, "    >> Pocet autorit: ", $cntAuth, "    ( $cntCycle )\n";
+	print $lastDateStamp, "    >> Zaznamu: ", $cntTotal, "    >> Osobnich autorit: ", $cntAuth, "    ( $cntCycle )\n";
 }
 
 print "\n\n-----------[ KONEC ]----------\n\nPocet zaznamu: ", $cntTotal, "\nPocet autorit: ", $cntAuth, "\n\n";
