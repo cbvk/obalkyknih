@@ -108,7 +108,13 @@ __PACKAGE__->table("product");
 
   data_type: 'decimal'
   is_nullable: 1
-  size: [5,2]
+  size: [7,2]
+
+=head2 price_max
+
+  data_type: 'decimal'
+  is_nullable: 1
+  size: [7,2]
 
 =head2 price_cur
 
@@ -191,7 +197,9 @@ __PACKAGE__->add_columns(
   "year",
   { data_type => "integer", is_nullable => 1 },
   "price_vat",
-  { data_type => "decimal", is_nullable => 1, size => [5, 2] },
+  { data_type => "decimal", is_nullable => 1, size => [7, 2] },
+  "price_max",
+  { data_type => "decimal", is_nullable => 1, size => [7, 2] },
   "price_cur",
   { data_type => "char", is_nullable => 1, size => 3 },
   "cover",
@@ -267,21 +275,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 active_review
-
-Type: might_have
-
-Related object: L<DB::Result::Review>
-
-=cut
-
-__PACKAGE__->might_have(
-  "active_review",
-  "DB::Result::Review",
-  { "foreign.product" => "self.id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 active_toc
 
 Type: might_have
@@ -332,6 +325,21 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 cover_uncommiteds
+
+Type: has_many
+
+Related object: L<DB::Result::CoverUncommited>
+
+=cut
+
+__PACKAGE__->has_many(
+  "cover_uncommiteds",
+  "DB::Result::CoverUncommited",
+  { "foreign.product" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 eshop
 
 Type: belongs_to
@@ -345,6 +353,21 @@ __PACKAGE__->belongs_to(
   "DB::Result::Eshop",
   { id => "eshop" },
   { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
+);
+
+=head2 product_params
+
+Type: has_many
+
+Related object: L<DB::Result::ProductParam>
+
+=cut
+
+__PACKAGE__->has_many(
+  "product_params",
+  "DB::Result::ProductParam",
+  { "foreign.product" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 review
@@ -365,6 +388,21 @@ __PACKAGE__->belongs_to(
     on_delete     => "RESTRICT",
     on_update     => "RESTRICT",
   },
+);
+
+=head2 reviews
+
+Type: has_many
+
+Related object: L<DB::Result::Review>
+
+=cut
+
+__PACKAGE__->has_many(
+  "reviews",
+  "DB::Result::Review",
+  { "foreign.product" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 toc
@@ -403,8 +441,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AwbE+g6//szwmeQUgcXcuQ
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-07-18 12:30:38
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zvXBAF+EzcD9sPvcfJZGXA
 
 
 sub media { Obalky::Media->new(shift) }

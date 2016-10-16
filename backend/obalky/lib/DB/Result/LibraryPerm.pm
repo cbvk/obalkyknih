@@ -67,6 +67,12 @@ __PACKAGE__->table("library_perms");
   is_nullable: 1
   size: 15
 
+=head2 auto_generated
+
+  data_type: 'tinyint'
+  default_value: 0
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -83,6 +89,8 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "ip",
   { data_type => "varchar", is_nullable => 1, size => 15 },
+  "auto_generated",
+  { data_type => "tinyint", default_value => 0, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -115,8 +123,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Mv+PsBuANmhKhbqz7tuIhA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-04-15 17:17:27
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GVhW1zt8ScPK1WTw3UcZiA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

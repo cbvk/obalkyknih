@@ -63,11 +63,18 @@ __PACKAGE__->table("abuse");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 auth
+
+  data_type: 'varchar'
+  is_foreign_key: 1
+  is_nullable: 1
+  size: 50
+
 =head2 book
 
   data_type: 'integer'
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
 
 =head2 client_ip
 
@@ -116,8 +123,10 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "toc",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
+  "auth",
+  { data_type => "varchar", is_foreign_key => 1, is_nullable => 1, size => 50 },
   "book",
-  { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "client_ip",
   { data_type => "varchar", is_nullable => 0, size => 16 },
   "referer",
@@ -149,6 +158,26 @@ __PACKAGE__->set_primary_key("id");
 
 =head1 RELATIONS
 
+=head2 auth
+
+Type: belongs_to
+
+Related object: L<DB::Result::Auth>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "auth",
+  "DB::Result::Auth",
+  { id => "auth" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
 =head2 book
 
 Type: belongs_to
@@ -161,7 +190,12 @@ __PACKAGE__->belongs_to(
   "book",
   "DB::Result::Book",
   { id => "book" },
-  { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
 );
 
 =head2 cover
@@ -205,8 +239,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:x/Zo9CQOlwtFew8JbHIOvA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-09-07 12:22:04
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:WWJFmKgL0DiLJcidpsCEZw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -59,7 +59,7 @@ __PACKAGE__->table("fileblob");
 =head2 content
 
   data_type: 'mediumblob'
-  is_nullable: 1
+  is_nullable: 0
 
 =cut
 
@@ -71,7 +71,7 @@ __PACKAGE__->add_columns(
   "medium",
   { data_type => "varchar", is_nullable => 0, size => 64 },
   "content",
-  { data_type => "mediumblob", is_nullable => 1 },
+  { data_type => "mediumblob", is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -149,8 +149,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:toWRgHTSeNu/D7dlvKM0+w
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-08-31 13:28:09
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:lqCMiYEkf7QFgOGXhs9zNQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

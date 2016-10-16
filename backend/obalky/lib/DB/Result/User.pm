@@ -95,6 +95,11 @@ __PACKAGE__->table("user");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 last_auth_cover
+
+  data_type: 'integer'
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -131,6 +136,8 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_nullable => 0,
   },
+  "last_auth_cover",
+  { data_type => "integer", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -217,8 +224,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:E67iSDWmcT+4l+vOtOZC5A
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-08-31 13:28:09
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uN1qHKP6usnLaKqN616NKA
 
 
 use Data::Dumper;

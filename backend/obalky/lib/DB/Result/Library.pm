@@ -177,6 +177,21 @@ __PACKAGE__->add_unique_constraint("library_code", ["code"]);
 
 =head1 RELATIONS
 
+=head2 eshops
+
+Type: has_many
+
+Related object: L<DB::Result::Eshop>
+
+=cut
+
+__PACKAGE__->has_many(
+  "eshops",
+  "DB::Result::Eshop",
+  { "foreign.library" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 library_perms
 
 Type: has_many
@@ -192,17 +207,17 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 marcs
+=head2 library_settings_citaces
 
 Type: has_many
 
-Related object: L<DB::Result::Marc>
+Related object: L<DB::Result::LibrarySettingsCitace>
 
 =cut
 
 __PACKAGE__->has_many(
-  "marcs",
-  "DB::Result::Marc",
+  "library_settings_citaces",
+  "DB::Result::LibrarySettingsCitace",
   { "foreign.library" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -283,8 +298,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FclXlWPwcoXAGT7q9ZtMSQ
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-09-19 12:15:00
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LEKM7oLH2napvCxhboVQyw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

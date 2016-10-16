@@ -93,26 +93,9 @@ __PACKAGE__->set_primary_key("id");
 
 __PACKAGE__->add_unique_constraint("part_type_code", ["part_type_code"]);
 
-=head1 RELATIONS
 
-=head2 books
-
-Type: has_many
-
-Related object: L<DB::Result::Book>
-
-=cut
-
-__PACKAGE__->has_many(
-  "books",
-  "DB::Result::Book",
-  { "foreign.part_type" => "self.id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:d0offLK4ofJVDl/sdv2FZQ
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-03-31 15:17:25
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:BlM7UMCJZqjPMrmh7i5Q5Q
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

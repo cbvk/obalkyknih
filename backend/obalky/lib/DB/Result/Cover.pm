@@ -128,6 +128,13 @@ __PACKAGE__->table("cover");
   is_nullable: 1
   size: 50
 
+=head2 auth_source
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -170,6 +177,13 @@ __PACKAGE__->add_columns(
   { data_type => "integer", default_value => 0, is_nullable => 1 },
   "auth",
   { data_type => "varchar", is_foreign_key => 1, is_nullable => 1, size => 50 },
+  "auth_source",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -185,6 +199,18 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("id");
 
 =head1 UNIQUE CONSTRAINTS
+
+=head2 C<cover_auth_source>
+
+=over 4
+
+=item * L</auth_source>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("cover_auth_source", ["auth_source"]);
 
 =head2 C<cover_checksum>
 
@@ -245,6 +271,41 @@ __PACKAGE__->belongs_to(
     on_delete     => "RESTRICT",
     on_update     => "RESTRICT",
   },
+);
+
+=head2 auth_source
+
+Type: belongs_to
+
+Related object: L<DB::Result::AuthSource>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "auth_source",
+  "DB::Result::AuthSource",
+  { id => "auth_source" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
+=head2 auth_sources
+
+Type: has_many
+
+Related object: L<DB::Result::AuthSource>
+
+=cut
+
+__PACKAGE__->has_many(
+  "auth_sources",
+  "DB::Result::AuthSource",
+  { "foreign.cover" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 auths
@@ -408,8 +469,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-11-23 00:41:16
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ize2WSIyUolmXuTxws+FIw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-08-07 00:32:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:K+1Lbp06bVcf3wf2XpTHSA
 
 use Data::Dumper;
 use Image::Info qw(image_info dim);
@@ -480,13 +541,8 @@ sub get_file {
 	return $cover->get_master() if ($method eq 'master');
 	return $cover->get_preview($method) if ($method eq 'preview510');
     my $blob = $method eq 'medium' ? $cover->file_medium :
-<<<<<<< HEAD
                $method eq 'thumbnail' ? $cover->file_thumb :
                $method eq 'thumb' ? $cover->file_thumb :
-=======
-               $method eq 'thumbnail' ? $cover->file_thumb :    
-               $method eq 'thumb' ? $cover->file_thumb :        
->>>>>>> branch 'master' of https://github.com/cbvk/obalkyknih.git
                $method eq 'icon' ? $cover->file_icon :
                $method eq 'original' ? $cover->file_orig : 
                $method eq 'orig' ? $cover->file_orig : $cover->file_thumb;
@@ -537,8 +593,8 @@ sub get_preview {
 	
 	# resamplovani a ulozeni nahledu do cache adresare
 	system('mkdir '.$Obalky::Config::PREVIEW510_DIR.'/'.$dirGroupName) unless (-e $Obalky::Config::PREVIEW510_DIR.'/'.$dirGroupName);
-	system "convert -dither FloydSteinberg $orig_filename png8:$resampled_filename" if ($width == $width_wanted);
-	system "convert $orig_filename png24:$resampled_filename" unless ($width == $width_wanted);
+	system "convert -resize $width -dither FloydSteinberg $orig_filename png8:$resampled_filename" if ($width == $width_wanted);
+	system "convert -resize $width $orig_filename png24:$resampled_filename" unless ($width == $width_wanted);
 	
 	# zaslani resamplovane verze z cache adresare
 	return () unless (-e $resampled_filename);

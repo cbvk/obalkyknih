@@ -127,7 +127,6 @@ __PACKAGE__->table("book");
 
   data_type: 'tinyint'
   extra: {unsigned => 1}
-  is_foreign_key: 1
   is_nullable: 1
 
 =head2 search_count
@@ -223,6 +222,17 @@ __PACKAGE__->table("book");
   is_nullable: 1
   size: 255
 
+=head2 citation_source
+
+  data_type: 'integer'
+  is_nullable: 1
+
+=head2 citation_time
+
+  data_type: 'datetime'
+  datetime_undef_if_invalid: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -260,12 +270,7 @@ __PACKAGE__->add_columns(
   "part_note",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "part_type",
-  {
-    data_type => "tinyint",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
-  },
+  { data_type => "tinyint", extra => { unsigned => 1 }, is_nullable => 1 },
   "search_count",
   { data_type => "integer", default_value => 0, is_nullable => 1 },
   "harvest_max_eshop",
@@ -302,6 +307,14 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "part_note_orig",
   { data_type => "varchar", is_nullable => 1, size => 255 },
+  "citation_source",
+  { data_type => "integer", is_nullable => 1 },
+  "citation_time",
+  {
+    data_type => "datetime",
+    datetime_undef_if_invalid => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -368,6 +381,21 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 cover_uncommiteds
+
+Type: has_many
+
+Related object: L<DB::Result::CoverUncommited>
+
+=cut
+
+__PACKAGE__->has_many(
+  "cover_uncommiteds",
+  "DB::Result::CoverUncommited",
+  { "foreign.book" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 covers
 
 Type: has_many
@@ -403,39 +431,19 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 marcs
+=head2 product_params
 
 Type: has_many
 
-Related object: L<DB::Result::Marc>
+Related object: L<DB::Result::ProductParam>
 
 =cut
 
 __PACKAGE__->has_many(
-  "marcs",
-  "DB::Result::Marc",
+  "product_params",
+  "DB::Result::ProductParam",
   { "foreign.book" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 part_type
-
-Type: belongs_to
-
-Related object: L<DB::Result::CPartType>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "part_type",
-  "DB::Result::CPartType",
-  { id => "part_type" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "RESTRICT",
-    on_update     => "RESTRICT",
-  },
 );
 
 =head2 products
@@ -669,8 +677,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:45mSCqbqjRDIqt0ygIqDxg
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-09-19 07:35:53
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Mv9I7B0BQMPXQFJVnMa6pg
 
 use Obalky::Media;
 use Data::Dumper;
@@ -740,6 +748,7 @@ sub recalc_review {
 	foreach($book->reviews) { # WHERE rating NOT NULL ?
 		# zahod ty, ktere nepochazi z knihovny
 		next if (not defined $_->library or not defined $_->library_id_review);
+		next if (defined $_->status && $_->status == 2);
 		# vyber komentare s vyssim impact
 		$best = $_ if($_->impact eq $Obalky::Media::REVIEW_ANNOTATION);
 		$best = $_ if($_->impact eq $Obalky::Media::REVIEW_REVIEW 
@@ -761,6 +770,7 @@ sub recalc_rating {
 	foreach($book->reviews) {
 		# zahod ty, ktere nepochazi z knihovny
 		next if (not defined $_->library or not defined $_->library_id_review);
+		next if (defined $_->status && $_->status == 2);
 		# napocitej rating
 		if(defined $_->rating) {
 			if ($_->rating > 0) {
@@ -1031,6 +1041,8 @@ sub get_most_recent {
 			my $recent_book_id;
 			my $max_part_no_by_year = max keys %{$max_by_year{$max_year_calculated}};
 			my $max_part_no_by_volume = max keys %{$max_by_volume{$max_volume}};
+			# zneplatnit nejnovejsi obalku podle rocniku, pokud vime, ze existuji cisla s vyssim rokem vydani
+			$max_part_no_by_volume = 0 if ($eq_year == $vol_to_year and $eq_year < $max_year);
 			if ($max_part_no_by_year >= $max_part_no_by_volume) {
 				# maximum se naslo podle roku
 				$recent_book_id = $max_by_year{$max_year_calculated}{ $max_part_no_by_year };
@@ -1041,13 +1053,14 @@ sub get_most_recent {
 			return DB->resultset('Book')->find( $recent_book_id );
 		}
 	}
+
 	return $book;
 }
 
 # --------------------------------------------------------------
 
 sub enrich {
-	my($book,$info,$library,$permalink,$bibinfo,$secure,$params) = @_;
+	my($book,$info,$library,$bibinfo,$secure,$params) = @_;
 	
 	# vyzadujeme/nevyzadujeme, aby se vyhledaval zaznam s presnou shodou
 	# strict_match = 1  nebude se vyhledavat novejsi cislo periodika/cast monografie (pokud se jedna o souborny zaznam)

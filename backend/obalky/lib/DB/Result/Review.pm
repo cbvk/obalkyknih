@@ -101,6 +101,12 @@ __PACKAGE__->table("review");
   data_type: 'integer'
   is_nullable: 1
 
+=head2 cnt
+
+  data_type: 'smallint'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
 =head2 approved
 
   data_type: 'varchar'
@@ -117,6 +123,11 @@ __PACKAGE__->table("review");
 
   data_type: 'tinyint'
   is_nullable: 1
+
+=head2 pomocna
+
+  data_type: 'integer'
+  is_nullable: 0
 
 =cut
 
@@ -148,12 +159,16 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 16 },
   "rating",
   { data_type => "integer", is_nullable => 1 },
+  "cnt",
+  { data_type => "smallint", extra => { unsigned => 1 }, is_nullable => 1 },
   "approved",
   { data_type => "varchar", is_nullable => 1, size => 40 },
   "library_id_review",
   { data_type => "varchar", is_nullable => 1, size => 32 },
   "status",
   { data_type => "tinyint", is_nullable => 1 },
+  "pomocna",
+  { data_type => "integer", is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
@@ -170,7 +185,7 @@ __PACKAGE__->set_primary_key("id");
 
 =head1 UNIQUE CONSTRAINTS
 
-=head2 C<library_2>
+=head2 C<library>
 
 =over 4
 
@@ -182,19 +197,7 @@ __PACKAGE__->set_primary_key("id");
 
 =cut
 
-__PACKAGE__->add_unique_constraint("library_2", ["library", "library_id_review"]);
-
-=head2 C<review_product>
-
-=over 4
-
-=item * L</product>
-
-=back
-
-=cut
-
-__PACKAGE__->add_unique_constraint("review_product", ["product"]);
+__PACKAGE__->add_unique_constraint("library", ["library", "library_id_review"]);
 
 =head1 RELATIONS
 
@@ -344,8 +347,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CXI5ulVcgS6qqmCOimfxCw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-07-18 12:30:38
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:H0zxEeZNsT0cBzknbGyiGA
 
 use Data::Dumper;
 use HTML::StripTags qw(strip_tags);

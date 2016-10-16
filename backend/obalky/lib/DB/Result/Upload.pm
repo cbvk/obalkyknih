@@ -129,6 +129,12 @@ __PACKAGE__->table("upload");
   is_nullable: 1
   size: 32
 
+=head2 auth_id
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 50
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -167,6 +173,8 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "year",
   { data_type => "varchar", is_nullable => 1, size => 32 },
+  "auth_id",
+  { data_type => "varchar", is_nullable => 1, size => 50 },
 );
 
 =head1 PRIMARY KEY
@@ -224,15 +232,13 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:RojNDnOnnK3rHbE859dqdQ
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-03-31 15:17:25
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:l/Kjn8RLyENBRULQJ0MFpA
 
 
 use Data::Dumper;
 use File::Copy;
 use MD5;
-#use ZOOM;
-#use MARC::Record;
 
 use LWP::UserAgent;
 use Business::ISBN;
