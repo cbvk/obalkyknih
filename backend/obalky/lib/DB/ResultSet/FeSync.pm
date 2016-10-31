@@ -78,7 +78,7 @@ sub set_sync {
 			$id_param = DB->resultset('FeSyncParam')->find_or_create({
 				param_name => $_,
 				param_value => $curParam
-			});
+			}, { rows => 1 });
 		}
 		push @params, $id_param->id;
 	}
@@ -259,16 +259,31 @@ sub book_sync_remove {
 	return unless($id);
 	my $sync_params;
 	my $book = DB->resultset('Book')->find($id);
-	$sync_params->{book_id} = $book->get_column('id_parent') ? $book->get_column('id_parent') : $id;
-	$sync_params->{isbn} = $book->get_column('ean13') if ($book->get_column('ean13'));
-	$sync_params->{nbn} = $book->get_column('nbn') if ($book->get_column('nbn'));
-	$sync_params->{oclc} = $book->get_column('oclc') if ($book->get_column('oclc'));
+	if ($book) {
+		$sync_params->{book_id} = $book->get_column('id_parent') ? $book->get_column('id_parent') : $id;
+		$sync_params->{isbn} = $book->get_column('ean13') if ($book->get_column('ean13'));
+		$sync_params->{nbn} = $book->get_column('nbn') if ($book->get_column('nbn'));
+		$sync_params->{oclc} = $book->get_column('oclc') if ($book->get_column('oclc'));
+	} else {
+		$sync_params->{book_id} = $id;
+	}
 	if ($sync_params) {
 		$sync_params->{remove} = 'true';
 		DB->resultset('FeSync')->set_sync($sync_params, 'metadata_changed', $fe, $forced);
 	}
 }
 
+sub auth_sync_remove {
+	my($pkg,$id,$fe,$forced) = @_;
+	return unless($id);
+	my $sync_params;
+
+	$sync_params->{auth_id} = $id;
+	if ($sync_params) {
+		$sync_params->{remove_auth} = 'true';
+		DB->resultset('FeSync')->set_sync($sync_params, 'metadata_changed', $fe, $forced);
+	}
+}
 
 =head2 request_sync_perm
 
@@ -285,6 +300,58 @@ sub request_sync_perm {
 	DB->resultset('FeSync')->set_sync($sync_params, 'perm_changed');
 }
 
+sub request_sync_settings_citace_remove {
+	my($pkg, $library) = @_;
+	
+	my $sync_params = 
+	{
+		settings_remove => 'true',
+		sigla => $library->get_column('code')
+	};
+	
+	DB->resultset('FeSync')->set_sync($sync_params, 'settings_citace_changed', undef, 1);
+}
+
+sub request_sync_settings_citace_modify {
+	my($pkg, $library, $modifiedParams) = @_;
+	
+	$modifiedParams->{settings_modify} .= 'true';
+	$modifiedParams->{sigla} .= $library->get_column('code');
+	
+	DB->resultset('FeSync')->set_sync($modifiedParams, 'settings_citace_changed', undef, 1);
+}
+
+=head2 request_sync_settings_citace
+
+Pridej nove nastaveni citaci na vsechny frontendy
+
+=cut
+sub request_sync_settings_citace_create {
+	my($pkg, $library, $type, $url, $port, $database, $encoding, $name, $password, $index_sysno) = @_;
+	
+	my $sync_params = ($type eq 'marcxml') ? 
+	{
+		settings_create => 'true',
+		sigla => $library->get_column('code'),
+		type => $type,
+		url => $url,
+	}
+	:
+	{
+		settings_create => 'true',
+		sigla => $library->get_column('code'),
+		type => $type,
+		url => $url,
+		port => $port,
+		database => $database,
+		encoding => $encoding,
+		name => $name,
+		password => $password,
+		index_sysno => $index_sysno
+	};
+	
+	DB->resultset('FeSync')->set_sync($sync_params, 'settings_citace_changed', undef, 1);
+}
 
 =head2 request_sync_perm
 

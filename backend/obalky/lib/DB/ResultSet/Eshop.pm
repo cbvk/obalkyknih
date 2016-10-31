@@ -12,6 +12,7 @@ sub max_id {
 	my($pkg) = @_;
 	my $max = 0;
 	foreach($pkg->all()) {
+		next if ($_->get_column('type') ne 'cover');
 		$max = $_->id if($max < $_->id);
 	}
 	return $max;

@@ -9,6 +9,7 @@ use Carp;
 use DateTime;
 use File::Path;
 use File::Copy;
+use Data::Dumper;
 
 use GD;
 
@@ -30,7 +31,7 @@ sub recent {
 		while($rows--) {
 			my $cover = $recent->next;
 			last unless($cover);
-			push @rows, $cover->book;
+			push @rows, $cover;
 		}
 	} else { # pro starou mrizku 3x3 
 		for(my $r=0;$r<$rows;$r++) {
@@ -65,7 +66,7 @@ sub resize {
 }
 
 sub create_image_blob {
-	my($pkg,$file,$type,$width,$height,$MAX_WIDTH,$MAX_HEIGHT) = @_;
+	my($pkg,$file,$type,$width,$height,$MAX_WIDTH,$MAX_HEIGHT,$current_file) = @_;
 
 	my($iw,$ih) = Obalky::Tools->resize(
 					$MAX_WIDTH,$MAX_HEIGHT,$width,$height);
@@ -85,12 +86,12 @@ sub create_image_blob {
                           $MAX_HEIGHT/2-$tmp_image->height/2,0,0,
 						$tmp_image->width,$tmp_image->height);
 
-	return DB->resultset('Fileblob')->new_from_data($type,$image->png);
+	return DB->resultset('Fileblob')->new_from_data($type,$image->png,$current_file);
 }
 
 sub create_from_file {
 	my($pkg,$book,$product,$orig_file) = @_;
-
+	
 	return unless($orig_file);
 
 	# checksum - checksum originalu
@@ -103,30 +104,64 @@ sub create_from_file {
 
 	my($width,$height) = Obalky::Tools->image_size($file);
 	return unless($height);
+	
+	# zjisteni jestli uz obalka ma nejaky fileblob, nebo se bude zakladat novy
+	my ($current_file_icon,$current_file_medium,$current_file_thumb,$current_file_orig) = (undef,undef,undef,undef);
+	if (defined $product->cover) {
+		$current_file_icon = $product->cover->file_icon;
+		$current_file_medium = $product->cover->file_medium;
+		$current_file_thumb = $product->cover->file_thumb;
+		$current_file_orig = $product->cover->file_orig;
+	}
 
 	my $file_icon = $pkg->create_image_blob(
 		$file,"cover-icon",$width,$height,
-		$Obalky::Config::ICON_WIDTH,$Obalky::Config::ICON_HEIGHT);
+		$Obalky::Config::ICON_WIDTH,$Obalky::Config::ICON_HEIGHT,
+		$current_file_icon);
 
 	my $file_cover = $pkg->create_image_blob(
 		$file,"cover-medium",$width,$height,
-		$Obalky::Config::MEDIUM_WIDTH,$Obalky::Config::MEDIUM_HEIGHT);
+		$Obalky::Config::MEDIUM_WIDTH,$Obalky::Config::MEDIUM_HEIGHT,
+		$current_file_medium);
 
 	my $file_thumb = $pkg->create_image_blob(
 		$file,"cover-thumb",$width,$height,
-		$Obalky::Config::THUMB_WIDTH,$Obalky::Config::THUMB_HEIGHT);
+		$Obalky::Config::THUMB_WIDTH,$Obalky::Config::THUMB_HEIGHT,
+		$current_file_thumb);
 
 	# original.jpg -- ukladat ho do DB?
 	my $file_orig = 
-		DB->resultset('Fileblob')->new_from_file("cover-orig",$orig_file);
-
+		DB->resultset('Fileblob')->new_from_file("cover-orig",$orig_file,$current_file_orig);
+	
+	my $cover;
 	# FIXME: co kdyz uz obrazek s checksum v databazi je?
-	my $cover = eval { DB->resultset('Cover')->update_or_create({
-		book => $book, product => $product, checksum => $checksum,
-		file_medium => $file_cover, file_thumb => $file_thumb,
-		file_orig => $file_orig, file_icon => $file_icon, 
-		orig_width => $width,    orig_height => $height
-    },{ key => 'cover_product' }) };
+	if ((ref $product) =~ /AuthSource/) { #AuthSource
+		my $auth = $book;
+		my $source = $product;
+		
+		$cover = eval { DB->resultset('Cover')->update_or_create({
+			auth => $auth, auth_source => $source, checksum => $checksum,
+			file_medium => $file_cover, file_thumb => $file_thumb,
+			file_orig => $file_orig, file_icon => $file_icon, 
+			orig_width => $width, 	orig_height => $height
+	    },{ key => 'cover_checksum' }) };
+		
+		$cover = eval { DB->resultset('Cover')->update_or_create({
+			auth => $auth, auth_source => $source, checksum => $checksum,
+			file_medium => $file_cover, file_thumb => $file_thumb,
+			file_orig => $file_orig, file_icon => $file_icon, 
+			orig_width => $width,    orig_height => $height
+	    },{ key => 'cover_auth_source' }) }
+	    unless $cover;
+	} else {
+		$cover = eval { DB->resultset('Cover')->update_or_create({
+			book => $book, product => $product, checksum => $checksum,
+			file_medium => $file_cover, file_thumb => $file_thumb,
+			file_orig => $file_orig, file_icon => $file_icon, 
+			orig_width => $width,    orig_height => $height
+	    },{ key => 'cover_product' }) };
+	}
+
 	# warn "Created cover ".$cover->id." for book ".$book->id."\n";
 	$cover = DB->resultset('Cover')->find({ checksum => $checksum }) 
 					unless($cover);

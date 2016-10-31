@@ -143,10 +143,24 @@ sub process {
 	my $filename = substr($filepath,length($dir)+1);
 	my $type = __PACKAGE__->filetype($filepath);
 
-	my $file_id = $filepath =~ /^.*?([^\/]+?)(\..+)?$/ ? $1 : $filepath;
-	$bibinfo = Obalky::BibInfo->new_from_string($file_id) 
-						unless($bibinfo);
-	return unless($bibinfo);
+	my $file_id;
+	if (not defined $info->{'file_id'}) {
+		# pouzijeme jako ID nazev souboru (v pripade knih se toto pouzije vzdy, v pripade autorit a zpusobem standardniho uploadu taky)
+		$file_id = $filepath =~ /^.*?([^\/]+?)(\..+)?$/ ? $1 : $filepath;
+	} else {
+		# nazev souboru je explicitne definovan v kontextu uploadu (napr. u uploadu obrazky autority ze stranky detailu autority)
+		$file_id = $info->{'file_id'};
+	}
+
+	my $resAuth = DB->resultset('Auth')->find($file_id);
+	$bibinfo = Obalky::BibInfo->new_from_string($file_id)
+					unless ($resAuth or $bibinfo);
+
+	my $authinfo;
+	$authinfo = Obalky::AuthInfo->new_from_id($file_id)
+					if ($resAuth);
+
+	return unless($bibinfo or $authinfo);
 
 	my $user = DB->resultset('User')->find_by_email($info->{login});
 
@@ -156,11 +170,21 @@ sub process {
 		filename => $filename
 	});
 	$upload->orig_url($info->{url}) unless($info->{orig_url});
-	$bibinfo->save_to($upload);
+	$bibinfo->save_to($upload) if ($bibinfo);
+	$authinfo->save_to($upload) if ($authinfo);
 
 	my $md5 = `md5sum $filepath | head -c 32`;
 	$upload->checksum($md5);
 	$upload->update;
+	
+	if ($authinfo) {
+		my $upload_info = {};
+		my $auth = DB->resultset('Auth')->find($authinfo->{auth_id});
+		$upload_info->{title} = $auth->get_column('auth_biography');
+		$upload_info->{authors} = $auth->get_column('auth_name');
+		$upload_info->{year} = $auth->get_column('auth_date');
+		$upload->update($upload_info);
+	}
 
 	if($api and DB->resultset('Cover')->has_same_cover($bibinfo,$md5)) {
 		$api->write("Cover already in database, ignoring..\n");
@@ -196,6 +220,7 @@ sub process {
 
 	if($api) {
 		my($book,$object);
+
 		eval { ($book,$object) = DB->resultset('Book')->upload($upload) };
 		$book->invalidate;
 
@@ -216,27 +241,38 @@ sub images {
 
 sub do_import {
 	my($pkg,$batch,$list) = @_;
+
     foreach(sort { $a <=> $b } keys %$list) {
 		my $hash = $list->{$_};
         next if(not $hash->{check} or $hash->{check} ne 'on');
 		my $upload = DB->resultset('Upload')->find($hash->{id});
         next unless($upload); # FIX: we should die!
-
-		$upload->authors($hash->{authors}) if($hash->{authors});
-		$upload->title($hash->{title})     if($hash->{title});
-		$upload->year($hash->{year})       if($hash->{year});
-		$upload->update;
-
-		my $bibinfo = Obalky::BibInfo->new($upload);
-		my $media = Obalky::Media->new_from_info({
+        
+        my $media = Obalky::Media->new_from_info({
 						cover_url => $upload->cover_url, 
 						cover_tmpfile => $upload->cover_tmpfile });
 
-		# pridej do Upload e-shopu product, mozna vypropaguje obalku do book
-		my $upload_eshop = DB->resultset('Eshop')->get_upload_eshop;
-		my $product_url = $Obalky::Config::WWW_URL."/view?".$bibinfo->to_some_param;
-		my $product = $upload_eshop->add_product($bibinfo,$media,$product_url);
-		$upload->update({ product => $product });
+		if ($hash->{type} eq 'book') {
+			$upload->authors($hash->{authors}) if($hash->{authors});
+			$upload->title($hash->{title})     if($hash->{title});
+			$upload->year($hash->{year})       if($hash->{year});
+			$upload->update;
+
+			my $bibinfo = Obalky::BibInfo->new($upload);
+	
+			# pridej do Upload e-shopu product, mozna vypropaguje obalku do book
+			my $upload_eshop = DB->resultset('Eshop')->get_upload_eshop;
+			my $product_url = $Obalky::Config::WWW_URL."/view?".$bibinfo->to_some_param;
+			my $product = $upload_eshop->add_product($bibinfo,$media,$product_url);
+			$upload->update({ product => $product });
+		}
+		
+		if ($hash->{type} eq 'auth') {
+			my $auth_id = $upload->get_column('auth_id');
+			my $auth = DB->resultset('Auth')->find($auth_id);			
+			$auth->add_cover($media);
+			#######my $product = $upload_eshop->add_product($bibinfo,$media,$product_url);
+		}
 	}
 ###	system("rm -rf ".$Obalky::Config::WWW_DIR."/upload/".$batch) if($batch);
 }

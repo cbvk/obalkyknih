@@ -35,6 +35,27 @@ sub abuse {
 	return $abuse;
 }
 
+sub abuse_auth {
+	my($pkg,$auth,$cover,$client_ip,$referer,$note) = @_;
+	if($auth and $cover and $auth->cover and 
+		($auth->cover->id eq $cover->id)) {
+		$auth->update({ cover => undef }); # odlinkuj obalku
+	}
+	my $abuse = $pkg->create({
+		client_ip => $client_ip,
+		referer => $referer,
+		cover => $cover,
+		toc => undef,
+		auth => $auth,
+		note => $note
+	});
+	
+	# synchronizuj s frontend
+	DB->resultset('FeSync')->auth_sync_remove($auth->id);
+	
+	return $abuse;
+}
+
 #sub approve {
 #	my($case,$
 #}

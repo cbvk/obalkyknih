@@ -43,23 +43,13 @@ sub find_by_ean13 {
 	return wantarray ? @books : $books[0];
 }
 sub find_by_bibinfo {
-	my($pkg,$id) = @_;
+	my($pkg,$id,$creating) = @_;
 	my @books;
+	$creating = 0 unless($creating);
 	$id->{part_year} = undef unless(defined $id->{part_year});
 	$id->{part_volume} = undef unless(defined $id->{part_volume});
 	$id->{part_no} = undef unless(defined $id->{part_no});
 	$id->{part_name} = undef unless(defined $id->{part_name});
-	
-	# dotazy na zaznam book (souborny zaznam)
-	unless ($id->{part_no} or $id->{part_name} or $id->{part_year} or $id->{part_volume}) {
-		$id->{part_year} = $id->{part_volume} = undef;
-		push @books, $pkg->search({ ean13=>$id->{ean13} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{ean13});
-   		return $books[0] if(@books and not wantarray);
-   		push @books, $pkg->search({ nbn=>$id->{nbn} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{nbn});
-		return $books[0] if(@books and not wantarray);
-   		push @books, $pkg->search({ oclc=>$id->{oclc} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{oclc});
-  		return $books[0] if(@books and not wantarray);
-	}
 	
 	# dotaz na cislo periodika, nebo cast monografie
 	if ($id->{part_no} or $id->{part_name} or $id->{part_year} or $id->{part_volume}) {
@@ -87,7 +77,7 @@ sub find_by_bibinfo {
 			# druhy pokus o vyhledani uz se vsemi info
 			@books = $pkg->search_book_part($id);
    		}
-   		
+		
    		# rozhodovani se jestli vyhledat rozmezi roku/rocniku/cisel
    		my ($found_part_no_range, $found_part_year_range, $found_part_volume_range) = (0,0,0);
    		$found_part_no_range = 1 if ($id->{part_no} and $id->{part_no} =~ /[\,\-]/);
@@ -101,6 +91,45 @@ sub find_by_bibinfo {
    			map { push @book_ids, $_->id; } @books;
    			$books[0]->{_column_data}{book_range_ids} = \@book_ids;
    		}
+	}
+	
+	# dotazy na zaznam book (souborny zaznam)
+	unless (defined $books[0]) {
+		return undef if ($creating and ($id->{part_no} or $id->{part_name} or $id->{part_year} or $id->{part_volume}));
+		
+		#$id->{part_year} = $id->{part_volume} = undef;
+		push @books, $pkg->search({ ean13=>$id->{ean13} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{ean13});
+		my ($acceptable,$i,$part_type,$first_row) = (1,0,undef,undef);
+		foreach (@books) {
+			next unless (defined $_);
+			$part_type = $_->get_column('part_type');
+			$first_row = $_ unless ($i);			
+			$i++;
+		}
+		$acceptable = 0 if ($part_type); # hledame pouze monografie (i kdyz do dotazu zadame parametry periodika)
+   		return $first_row if(@books and not wantarray and $acceptable);
+   		
+   		push @books, $pkg->search({ nbn=>$id->{nbn} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{nbn});
+		$acceptable=1; $i=0; $part_type=undef; $first_row=undef;
+		foreach (@books) {
+			next unless (defined $_);
+			$part_type = $_->get_column('part_type');
+			$first_row = $_ unless ($i);			
+			$i++;
+		}
+		$acceptable = 0 if ($part_type);
+   		return $first_row if(@books and not wantarray and $acceptable);
+   		
+   		push @books, $pkg->search({ oclc=>$id->{oclc} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{oclc});
+   		$acceptable=1; $i=0; $part_type=undef; $first_row=undef;
+		foreach (@books) {
+			next unless (defined $_);
+			$part_type = $_->get_column('part_type');
+			$first_row = $_ unless ($i);			
+			$i++;
+		}
+		$acceptable = 0 if ($part_type);
+  		return $first_row if(@books and not wantarray and $acceptable);
 	}
 	
 	return wantarray ? @books : $books[0];
@@ -179,6 +208,7 @@ sub normalize_part {
 	$str = lc $str;
 	$str =~ s/[\s]*\-[\s]*/\-/; # normalize dash
 	$str =~ s/[\s]*\,[\s]*/\,/; # normalize comma
+	$str =~ s/\.\-/-/;
 	$str =~ s/spec\./special/;
 	
 	# najdi posledny vyskyt znaku +
@@ -193,7 +223,19 @@ sub normalize_part {
 	# replace month names by month numbers
 	$regex = join "|", keys %Obalky::Config::replace_months;
 	$regex = qr/$regex/;
+	$str =~ s/cervenec/7/g if ($str =~ m/cervenec(\-|\s|$)/g);
 	$str =~ s/($regex)/$Obalky::Config::replace_months{$1}/g;
+	
+	# rocni obdobi
+	$str =~ s/zima-jaro/1-6/g if ($str =~ m/zima-jaro/g);
+	$str =~ s/jaro-leto/4-9/g if ($str =~ m/jaro-leto/g);
+	$str =~ s/leto-podzim/7-12/g if ($str =~ m/leto-podzim/g);
+	$str =~ s/podzim-zima/10-15/g if ($str =~ m/podzim-zima/g);
+	$str =~ s/jaro/4-6/g if ($str =~ m/jaro/g);
+	$str =~ s/leto/7-9/g if ($str =~ m/leto/g);
+	$str =~ s/podzim/10-12/g if ($str =~ m/podzim/g);
+	$str =~ s/zima/1-3/g if ($str =~ m/zima/g);
+	$str =~ s/jaro/1-12/g if ($str =~ m/jaro-zima/g);
     
 	# hledame vice urovnove oznaceni casti monografie (napr. "Ottuv slovnik naucny, 1.díl, 2.sv." se normalizuje na 1|2)
 	# na vystupu bude vzdy v poradi dil|svazek i kdyz se informace na vstupu prohodi
@@ -224,7 +266,7 @@ sub normalize_part {
 	
 	# odstraneni casto pouzivanych "predpon"
 	my $str_clr = $str;
-	$str_clr =~ s/(č(\.|$)|c(\.|$)|cislo|číslo|Č(\.|$)|Číslo|sv(\.|$)|svazek|díl|Díl|dil|no(\.|$)|měs(\.|$))//g;
+	$str_clr =~ s/(č(\.|$)|c(\.|$)|cislo|číslo|Č(\.|$)|Číslo|sv(\.|$)|svazek|díl|Díl|dil|(\s|^)no(\.|$|\s)|(\s|^)nr(\.|$|\s)|měs(\.|$)|mes(\.|$))//g;
 	
 	# identifikace jestli cast obsahuje pismena
 	my @tmp;
@@ -241,7 +283,7 @@ sub trimPart {
 	return '' if ($str eq '' || $str =~ m/^[\s\[\]\(\)\.\,\-\;\\\/_]$/);
 	my $startAt = 0;
 	my $endAt = length($str);
-	    
+	
 	# najdi od zacatku, kde zacina rozumna informace
 	for (my $p=0; $p<length($str)-1; $p++) {
 		last if (substr($str, $p, 1) !~ m/^[\s\[\]\(\)\.\,\-\;\\\/_]$/);
@@ -263,6 +305,7 @@ sub trimPart {
 	$str =~ s/\]\-/\-/; $str =~ s/\-\[/\-/;
 	$str =~ s/\)\-/\-/; $str =~ s/\-\(/\-/;
 	$str =~ s/\/\-/\-/; $str =~ s/\-\//\-/;
+	$str =~ s/\-_/\-/;  $str =~ s/_\-/\-/;
 	$str =~ s/\,_/_/;   $str =~ s/\._/_/;
 	
 	return $str;
@@ -279,6 +322,7 @@ sub normalizePureText {
 	# zmena mesice na cislo
 	$regex = join "|", keys %Obalky::Config::replace_months;
 	$regex = qr/$regex/;
+	$str =~ s/cervenec/7/g if ($str =~ m/cervenec(\-|\s|$)/g);
 	$str =~ s/($regex)/$Obalky::Config::replace_months{$1}/g;
 	
 	# normalizace jinych nez alpha-num. znaku
@@ -313,10 +357,12 @@ sub search_book_part {
 	   	# cast periodika podle NBN
 	   	push @books, $pkg->search_book_part_helper([ $pkg->search({ nbn => $id->{nbn}, part_type => 2 }) ], \@partYear, \@partVolume, \@partNo)
 				if ($id->{nbn});
+		return @books if(@books);
 	   	
 	   	# cast periodika podle OCLC
 	   	push @books, $pkg->search_book_part_helper([ $pkg->search({ oclc => $id->{oclc}, part_type => 2 }) ], \@partYear, \@partVolume, \@partNo)
 				if ($id->{oclc});
+		return @books if(@books);
 	}
 	
 	# MONOGRAFIE
@@ -377,51 +423,70 @@ sub search_book_part_helper {
 				for (my $k=0; $k<scalar @$partNo; $k++) {
 					my $partNo = @$partNo[$k];
 					
+					my ($partNoDb, $partVolumeDb, $partYearDb) = (undef, undef, undef);
+					$partYearDb = $_->get_column("part_year") if ($_->get_column("part_year"));
+					$partVolumeDb = $_->get_column("part_volume") if ($_->get_column("part_volume"));
+					$partNoDb = $_->get_column("part_no") if ($_->get_column("part_no"));
+					
+					#my @partNoRange = $pkg->get_range($partNoDb);
+					#$partNoDb = join(',',@partNoRange) if ($partNoDb and !($partNoDb =~ /[a-z]/i));
+					#$partVolumeDb = join(',',@partVolumeRange) if ($partVolumeDb and !($partVolumeDb =~ /[a-z]/i));
+					#$partYearDb = join(',',@partYearRange) if ($partYearDb and !($partYearDb =~ /[a-z]/i));
+					
 					# presna shoda rok + cislo
-					if ($partYear and $partNo and $_->get_column("part_year") and $_->get_column("part_no") and 
-					    $_->get_column("part_year") eq $partYear and $_->get_column("part_no") eq $partNo)
+					if ($partYear and $partNo and $partYearDb and $partNoDb and 
+					    $partYearDb eq $partYear and $partNoDb eq $partNo and
+					    ($partVolume eq $partVolumeDb or undef $partVolume)
+					)
 					{
 						push @books, $_;
 						next;
 					}
 					
 					# presna shoda rocnik + cislo
-					if ($partVolume and $partNo and $_->get_column("part_volume") and $_->get_column("part_no") and 
-					    $_->get_column("part_volume") eq $partVolume and $_->get_column("part_no") eq $partNo)
+					if ($partVolume and $partNo and $partVolumeDb and $partNoDb and 
+					    $partVolumeDb eq $partVolume and $partNoDb eq $partNo and
+					    ($partNo eq $partNoDb or undef $partNo)
+					)
 					{
 						push @books, $_;
 						next;
 					}
-					
+
 					# rok + cislo castecna shoda u rozsahu periodik
 					# pokud hledame periodika v rozsahu 1-6 = 1,2,3,4,5,6 a zaznam ulozeny v db. je napr. dvoucislo 3,4
-					if ($partYear and $partNo and $_->get_column("part_year") and $_->get_column("part_no") and 
-					    $_->get_column("part_year") eq $partYear and 
-					    $partNo=~/\,/ and $_->get_column("part_no")=~/\,/ and $partNo=~$_->get_column("part_no")) {
+					if ($partYear and $partNo and $partYearDb and $partNoDb and 
+					    $partYearDb eq $partYear and 
+					    ($partVolume eq $partVolumeDb or undef $partVolume) and
+					    $partNo=~/\,/ and $partNoDb=~/\,/ and $partNo=~$partNoDb)
+					{
 						push @books, $_;
 						next;
 					}
 					
 					# rocnik + cislo castecna shoda u rozsahu periodik
 					# pokud hledame periodika v rozsahu 1-6 = 1,2,3,4,5,6 a zaznam ulozeny v db. je napr. dvoucislo 3,4
-					if ($partVolume and $partNo and $_->get_column("part_volume") and $_->get_column("part_no") and 
-					    $_->get_column("part_volume") eq $partVolume and
-					    $partNo=~/\,/ and $_->get_column("part_no")=~/\,/ and $partNo=~$_->get_column("part_no")) {
+					if ($partVolume and $partNo and $partVolumeDb and $partNoDb and 
+					    $partVolumeDb eq $partVolume and
+					    ($partNo eq $partNoDb or undef $partNo) and
+					    $partNo=~/\,/ and $partNoDb=~/\,/ and $partNo=~$partNoDb)
+					{
 						push @books, $_;
 						next;
 					}
 					
 					# oprava vstupu; pokud se na vstupu rok a rocnik shoduje, jeden z nich nebude potrebny
-					if ($partYear and $partVolume and $partYear eq $partVolume) {
+					if ($partYear and $partVolume and $partYear eq $partVolume)
+					{
 						$partVolume = undef if (length($partYear) == 4);
 						$partYear = undef   if (length($partYear) != 4);
 					}
 					
 					# presna shoda rok + rocnik, nebo castecna shoda pouze v roce, nebo rocniku
 					# v takovemto pripade nesmi byt v DB vyplneno cislo periodika
-					if (($partYear and $partVolume and $_->get_column("part_year") eq $partYear and $_->get_column("part_volume") eq $partVolume and !$_->get_column("part_no")) or
-						($partYear and !$partVolume and $_->get_column("part_year") eq $partYear and !$_->get_column("part_no")) or
-						(!$partYear and $partVolume and $_->get_column("part_volume") eq $partVolume and !$_->get_column("part_no")))
+					if (($partYear and $partVolume and $partYearDb eq $partYear and $partVolumeDb eq $partVolume and !$partNoDb) or
+						($partYear and !$partVolume and $partYearDb eq $partYear and !$partNoDb) or
+						(!$partYear and $partVolume and $partVolumeDb eq $partVolume and !$partNoDb))
 					{
 						push @books, $_;
 						next;
@@ -579,6 +644,34 @@ sub search_book_by_range {
 	}
 	
 	return @books;
+}
+
+sub get_range {
+	my ($pkg,$str) = @_;
+	
+	my @book_part_no;
+	my @part_no_separated = split /,/, $str;
+	# carka oddeluje hodnoty/rozsahy hodnot
+	foreach (@part_no_separated) {
+		my @part_no = split /-/, $_;
+		# neni rozsahem, obsahuje jednu hodnotu
+		if (scalar @part_no == 1) {
+			push(@book_part_no, trim($part_no[0]));
+			next;
+		}
+		# muze byt rozsahem
+		next if (scalar @part_no < 2);
+		my $cycleFrom = trim($part_no[0]);
+		my $cycleTo = trim($part_no[1]);
+		next if (!($cycleFrom =~ /^\d*$/));
+		next if (!($cycleTo =~ /^\d*$/));
+		next if ($cycleFrom > $cycleTo); # rozsah musi byt dopredny
+		for (my $i=$cycleFrom; $i<=$cycleTo; $i++) {
+			push(@book_part_no, $i);
+		}
+	}
+	
+	return @book_part_no;
 }
 
 1;
