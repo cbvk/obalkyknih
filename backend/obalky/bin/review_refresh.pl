@@ -34,7 +34,7 @@ my $query = 'SELECT b.id
            AND library_id_review IS NOT NULL
 		   AND IFNULL(`status`, 0) != 2
 		 GROUP BY book) AS r
-         INNER JOIN book AS b ON b.id = r.book AND (b.cached_rating_sum!=r.sum OR b.cached_rating_count!=r.cnt)';
+         INNER JOIN book AS b ON b.id = r.book AND (IFNULL(b.cached_rating_sum,0)!=r.sum OR IFNULL(b.cached_rating_count,0)!=r.cnt)';
 
 my $book_sth = $dbh->prepare($query);
 $book_sth->execute();

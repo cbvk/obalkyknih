@@ -853,6 +853,11 @@ sub get_rating_avg5 { # nutne asi jen kvuli view
 	return $avg/20 unless($avg % 20);
 	return sprintf("%1.1f",$book->get_rating_avg100/20);
 }
+sub is_library_rating { # pouzito ve view
+	my($book,$library) = @_;
+	my $res = DB->resultset('Review')->search({ book=>$book->id, library=>$library, impact=>8 });
+	return $res->next ? 1 : 0;
+}
 
 sub get_obalkyknih_url {
 	my($book,$secure) = @_;

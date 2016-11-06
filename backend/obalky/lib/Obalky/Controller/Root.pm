@@ -7,7 +7,11 @@ use base 'Catalyst::Controller';
 use Obalky::Media;
 
 use Data::Dumper;
+use File::Copy qw(move);
+use URI::Encode qw(uri_encode);
 use utf8;
+use Business::ISBN;
+use Business::ISSN;
 
 
 #use encoding 'latin-2';
@@ -48,8 +52,10 @@ sub blue_stash {
 		$blue_info{recent} = DB->resultset('Cover')->recent(16,1)
 						unless($ENV{SKIP_RECENT});
 		$blue_info{eshops} = [ grep { 
-            not $_->is_internal and $_->logo_url and $_->id <= 8000 } 
-								DB->resultset('Eshop')->all ];
+# !!! uprava zobrazeni logo JN 2015-09-10
+            not $_->is_internal and $_->logo_url and $_->id <= 1000000} 
+###            not $_->is_internal and $_->logo_url and $_->checkin > 0} 
+            			DB->resultset('Eshop')->all ];
 		my $libs = DB->resultset('Library')->count;
 		$libs = 10*int($libs/10);
 		$blue_info{libraries_at_least} = $libs;
@@ -184,6 +190,9 @@ sub file : Local {
 	}
 }
 
+
+
+
 sub login : Local {
 	my($self,$c) = @_;
 	my($user,$passwd) = ($c->req->param('email'),$c->req->param('password'));
@@ -209,6 +218,62 @@ sub login : Local {
 	$c->stash->{password} = $passwd;
 	$c->stash->{'return'} = $return;
 }
+
+sub settings_citace : Local {
+    my($self,$c) = @_;
+    my $signed = $c->user ? 1 : 0;
+    unless ($signed) {
+    	#uzivatelsky ucet jen pro prihlasene uzivatele
+    	$c->res->redirect("index");
+    	return;
+    }
+    unless ($c->user->get('flag_library_admin')) {
+    	#presmeruj na uzivatelsky ucet ne-spravce knihovny
+		$c->res->redirect("/account_user");
+		return;
+	}
+    
+    my $username = $c->user->get_column('login');
+    if ($username eq $Obalky::ADMIN_EMAIL && !$c->req->param('i')) {
+    	#spravce ma k dispozici spravu vsech knihoven
+    	$c->res->redirect("admin_library");
+    	return;
+    }
+    
+    my $library_admin = $c->user->get_column('flag_library_admin');
+    
+    my $id = $c->user->get_column('library');
+    $id = $c->req->param('i') if ($username eq $Obalky::ADMIN_EMAIL);
+    my $library = $signed ? DB->resultset('Library')->find($id) : 0;
+    
+    if ($library) {
+    	# Pridej nastaveni
+	    if($c->req->param('new')) {
+			eval { my $res = DB->resultset('LibrarySettingsCitace')->add_permission($c->req->params, $library) };
+			$c->stash->{error} = $@ if($@);
+		}
+		# Edituj nastaveni
+	    if($c->req->param('e')) {
+			eval { my $res = DB->resultset('LibrarySettingsCitace')->edit_permission($c->req->param('e'), $c->req->params, $library) };
+			$c->stash->{error} = $@ if($@);
+		}
+    	# Odstran nastaveni
+	    if($c->req->param('d')) {
+			eval { my $res = DB->resultset('LibrarySettingsCitace')->remove_permission($c->req->param('d'), $library) };
+			$c->stash->{error} = $@ if($@);
+		}
+		# Vypis nastaveni
+    	$c->stash->{settings} = DB->resultset('LibrarySettingsCitace')->find({ library=>$id });
+    }
+    
+    $c->stash->{admin_page} = 'account';
+    $c->stash->{signed} = $signed;
+	$c->stash->{library} = $library;
+	$c->stash->{is_admin} = $c->req->param('i') ? 1 : 0;
+	$c->stash->{library_admin} = $library_admin;
+	$c->stash->{params} = $c->req->params;
+}
+
 sub account : Local {
     my($self,$c) = @_;
     my $signed = $c->user ? 1 : 0;
@@ -488,7 +553,7 @@ sub upload : Local {
 		license => "free",
 	};
 	if($url or $file) {
-		my $batch = eval { 
+		my $batch = eval {
 			DB->resultset('Upload')->upload(undef,undef,$info) };
 		return $c->res->redirect("preview?batch=$batch") unless($@);
 		$c->stash->{error} = $@;
@@ -648,6 +713,33 @@ sub view : Local {
 				$book = $bibinfo ? DB->resultset('Book')->find_by_bibinfo($bibinfo) : undef;
 				$c->response->redirect( '/view?oclc='.$code, 307 ) if ($book);
 			}
+			
+			# autorita podle ID
+			if (not defined($book)) {
+				my $authinfo = Obalky::AuthInfo->new_from_params({ auth_id => $c->req->param('isbn') });
+				my $auth = DB->resultset('Auth')->get_auth_record( $authinfo );
+				$c->response->redirect( '/view_auth?auth_id='.$auth->id, 307 ) if ($auth);
+			}
+			
+			# autorita podle jmena
+			if (not defined($book)) {
+				my $searchPhrase;
+				my @words = split / /, $c->req->param('isbn');
+				@{$searchPhrase->{'-and'}} = ();
+				foreach (@words) {
+					push @{$searchPhrase->{'-and'}}, { 'auth_name' => { -like => '%'.$_.'%' } };
+				}
+				my $resauth = DB->resultset('Auth')->search($searchPhrase, { limit=>1 });
+				#multiple records = list page
+				if ($resauth->count gt 1) {
+					my $authName = uri_encode($c->req->param('isbn'));
+					$c->response->redirect( '/list_auth?auth_name='.$authName, 307 );
+					return;
+				}
+				# single record = detail page
+				my $auth = $resauth->next;
+				$c->response->redirect( '/view_auth?auth_id='.$auth->id, 307 ) if ($auth);
+			}
 		}
 	}
 	
@@ -662,10 +754,13 @@ sub view : Local {
 	
 	my @parts = DB->resultset('Book')->get_parts($book, $sort_by, \@idf);
 	if (@parts) {
-		my $book_recent = $book->get_most_recent;
+		my $book_recent;
+		my @parts_tmp = @parts;
+		$book_recent = $book->get_most_recent unless ($idf);
+		$book_recent = pop @parts_tmp if ($idf);
 		$c->stash->{recent_book_id} = $book_recent->id if ($book_recent);
-		$c->stash->{recent_cover} = $book_recent->cover if ($book_recent->cover);
-		$c->stash->{recent_toc} = $book_recent->toc if ($book_recent->toc);
+		$c->stash->{recent_cover} = $book_recent->cover if ($book_recent and $book_recent->cover);
+		$c->stash->{recent_toc} = $book_recent->toc if ($book_recent and $book_recent->toc);
 	}
 	
 	my @books = $book ? ( $book->work ? $book->work->books : $book ) : ();
@@ -689,6 +784,191 @@ sub view : Local {
 
 	my $ip = $c->req->address; $ip =~ s/\.\d+$/.../;
 	$c->stash->{visitor_blurred_ip} = $ip;
+	
+	# same as in index()
+	$c->stash->{menu} = "index";
+}
+
+sub view_auth : Local {
+	my($self,$c) = @_;
+	my($library,$seance,$visitor) = Obalky->visit($c);
+	
+	my $referer = $c->req->param('referer') || $c->req->referer;
+	
+	my $auth = undef;
+	return unless($c->req->param('auth_id'));
+	
+	# ziskani zaznamu autority
+	if ($c->req->param('auth_id')) {
+		$auth = DB->resultset('Auth')->find($c->req->param('auth_id'));
+	}
+	
+	# upload obalky autority
+	if ($c->req->param('auth_upload')) {
+		my $upload;
+		my $file = $c->req->upload('file');	
+		my $info = {
+			file => $file, url => undef,
+			login => scalar($c->user->get('login')),
+			license => 'free'
+		};
+		if ($file) {
+			$info->{'file_id'} = $auth->id;
+			my $batch = eval { DB->resultset('Upload')->upload(undef,undef,$info) };
+			$upload = DB->resultset('Upload')->search({ batch => $batch })->next;
+		}
+		if ($upload) {
+	        my $media = Obalky::Media->new_from_info({
+							cover_url => $upload->cover_url, 
+							cover_tmpfile => $upload->cover_tmpfile });
+			$auth->add_cover($media);
+			DB->resultset('FeSync')->auth_sync_remove($auth->id);
+		}
+	}
+	
+	return unless($auth);
+	
+	my @auths = ( $auth );
+	
+	$c->stash->{auths}   = [ @auths ];
+	$c->stash->{referer} = $referer;
+	$c->stash->{detail}  = $c->user ? 1 : 0; # prihlasenym i detaily
+	$c->stash->{seznam_main_image} = ($auths[0] and $auths[0]->cover) ? 
+		$auths[0]->cover->get_cover_url : undef;
+
+	my $ip = $c->req->address; $ip =~ s/\.\d+$/.../;
+	$c->stash->{visitor_blurred_ip} = $ip;
+	
+	# same as in index()
+	$c->stash->{user} = $c->user ? $c->user->get('login') : undef;
+	$c->stash->{menu} = "index";
+}
+
+sub list_auth : Local {
+	my($self,$c) = @_;
+	my($library,$seance,$visitor) = Obalky->visit($c);
+	
+	my $referer = $c->req->param('referer') || $c->req->referer;
+	
+	my $offset = 0;
+	$offset = $c->req->param('offset') if ($c->req->param('offset'));
+	
+	my ($resAuth, $searchPhrase) = (undef, undef);
+	
+	if ($c->req->param('auth_name')) {
+		my @words = split / /, $c->req->param('auth_name');
+		@{$searchPhrase->{'-and'}} = ();
+		foreach (@words) {
+			push @{$searchPhrase->{'-and'}}, { 'auth_name' => { -like => '%'.$_.'%' } };
+		}
+	}
+	$searchPhrase->{'auth_date'} = { -like => '%'.$c->req->param('auth_date').'%' } if ($c->req->param('auth_date'));
+	return unless (defined $searchPhrase);
+	$resAuth = DB->resultset('Auth')->search($searchPhrase);
+	
+	my $resCount = $resAuth->count;
+	$resCount = 0 unless($resCount);
+	
+	if ($resAuth->count > 30) {
+		$c->stash->{auths_count} = $resAuth->count;
+		$resAuth = DB->resultset('Auth')->search($searchPhrase, {
+			offset => $offset,
+			rows => 30
+		})
+	}
+	
+	
+	$c->stash->{auths} = $resAuth;
+	$c->stash->{auths_count} = $resCount;
+	$c->stash->{auth_name} = $c->req->param('auth_name');
+	$c->stash->{auth_date} = $c->req->param('auth_date');
+	$c->stash->{offset} = $offset;
+	$c->stash->{offset_from} = $offset+1;
+	$c->stash->{offset_to} = ($resCount>($offset+31)) ? $offset+31 : $resCount;
+	$c->stash->{referer} = $referer;
+	$c->stash->{detail}  = $c->user ? 1 : 0; # prihlasenym i detaily
+	
+	# same as in index()
+	$c->stash->{menu} = "index";
+}
+
+sub admin_auth_cover : Local {
+	my($self,$c) = @_;
+	my($library,$seance,$visitor) = Obalky->visit($c);
+	
+	my $referer = $c->req->param('referer') || $c->req->referer;
+	my $user = $c->user;
+	
+	unless ($user) {
+    	$c->res->redirect("index");
+    	return;
+    }
+    
+    my $user_data = DB->resultset('User')->find($user->id);
+	
+	my $username = $user->get_column('login');	
+	unless ($username eq $Obalky::ADMIN_EMAIL) {
+    	$c->res->redirect("index");
+    	return;
+    }
+    
+    if ($c->req->param('del')) {
+    	my $auth = DB->resultset('Auth')->find($c->req->param('del'));
+    	my $abuse = DB->resultset('Abuse')->abuse_auth($auth,$auth->cover,$c->req->address,$referer,'admin_auth_cover') if ($auth);
+    }
+	
+	my $rowsCount = 100;
+	
+	# paging - forward
+	my $startat = 0;
+	if ($c->req->param('startat')) {
+		$startat = $c->req->param('startat');
+		$user_data->update({ last_auth_cover => $startat });
+	}
+	unless ($c->req->param('startat') and $startat) {
+		$startat = $user_data->get_column('last_auth_cover');
+		$startat = 1 unless(defined $startat);
+	}
+	# paging - back
+	if ($c->req->param('stepback')) {
+		my $resAuthStepBack = DB->resultset('Auth')->search(
+			{
+				'-and' => [
+					{ 'cover' => { '!=' => undef } },
+					{ 'cover' => { '<' => $startat } }
+				]
+			},
+			{
+				order_by => { '-desc' => 'cover' },
+				rows => $rowsCount
+			});
+		my $cnt;
+		foreach my $row ($resAuthStepBack->all) { $startat = $row->get_column('cover'); $cnt++; }
+		$startat = 1 unless(defined $startat and defined $cnt);
+		$startat = 1 if($cnt < $rowsCount);
+		$user_data->update({ last_auth_cover => $startat });
+	}
+	
+	my ($resAuth,$searchPhrase) = (undef,undef);
+	
+	@{$searchPhrase->{'-and'}} = ();
+	push @{$searchPhrase->{'-and'}}, { 'cover' => { '!=' => undef } };
+	push @{$searchPhrase->{'-and'}}, { 'cover' => { '>' => $startat } } if ($startat);
+	$resAuth = DB->resultset('Auth')->search($searchPhrase, {
+		order_by => { '-asc' => 'cover' },
+		rows => $rowsCount
+	});
+	
+	my $resCount = DB->resultset('Auth')->search($searchPhrase)->count;
+	$resCount = 0 unless($resCount);
+	
+	$c->stash->{auths} = $resAuth;
+	$c->stash->{auths_count} = $resCount;
+	$c->stash->{auths_showing} = $resAuth->count;
+	$c->stash->{auths_estimate} = DB->resultset('Auth')->search($searchPhrase)->count;
+	$c->stash->{startat} = $startat;
+	$c->stash->{referer} = $referer;
+	$c->stash->{detail}  = $c->user ? 1 : 0; # prihlasenym i detaily
 	
 	# same as in index()
 	$c->stash->{menu} = "index";
@@ -790,6 +1070,14 @@ sub end : Private {
 	$c->forward('Obalky::View::TT');	
 }
 
+sub seminar : Local {
+	my($self,$c) = @_;
+	my $dnes = DB->resultset('Product')->search({ eshop => 109, created => {'like' => '2015-12-08%'} });
+	my $vcera = DB->resultset('Product')->search({ eshop => 109, created => {'like' => '2015-12-07%'} });
+	$c->stash->{vcera} = $vcera->count;
+	$c->stash->{dnes} = $dnes->count;
+}
+
 #my $bibinfo = bless {}, 'Bibinfo';
 #$bibinfo->{ean13} = '9788073039219';
 #$bibinfo->{part_year} = 'rok 2014,2015';
@@ -799,6 +1087,9 @@ sub end : Private {
 #warn Dumper($bibinfo);
 #warn Dumper(DB->resultset("Book")->normalize_bibinfo($bibinfo));
 
+#@my $issn = Business::ISSN->new('13352720');
+#$issn->fix_checksum;
+#warn $issn->as_string;
 
 =head1 AUTHOR
 

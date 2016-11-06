@@ -2,16 +2,10 @@
 package Obalky::Tools;
 
 use LWP::UserAgent;
+use File::Copy;
 use Obalky::Config;
 
 # Samostatna knihovna
-
-sub fix_permalink {
-	my($pkg,$link) = @_;
-	$link =~ s/sys\=zmp/sys\=/;
-	$link =~ s/\&amp\;/\&/g;
-	return $link;
-}
 
 sub valid_email {
 	my($pkg,$email) = @_;
@@ -67,6 +61,9 @@ sub image_size {
 # take v C::API.pm
 my $OCR_DIR_INPUT  = "/opt/obalky/ocr/input";
 my $OCR_DIR_OUTPUT = "/opt/obalky/ocr/output";
+my $OCR_DIR_INPUT_NKP  = "/opt/store/toc_ocr/in";
+my $OCR_DIR_OUTPUT_NKP = "/opt/store/toc_ocr/out";
+my $OCR_DIR_ORPHAN_NKP = "/opt/store/toc_ocr/orphan";
 
 use DB;
 use Encode;
@@ -107,6 +104,61 @@ sub cmdCronTocOcr {
 			print OUTFILE $content;
 			close(OUTFILE);
 			unlink $in, $inpdf, $out, $outTxt; # done
+		}
+	}
+}
+
+# perl -wC -I/opt/obalky/lib -MObalky::Tools -e Obalky::Tools::cmdCronTocOcrNkp
+sub cmdCronTocOcrNkp {
+	my $Toc = DB->resultset('Toc') or die;
+	my $feSync = 0;
+	foreach my $in (glob("$OCR_DIR_OUTPUT_NKP/*")) {
+		my($tocId,$suffix) = ($in =~ /\/(\d+)\.?(\w*)$/);
+		my $toc = $Toc->find($tocId);
+		# zaznam uz neni v DB, podezrele, ale neni
+		# presunout do adresare se sirotky
+		unless ($toc) {
+			move($in, "$OCR_DIR_ORPHAN_NKP/$tocId.$suffix");
+			warn "!!! ORPHAN... $tocId.$suffix";
+		}
+		# ochrana pred nulovym obsahem souboru
+		unless (-s $in) {
+			unlink $in;
+			warn "!!! EMPTY... $tocId.$suffix";
+			next;
+		}
+		# PDF
+		if ($suffix eq 'pdf') {
+			my $out = "$OCR_DIR_OUTPUT_NKP/$tocId.pdf";
+			my $content = Obalky::Tools->slurp($out);
+			$toc->update({ pdf_file => undef });
+			warn "Updating PDF $tocId, ".length($content)." bytes\n";
+			# PDF files are grouped in dir
+			my $dirGroupName = int($tocId/10000+1)*10000;
+			mkdir($Obalky::Config::TOC_DIR.'/'.$dirGroupName) unless (-d $Obalky::Config::TOC_DIR.'/'.$dirGroupName);
+			# place PDF onto file system
+			my $tocFile = $Obalky::Config::TOC_DIR.'/'.$dirGroupName.'/'.$tocId.'.pdf';
+			open(OUTFILE, ">".$tocFile);
+			print OUTFILE $content;
+			close(OUTFILE);
+			# change owner and access rights
+			system('chown obalky:obalky '.$tocFile);
+			system('chmod 644 '.$tocFile);
+			# metadata changed; do FE sync
+			DB->resultset('FeSync')->book_sync_remove($toc->book->id) unless ($feSync);
+			$feSync = 0;
+			unlink $in; # done
+		}
+		# FULLTEXT
+		if ($suffix eq 'txt') {
+			my $outTxt = "$OCR_DIR_OUTPUT_NKP/$tocId.txt";
+			my $text = decode('cp1250', `cat $outTxt`);
+			$toc->update({ full_text => $text });
+			warn "Updating FULLTEXT $tocId, text ".length($text)." chars\n";
+			# metadata changed; do FE sync
+			DB->resultset('FeSync')->book_sync_remove($toc->book->id);
+			$feSync = 1;
+			unlink $in; # done
 		}
 	}
 }

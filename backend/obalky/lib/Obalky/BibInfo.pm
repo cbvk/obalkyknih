@@ -49,7 +49,7 @@ isbn_1234, ean_123, oclc_123, nbn_123, isbn1234_nbn123
 =cut
 
 
-my @keys = qw/ean13 oclc nbn title authors year part_year part_volume part_no part_name part_note/;
+my @keys = qw/ean13 oclc nbn title authors year part_year part_volume part_no part_name part_note auth_id auth_name/;
 
 sub param_keys { qw/ean isbn issn oclc nbn title authors year/ }
 sub param_keys_part { qw/part_ean part_isbn part_issn part_oclc part_nbn part_title part_authors part_year/ }
@@ -141,21 +141,32 @@ sub issn {
 sub parse_code {
 	my($pkg,$code) = @_;
 	if($code) { # 8, 10, 12 or 13
-		$code =~ s/\-//g; 
+		$code =~ s/\-//g;
+		
+		# ISSN
 		if(length($code) == 8) {
 			my $obj = Business::ISSN->new($code);
 			return undef unless($obj and $obj->is_valid);
 			my $toean = "977".substr($code,0,7)."00"; 
 			return $toean.check_digit($toean);
-		} elsif(length($code) == 10) {
+		} 
+		
+		# ISBN
+		elsif(length($code) == 10) {
 			$obj = Business::ISBN->new($code);
 			return unless($obj and $obj->is_valid);
 			my $ean13 = $obj->as_isbn13->as_string;
 			$ean13 =~ s/\-//g;
 			return $ean13;
-		} elsif(length($code) == 12) {
-			return $code.check_digit($code);
-		} elsif(length($code) == 13) {
+		}
+		
+		# UPC
+		elsif(length($code) == 12) {
+			return '0'.$code;
+		} 
+		
+		# EAN
+		elsif(length($code) == 13) {
 			if($code =~ /^977(\d{7})(\d\d)(\d)/) {
 				my $toean = "977".$1."00"; 
 				return $toean.check_digit($toean);

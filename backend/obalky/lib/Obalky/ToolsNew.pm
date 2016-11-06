@@ -6,13 +6,6 @@ use Obalky::Config;
 
 # Samostatna knihovna
 
-sub fix_permalink {
-	my($pkg,$link) = @_;
-	$link =~ s/sys\=zmp/sys\=/;
-	$link =~ s/\&amp\;/\&/g;
-	return $link;
-}
-
 sub valid_email {
 	my($pkg,$email) = @_;
 	# nebudeme to prehanet..

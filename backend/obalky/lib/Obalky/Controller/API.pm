@@ -69,25 +69,18 @@ sub add_review : Local {
 		return unless($fe->count || $c->request->address eq '127.0.0.1');
 	}
 
-	my($this,$bibinfo,$permalink) = (undef,undef,undef);
+	my($this,$bibinfo) = (undef,undef);
 	if ($book_id) {
 		my $book = DB->resultset('Book')->find($book_id);
 		$bibinfo = Obalky::BibInfo->new($book);
-		$permalink = Obalky::Tools->fix_permalink('a');
 	} else {
 		$this = from_json($c->req->param("book"));
 		$bibinfo = Obalky::BibInfo->new_from_params($this->{bibinfo});
-		$permalink = Obalky::Tools->fix_permalink($this->{permalink});
 	}
 
-	# v dotazu chybi minimalni udaje, ignoruj..
-#	unless($library and $bibinfo and $permalink) {
-#		warn "Chybi minimalni udaje, ignoruju (lib=".($library?$library->code:"").")...\n";
-#	}
+	return unless($library and $bibinfo);
 
-	return unless($library and $bibinfo and $permalink);
-
-	my($book,$record) = DB->resultset('Marc')->get_book_record( $library, $permalink, $bibinfo );
+	my $book = DB->resultset('Book')->find_by_bibinfo($bibinfo);
 
 	# existuje uz zaznam v tabulce review ?
 	# pokud ano, v dalsich krocich bude se pokracovat editaci
@@ -119,7 +112,7 @@ sub add_review : Local {
 		$book->edit_review($retExists,$library,$visitor,$review_params);
 	}
 
-	$book->enrich($this,$library,$permalink,$bibinfo,$c->request->secure);
+	$book->enrich($this,$library,$bibinfo,$c->request->secure);
 	
 	# vyvolej promazani metadat ze vsech frontend serveru
 	DB->resultset('FeSync')->request_sync_review($book,$c->request->secure);
@@ -146,13 +139,12 @@ sub del_review : Local {
 		return unless($fe->count || $c->request->address eq '127.0.0.1');
 	}
 
-	my($this,$bibinfo,$permalink,$book,$book_id) = (undef,undef,undef,undef,undef);
+	my($this,$bibinfo,$book,$book_id) = (undef,undef,undef,undef);
 	my $review = DB->resultset('Review')->search({ library=>$library->id, library_id_review=>$id })->next;
 	$book_id = $review->book->id if ($review);
 	if ($book_id) {
 		$book = DB->resultset('Book')->find($book_id);
 		$bibinfo = Obalky::BibInfo->new($book);
-		$permalink = Obalky::Tools->fix_permalink('a');
 		$this->{ean} = $book->ean13 if $book->ean13;
 		$this->{nbn}  = $book->nbn if $book->nbn;
 		$this->{oclc} = $book->oclc if $book->oclc;
@@ -160,7 +152,7 @@ sub del_review : Local {
 		return;
 	}
 
-	return unless($library and $bibinfo and $permalink);
+	return unless($library and $bibinfo);
 
 	my $review_params = {
 		id => $id,
@@ -170,7 +162,7 @@ sub del_review : Local {
 	# zaznam komentare neexistuje, vytvarime
 	$book->del_review($review,$library,$visitor,$review_params);
 
-	$book->enrich($this,$library,$permalink,$bibinfo,$c->request->secure);
+	$book->enrich($this,$library,$bibinfo,$c->request->secure);
 	
 	# vyvolej promazani metadat ze vsech frontend serveru
 	DB->resultset('FeSync')->request_sync_review($book,$c->request->secure);
@@ -183,19 +175,14 @@ sub do_book_request {
 	my($self,$c,$session,$library,$visitor,$this) = @_;
 
 	my $bibinfo = Obalky::BibInfo->new_from_params($this->{bibinfo});
-	my $permalink = Obalky::Tools->fix_permalink($this->{permalink});
 
 	# v dotazu chybi minimalni udaje, ignoruj..
-	#unless($library and $bibinfo and $permalink) {
-		# ale nevypisuj, je toho hodne..
-	#	warn "Chybi minimalni udaje, ignoruju (lib=".($library?$library->code:"").",permalink=".($permalink||'').",bibinfo=".($bibinfo||'').")...\n";
-	#}
-	return unless($library and $bibinfo and $permalink);
+	return unless($library and $bibinfo);
 	
 	# normalizace identifikatoru casti
 	$bibinfo = DB->resultset('Book')->normalize_bibinfo($bibinfo) if ($bibinfo->{part_no} or $bibinfo->{part_name});
 	
-    my($book,$record) = DB->resultset('Marc')->get_book_record( $library, $permalink, $bibinfo );
+    my $book = DB->resultset('Book')->find_by_bibinfo($bibinfo);
     
 	# pokud se zaznam nenasel, a neni vytvoren novy (napr. v pripade dotazu na periodikum, nebo vicesvazkovou monografii)
 	# vratime souborny zaznam - jeho part_most_recent
@@ -221,7 +208,7 @@ sub do_book_request {
 		return (undef, $dummy);
 	}
 
-	$book->enrich($this,$library,$permalink,$bibinfo,$c->request->secure,$c->req->params);
+	$book->enrich($this,$library,$bibinfo,$c->request->secure,$c->req->params);
 	
 	# pokud skutecna cast monografie, nebo periodika neexistuje,
 	# potrebujeme tento zaznam zmenit na dummy = identifikatory casti nahradit za ty, ktere byly v pozadavku
@@ -232,14 +219,6 @@ sub do_book_request {
 		$this->{part_volume} = $bibinfo->{part_volume} if ($bibinfo->{part_volume});
 		$this->{flag_bare_record} = 1;
 	}
-
-	# zapis do DB #lastrequests [ visitor_id, session?, $book->id, $record->id ]
-	#if($tip) { nelogujeme, pretikaji disky
-	#	DB->resultset('Lastrequests')->create({ 
-	#		library => $library->id, book => $book->id, 
-	#		visitor => $visitor->id, marc => $record ? $record->id : undef, 
-	#		session_info => $session});
-	#}
 
 	# jen docasne - zkratime debug vypisy..
 	# delete $this->{bibinfo} if($this); 
@@ -535,6 +514,7 @@ sub _do_import {
 	my $user = $c->user->login;
 
 	# z parametru zkonstruuj identifikator knizky (TODO jen BibInfo->fields?)
+	warn Dumper($c->req->params) if($ENV{DEBUG});
 	my $bibinfo_params = {};
 	$bibinfo_params->{$_} = decode_utf8($c->req->param($_))
 		foreach(Obalky::BibInfo->param_keys);
@@ -548,7 +528,7 @@ sub _do_import {
 	if ($part_type eq "serial" or $part_type eq "mono") {
 		
 		# chybi povinny parametr
-		unless ($c->req->param("part_no") or $c->req->param("part_name") or ($c->req->param("part_year") and $c->req->param("part_volume"))) {
+		unless ($c->req->param("part_no") or $c->req->param("part_name") or ($c->req->param("part_year") or $c->req->param("part_volume"))) {
 			$c->response->content_type("text/plain");
 			$c->response->body("Missing params part_year, or part_volume, part_no, or part_name.");
 			return;
@@ -562,10 +542,11 @@ sub _do_import {
 		$book_aggr = undef if ($book_aggr and $book_aggr->get_column('id_parent')); # souborny zaznam nesmi byt cast mono./cislo per.
 		if ($book_aggr) {
 			# book zaznam existuje, aktualizovat
+			warn 'BIBINFO_AGGR - EXISTUJE ... '.$book_aggr->id if($ENV{DEBUG});
 			$book_aggr->update($hash);
 		} else {
 			# book zaznam neexistuje, vytvorit
-			warn Dumper($hash);
+			warn 'BIBINFO_AGGR - VYTVARIM' if($ENV{DEBUG});
 			$book_aggr = DB->resultset('Book')->create($hash);
 		}
 		
@@ -648,13 +629,11 @@ sub _do_import {
 			system("pdftk $dir/toc_page_* cat output $dir/toc.pdf");
 		} else {
 		   	$self->_do_log("toc.pdf: merging with gm convert");
-			system("$CONVERT_BIN -density 150 $dir/toc_page_* -resize '50%' ".
-					"-compress jpeg $dir/toc.pdf");
+			#system("$CONVERT_BIN -density 150 $dir/toc_page_* -resize '50%' ".
+			#		"-compress jpeg $dir/toc.pdf");
+			system("$CONVERT_BIN -density 72 $dir/toc_page_* -compress jpeg $dir/toc.pdf");
 		}
 	} else {
-#	   	$self->_do_log("executing gm convert 150dpi/50% toc_big.pdf toc.pdf");
-#		system("$CONVERT_BIN -density 150 $dir/toc_big.pdf -resize '50%' ".
-#				"-compress jpeg $dir/toc.pdf") if(-s "$dir/toc_big.pdf");
 	   	$self->_do_log("toc.pdf: using original PDF");
 		system("cp $dir/toc_big.pdf $dir/toc.pdf");
 	}
@@ -697,6 +676,7 @@ sub _do_import {
 
 	# TODO: dat ocr do fronty? nebo tim bin/toc*.pl "daemonem" ?
 	my $ocrFlag = $c->req->param('ocr');
+	$ocrFlag = 0 unless(defined $ocrFlag);
     $self->_do_log("ocrFlag $ocrFlag");
 	if((not $ocrFlag or (($ocrFlag ne 'no') and 
 			($ocrFlag ne 'false') and ($ocrFlag ne '0')))) {
@@ -711,13 +691,36 @@ sub _do_import {
 			}
 		}
 	}
+	
+	# main AUTHOR cover
+	my $authId;
+	$authId = $c->req->param("auth_id");
+	if ($authId) {
+		$self->_do_log("uploading auth");
+		for(my $page=1;;$page++) {
+	        last unless($c->req->param("auth_$page"));
+	        $self->_do_log("uploading auth $page");
+			$self->_upload_file($c,"auth_$page",sprintf("$dir/auth_%02d",$page));
+		}
+	    $self->_do_log("auth upload done");
+	    
+	    my $auth = DB->resultset('Auth')->find($authId);
+	    
+	    if(-s "$dir/auth_01" and $auth) {
+			my $authMedia = Obalky::Media->new_from_info({
+								cover_url => "$product_url/auth_01", 
+								cover_tmpfile => "$dir/auth_01"
+							});
+			$auth->add_cover($authMedia);
+		}
+		$self->_do_log("auth import done ".$auth->id);
+	}
 
     $self->_do_log("import done");
 
 	# vrat nejake OK nebo tak neco
 	$c->response->content_type("text/plain");
-	$c->response->body("OK");
-#	die Dumper($dir,$bibinfo,$info,$media,"$eshop",$product_url);
+	$c->response->body('OK');
 }
  
 # jen pomocna funkce pro ulozeni uploadovaneho souboru do FS
@@ -744,6 +747,33 @@ sub _upload_file {
     return $pathname ? $size : $content;
 }
 
+# vola frontend pro nacteni nastaveni citaci (pri startu instance FE serveru)
+sub get_settings_citace : Local {
+	my($self,$c) = @_;
+	my $fe = DB->resultset('FeList')->search({ ip_addr=>$c->request->address });
+	#return unless($fe->count || $c->request->address eq '127.0.0.1');
+	my @settings;
+	my $resSettings = DB->resultset('LibrarySettingsCitace')->search(undef,{
+		join => 'library',
+		'+select' => 'library.code',
+		'+as' => 'sigla'});
+	foreach ($resSettings->all) {
+		push @settings, ($_->type eq 'marcxml' ?
+						{
+							'sigla'=>$_->get_column('sigla'), 'type'=>$_->type, 'url'=>$_->url
+						}		
+						:
+						{
+							'sigla'=>$_->get_column('sigla'), 'type'=>$_->type, 'url'=>$_->url,
+							'port'=>$_->z_port, 'database'=>$_->z_database, 'encoding'=>$_->z_encoding,
+							'name'=>$_->z_name, 'password'=>$_->z_password, 'index_sysno'=>$_->z_index_sysno
+						}
+		);
+	}
+	$c->response->content_type("text/plain");
+	$c->response->body( to_json({ 'count'=>$resSettings->count, 'settings'=>\@settings }) );
+}
+
 # vola frontend pro nacteni vsech prav (pri startu instance FE serveru)
 sub get_perms : Local {
 	my($self,$c) = @_;
@@ -759,6 +789,39 @@ sub get_perms : Local {
 	}
 	$c->response->content_type("text/plain");
 	$c->response->body( to_json({ 'count'=>$resPerms->count, 'perms'=>\@perms }) );
+}
+
+sub auth : Local {
+	my($self,$c) = @_;
+	my $auth = eval { from_json($c->req->param("auth")) };
+	$auth = [$auth] if(ref $auth eq 'HASH');
+	$auth = [] unless $auth; 
+	
+	my($library,$session,$visitor) = Obalky->visit($c);
+	
+	my @auth;
+	foreach my $this (ref $auth eq 'ARRAY' ? @$auth : []) {
+		my($authid,$full) = $self->do_auth_request($c,$session,$library,$visitor,$this);
+		push @auth, $full if(defined $full);
+	}
+	
+	$c->response->content_type("text/javascript;charset=UTF-8");
+	$c->response->body("obalky.callback(".to_json(\@auth).");\n");
+}
+
+sub do_auth_request {
+	my($self,$c,$session,$library,$visitor,$this) = @_;
+	
+	my $authinfo = Obalky::AuthInfo->new_from_params($this->{authinfo});
+	
+	return unless($library and $authinfo);
+	
+    my($auth) = DB->resultset('Auth')->get_auth_record( $authinfo );
+    return unless ($auth);
+	
+	$auth->enrich($this,$authinfo,$c->request->secure,$c->req->params);
+	
+	return ($auth->{auth_id},$this);
 }
 
 1;

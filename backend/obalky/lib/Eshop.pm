@@ -54,6 +54,7 @@ use Eshop::GoogleBooks;
 use Eshop::LibraryThing;
 use Eshop::Static;
 use Eshop::Upload;
+use Eshop::NKP_OAI;
 
 sub name { shift->{name} };
 

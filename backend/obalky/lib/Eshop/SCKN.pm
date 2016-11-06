@@ -16,10 +16,11 @@ sub baseURL { 'http://sckn.cz/ceskeknihy/html/stazeni_novinek.php?'.
 sub crawl {
 	my($self,$storable,$from,$to) = @_;	
 
-	my $id = $storable->{last_id} || 1;
-	$id = 1;
-	for(;@list<5;$id++) {
-		#sleep(1);
+	my $id = $storable->{last_id} || 4;
+	#$id = 80371; # debug (toto je posledne ID k 29.12.2015)
+	for(;@list<100;$id++) { # projistotu max 100x denne
+		# pokud ale promenna $have_data_row = undef tj. CSV neobsahuje datovy radek, pouze hlavicku, nebude se pokracovat do stovky opakovani
+		sleep(1);
 
 		my $listurl = 'http://www.sckn.cz/ceskeknihy/html/'.
 			'csv_txt_export_hledani.php?dotaz='.$id.
@@ -32,12 +33,12 @@ sub crawl {
 
 		$csv->column_names(@$colref);
 
-		my $media_info;
+		my ($media_info,$have_data_row) = (undef,undef);
 		while(my $row = $csv->getline_hr(*CSV)) {
 			my $isbn = $row->{'ISBN 1'};
 			my $ean = Obalky::BibInfo->isbn_to_ean13($isbn);  
 			warn "No ISBN (id $id)\n" unless($isbn);	
-			next unless($isbn);	
+			next unless($isbn);
 			$isbn =~ s/\-//g;
 			my $bibinfo = Obalky::BibInfo->new_from_params({ isbn => $isbn });
 			next unless($bibinfo);
@@ -70,9 +71,11 @@ sub crawl {
 			my $media = Obalky::Media->new_from_info($media_info);
 			push @list, [ $bibinfo, $media, $product_url ];
 			print "$id $isbn: ".(-s $cover_file)." ".$row->{'ISBN souboru'}."\n";
+			$have_data_row = 1;
 		}
 		$csv->eof or $csv->error_diag();
    		close(CSV);
+   		last unless ($have_data_row);
 	}
 	$storable->{last_id} = $id;
 	return @list;

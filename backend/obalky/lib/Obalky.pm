@@ -8,6 +8,7 @@ use Catalyst::Runtime '5.70';
 use Carp;
 
 use Obalky::BibInfo;
+use Obalky::AuthInfo;
 use Obalky::Tools;
 use DateTime;
 use utf8;
