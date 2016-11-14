@@ -219,6 +219,61 @@ sub login : Local {
 	$c->stash->{'return'} = $return;
 }
 
+sub settings_push : Local {
+	my($self,$c) = @_;
+    my $signed = $c->user ? 1 : 0;
+    unless ($signed) {
+    	#uzivatelsky ucet jen pro prihlasene uzivatele
+    	$c->res->redirect("index");
+    	return;
+    }
+    unless ($c->user->get('flag_library_admin')) {
+    	#presmeruj na uzivatelsky ucet ne-spravce knihovny
+		$c->res->redirect("/account_user");
+		return;
+	}
+    
+    my $username = $c->user->get_column('login');
+    if ($username eq $Obalky::ADMIN_EMAIL && !$c->req->param('i')) {
+    	#spravce ma k dispozici spravu vsech knihoven
+    	$c->res->redirect("admin_library");
+    	return;
+    }
+    
+    my $library_admin = $c->user->get_column('flag_library_admin');
+    
+    my $id = $c->user->get_column('library');
+    $id = $c->req->param('i') if ($username eq $Obalky::ADMIN_EMAIL);
+    my $library = $signed ? DB->resultset('Library')->find($id) : 0;
+    
+    if ($library) {
+    	# Pridej nastaveni
+	    if($c->req->param('new')) {
+			eval { my $res = DB->resultset('LibrarySettingsPush')->add_settings($c->req->params, $library) };
+			$c->stash->{error} = $@ if($@);
+		}
+		# Edituj nastaveni
+	    if($c->req->param('e')) {
+			eval { my $res = DB->resultset('LibrarySettingsPush')->edit_settings($c->req->param('e'), $c->req->params, $library) };
+			$c->stash->{error} = $@ if($@);
+		}
+    	# Odstran nastaveni
+	    if($c->req->param('d')) {
+			eval { my $res = DB->resultset('LibrarySettingsPush')->remove_settings($c->req->param('d'), $library) };
+			$c->stash->{error} = $@ if($@);
+		} 
+		# Vypis nastaveni
+    	$c->stash->{settings} = DB->resultset('LibrarySettingsPush')->find({ library=>$id });
+    }
+    
+    $c->stash->{admin_page} = 'account';
+    $c->stash->{signed} = $signed;
+	$c->stash->{library} = $library;
+	$c->stash->{is_admin} = $c->req->param('i') ? 1 : 0;
+	$c->stash->{library_admin} = $library_admin;
+	$c->stash->{params} = $c->req->params;
+}
+
 sub settings_citace : Local {
     my($self,$c) = @_;
     my $signed = $c->user ? 1 : 0;
@@ -249,17 +304,17 @@ sub settings_citace : Local {
     if ($library) {
     	# Pridej nastaveni
 	    if($c->req->param('new')) {
-			eval { my $res = DB->resultset('LibrarySettingsCitace')->add_permission($c->req->params, $library) };
+			eval { my $res = DB->resultset('LibrarySettingsCitace')->add_settings($c->req->params, $library) };
 			$c->stash->{error} = $@ if($@);
 		}
 		# Edituj nastaveni
 	    if($c->req->param('e')) {
-			eval { my $res = DB->resultset('LibrarySettingsCitace')->edit_permission($c->req->param('e'), $c->req->params, $library) };
+			eval { my $res = DB->resultset('LibrarySettingsCitace')->edit_settings($c->req->param('e'), $c->req->params, $library) };
 			$c->stash->{error} = $@ if($@);
 		}
     	# Odstran nastaveni
 	    if($c->req->param('d')) {
-			eval { my $res = DB->resultset('LibrarySettingsCitace')->remove_permission($c->req->param('d'), $library) };
+			eval { my $res = DB->resultset('LibrarySettingsCitace')->remove_settings($c->req->param('d'), $library) };
 			$c->stash->{error} = $@ if($@);
 		}
 		# Vypis nastaveni

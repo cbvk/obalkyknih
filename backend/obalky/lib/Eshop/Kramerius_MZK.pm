@@ -258,15 +258,15 @@ sub downloadtoc{
 	my $PIDreq = HTTP::Request->new(GET => $PIDjsonurl);
 	$PIDreq->header('content-type' => 'application/json');
     my $PIDresp = $PIDua->request($PIDreq);
-    my $jsondata= decode_json($PIDresp->content); 
+    my $jsondata= decode_json($PIDresp->content);
     return if (!$jsondata);
     my $index = 0;
-    my $toc_page;	
+    my $toc_page;
     my $toc_file;
-	foreach my $pagemodel (@{$jsondata}){	
+	foreach my $pagemodel (@{$jsondata}){
 		if (($pagemodel->{'details'}->{'type'} eq 'TableOfContents')){
 			if ($index == 0){
-				system("rm -rf $toc_dir"); 
+				system("rm -rf $toc_dir");
 				mkdir ($toc_dir	);
 			}
 			$index++;
@@ -277,14 +277,14 @@ sub downloadtoc{
 				return ($jsondata, undef);
 			}
 		}
-	}		
+	}
 	if ($index != 0){
 		$toc_file = "$tmp_dir/$ean.pdf";
 		system("convert $toc_dir/* $toc_file");
 		system("rm -rf $toc_dir");
 	}
 	return ($jsondata, $toc_file);
-				
+	
 }
 
 sub downloadcover{

@@ -747,11 +747,30 @@ sub _upload_file {
     return $pathname ? $size : $content;
 }
 
+# vola frontend pro nacteni nastaveni push api (pri startu instance FE serveru)
+sub get_settings_push : Local {
+	my($self,$c) = @_;
+	my $fe = DB->resultset('FeList')->search({ ip_addr=>$c->request->address });
+	my @settings;
+	my $resSettings = DB->resultset('LibrarySettingsPush')->search(undef,{
+		join => 'library',
+		'+select' => 'library.code',
+		'+as' => 'sigla'});
+	foreach ($resSettings->all) {
+		push @settings, ({
+							'sigla'=>$_->get_column('sigla'), 'url'=>$_->url, 'port'=>$_->port, 
+							'email'=>$_->email, 'full_container'=>$_->full_container, 
+							'frequency'=>$_->frequency, 'item_count'=>$_->item_count
+		});
+	}
+	$c->response->content_type("text/plain");
+	$c->response->body( to_json({ 'count'=>$resSettings->count, 'settings'=>\@settings }) );
+}
+
 # vola frontend pro nacteni nastaveni citaci (pri startu instance FE serveru)
 sub get_settings_citace : Local {
 	my($self,$c) = @_;
 	my $fe = DB->resultset('FeList')->search({ ip_addr=>$c->request->address });
-	#return unless($fe->count || $c->request->address eq '127.0.0.1');
 	my @settings;
 	my $resSettings = DB->resultset('LibrarySettingsCitace')->search(undef,{
 		join => 'library',

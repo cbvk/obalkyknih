@@ -146,9 +146,24 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 library_settings_pushes
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cj6T5M0+xYLVn4Ix8z7K+w
+Type: has_many
+
+Related object: L<DB::Result::LibrarySettingsPush>
+
+=cut
+
+__PACKAGE__->has_many(
+  "library_settings_pushes",
+  "DB::Result::LibrarySettingsPush",
+  { "foreign.fe" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-11-14 14:21:17
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9Wrj/pt/ANkve3eo3lvvKw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -305,20 +305,20 @@ sub request_sync_settings_citace_remove {
 	
 	my $sync_params = 
 	{
-		settings_remove => 'true',
+		settings_citace_remove => 'true',
 		sigla => $library->get_column('code')
 	};
 	
-	DB->resultset('FeSync')->set_sync($sync_params, 'settings_citace_changed', undef, 1);
+	DB->resultset('FeSync')->set_sync($sync_params, 'settings_citace_changed');
 }
 
 sub request_sync_settings_citace_modify {
 	my($pkg, $library, $modifiedParams) = @_;
 	
-	$modifiedParams->{settings_modify} .= 'true';
+	$modifiedParams->{settings_citace_modify} .= 'true';
 	$modifiedParams->{sigla} .= $library->get_column('code');
 	
-	DB->resultset('FeSync')->set_sync($modifiedParams, 'settings_citace_changed', undef, 1);
+	DB->resultset('FeSync')->set_sync($modifiedParams, 'settings_citace_changed');
 }
 
 =head2 request_sync_settings_citace
@@ -338,7 +338,7 @@ sub request_sync_settings_citace_create {
 	}
 	:
 	{
-		settings_create => 'true',
+		settings_citace_create => 'true',
 		sigla => $library->get_column('code'),
 		type => $type,
 		url => $url,
@@ -350,7 +350,50 @@ sub request_sync_settings_citace_create {
 		index_sysno => $index_sysno
 	};
 	
-	DB->resultset('FeSync')->set_sync($sync_params, 'settings_citace_changed', undef, 1);
+	DB->resultset('FeSync')->set_sync($sync_params, 'settings_citace_changed');
+}
+
+sub request_sync_settings_push_remove {
+	my($pkg, $library, $fe) = @_;
+	
+	my $sync_params = 
+	{
+		settings_push_remove => 'true',
+		sigla => $library->get_column('code')
+	};
+	
+	DB->resultset('FeSync')->set_sync($sync_params, 'settings_push_changed', $fe);
+}
+
+sub request_sync_settings_push_modify {
+	my($pkg, $library, $modifiedParams, $fe) = @_;
+	
+	$modifiedParams->{settings_push_modify} .= 'true';
+	$modifiedParams->{sigla} .= $library->get_column('code');
+	
+	DB->resultset('FeSync')->set_sync($modifiedParams, 'settings_push_changed', $fe);
+}
+
+=head2 request_sync_settings_citace
+
+Pridej nove nastaveni Push api na vsechny frontendy
+
+=cut
+sub request_sync_settings_push_create {
+	my($pkg, $library, $url, $port, $email, $fe, $full_container, $frequency, $item_count) = @_;
+	
+	my $sync_params = {
+		settings_push_create => 'true',
+		sigla => $library->get_column('code'),
+		url => $url,
+		port => $port,
+		email => $email,
+		full_container => $full_container,
+		frequency => $frequency,
+		item_count => $item_count
+	};
+	
+	DB->resultset('FeSync')->set_sync($sync_params, 'settings_push_changed', $fe);
 }
 
 =head2 request_sync_perm
