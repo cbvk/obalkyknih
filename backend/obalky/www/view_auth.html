@@ -1,0 +1,111 @@
+﻿[%PROCESS _header %]
+
+[% PROCESS _errors %]
+
+[% USE date %]
+
+<table cellspacing=4>
+
+[% IF books.size == 0 %]
+<div class="messageBox error">
+Tuto knihu, nebo autora ještě nemáme v databázi!
+</div>
+[% END %]
+
+<table class="detail">
+[% FOREACH auth IN auths %]
+<!-- [% auth.id %] / cover [% auth.cover %], detail [% detail %] -->
+
+<tr><td colspan=2>
+	<h1>[% IF auth.auth_name.substr(-1)==',' %][% auth.auth_name.substr(0,-1) %][% ELSE %][% auth.auth_name %][% END %]</h1>
+</td></tr>
+
+
+<tr><td valign="top" width=180>
+
+	[% IF auth.cover %]
+	<img class="nob" src="[% auth.cover.get_cover_url %]">
+		[% IF recent_cover %]
+		<div style="clear: both" /><br/>
+		[% END %]
+	<div style="clear: both" />
+<!--	<form onsubmit="return view_abuse_onsubmit();" method="post">
+		<textarea name=note id=abuse_comment style="display: none"></textarea>
+		<input type=hidden name=cover value="[% book.cover.id %]">
+		<input type=hidden name=book value="[% book.id %]">
+		<input type=hidden name=referer value="[% referer %]">
+
+		<div id="antispam">
+			<label for="spamQuestion">Ochrana proti spamu. 
+									  Kolik je 15 + 8?</label>
+			<input id="spamQuestion" type="text" value="" name="spamQuestion"/>
+			<script type="text/javascript">
+				document.getElementById("spamQuestion").value=
+						(Math.round(23.7544614)-1);
+				document.getElementById("antispam").style.display = "none";
+			</script>
+		</div>
+
+		<input name=report class="button" type="submit" 
+			value=" Ohlásit chybnou obálku ">
+	</form>
+-->
+	[% END %]
+  </td>
+
+
+  <td class="nob">
+	<p>
+		[% IF auth.auth_name %]
+		<b>Autor: </b>[% IF auth.auth_name.substr(-1)==',' %][% auth.auth_name.substr(0,-1) %][% ELSE %][% auth.auth_name %][% END %]</br>
+		[% END %]
+
+		[% IF auth.auth_date %]
+		<b>Rok: </b>[% auth.auth_date %]<br>
+		[% END %]
+		
+		[% IF auth.auth_accopation %]
+		<b>Povolání: </b>[% auth.auth_occupation %]<br>
+		[% END %]
+		
+		[% IF auth.auth_activity %]
+		<b>Oblast působnosti: </b>[% auth.auth_occupation %]<br>
+		[% END %]
+		
+		[% IF auth.auth_biography %]
+		<br/><b>Biogr./Hist. údaje: </b>[% auth.auth_biography %]<br>
+		<b>Zdroj: </b><a href="[% auth.nkp_aut_url %]" target="_blank">Autoritní databáze Národní knihovny ČR</a><br/>
+		[% END %]
+	</p>
+	
+	[% FOREACH link IN auth.get_links %]
+		<a href="[% link.val %]" target="_blank">[% link.name %]</a><br>
+	[% END %]
+
+	<p>
+		[% auth.get_annotation %]</br>
+	</p>
+	
+	[% IF user %]
+	<form method="POST" enctype="multipart/form-data" style="margin:20px 0; padding: 10px 5px; border-top:#ddd solid 2px; border-bottom:#ddd solid 2px; background-color:#eee;">
+		<div style="float:left; padding-top:2px;">
+			<label for="file">Nová obálka autority: &nbsp;</label>
+			<input type="file" name="file" size="40" id="file">
+		</div>
+		<div style="float:right; margin-right:20px;">
+			<input type="submit" style="text-transform:uppercase;" class="button" value=" Poslat " name="auth_upload" id="auth_search">
+		</div>
+		<div style="clear:both"></div>
+	</form>
+	[% END %]
+
+  </td></tr>
+
+<!-- TODO: pokud je jeste dalsi book za nama, udelej <HR> -->
+
+[% END %] <!-- FOREACH books -->
+</table>
+
+</div> <!-- id="main" -->
+
+[%PROCESS _footer %]

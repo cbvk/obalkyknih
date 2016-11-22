@@ -4,12 +4,22 @@
 [% PROCESS _header_main %]
 
 <div>
-<font color="red" size="+1" style="bold">
-	<strong>NOVINKA:</strong> &nbsp; &nbsp; &nbsp; Vydána nová verze skenovacího klienta</strong> podporující skenování <u>vícesvazkových monografií a periodik</u>.
-	<br/><br/>
-	<strong><center>!!! Knihovny zapojte se do skenování obsahů a obálek !!! : <a href="/obalkyknih-scanner/" alt="skenovací klient"> informace a stažení skenovacího klienta</a></center></strong>
-</font>
+<center>
+	<br/>
+	<strong>Knihovny zapojte se do skenování obsahů a obálek : <a href="/obalkyknih-scanner/" alt="skenovací klient"> informace a stažení skenovacího klienta</a></center></strong>
+  <br>
 </div>
+
+<div style="background-color:#819FF7; margin: 20px 20px 20px 20px; border-style: solid; border-width: 6px; border-color: #FE2E2E;">
+<center>
+ <strong>UPOZORNĚNÍ</strong> pro uživatele projektu obálkyknih.cz. <strong>1. ledna 2017</strong> dojde k vypnutí starých způsobu využití služeb projektu obálkyknih.cz (API 1 a API 2).
+   Aktuální API 3, dostupné již od roku 2013, umožňuje rozšířit knihovní systémy o další prvky (obsahy,anotace, hodnocení, komentáře, texty obsahů k indexaci, ...), 
+   dotazování pomocí více identifikátorů, rychlejší načítání obálek, odolnost proti výpadkům, ...  .
+   <br>
+</div>
+
+   
+   
 
 <hr class="cl" />
 
@@ -39,6 +49,8 @@
 
 <hr class="cl" />
 
+<p>Zdrojem pro ObalkyKnih.cz jsou spolupracující nakladatelé a knihkupci, kteří pro knihovny patřící do sdružení <a href="http://www.skipcr.cz">SKIP</a> souhlasí se zobrazováním obálek jejich knih v knihovních katalozích. V současnosti hlavním zdrojem obálek jsou knihovny, které aktivně skenují obálky knih a daších dokumentů z jejich knihovních fondů a tyto vkládájí na obálkový server.</p>
+
 <p class="loga fr nob">
 [% FOREACH eshop IN eshops %]
 	[% IF eshop.logo_url %] <!-- logo by (nove) melo mit na vysku 40 bodu -->
@@ -46,7 +58,6 @@
 	[% END %]
 [% END %]
 </p>
-<p>Zdrojem pro ObalkyKnih.cz jsou spolupracující nakladatelé a knihkupci, kteří pro knihovny patřící do sdružení <a href="http://skip.nkp.cz">SKIP</a> souhlasí se zobrazováním obálek jejich knih v knihovních katalozích. V současnosti hlavním zdrojem obálek jsou knihovny, které aktivně skenují obálky knih a daších dokumentů z jejich knihovních fondů a tyto vkládájí na obálkový server.</p>
 
 	</div>
 	

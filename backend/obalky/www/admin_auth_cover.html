@@ -1,0 +1,79 @@
+﻿[%PROCESS _header %]
+
+[% PROCESS _errors %]
+
+[% USE date %]
+
+<table cellspacing=4>
+
+<h1>Administrace foto autorů</h1>
+
+<div>
+	<label>Zůstává ke kontrolě:</label> <strong>[% auths_count %]</strong> / Na této stránce: <strong>[% auths_showing %]</strong>
+</div>
+
+ <p></p>
+<form method="post" action="/admin_auth_cover">
+<table class="detail" style="width:100%">
+[% FOREACH auth IN auths.all %]
+<!-- [% auth.id %] / cover [% auth.cover %], detail [% detail %] -->
+
+<tr>
+	<td style="padding: 10px 0; border-top: #ddd solid 1px; width:220px;">
+		[% IF auth.cover %]
+			<a href="/admin_auth_cover/#" class="auth-cover-del" data-id="[% auth.id %]" title="Smazat"><img src="/img/close.png" style="border:#999 solid 1px; border-radius:6px; float:left;" /></a>
+			<img class="nob" src="[% auth.cover.get_cover_url %]" style="float:left; margin-left:10px; width:50%;" /> &nbsp;
+		[% ELSE %]
+			&nbsp;
+		[% END %]
+	</td>
+	<td style="width: 50px; padding: 10px 15px; border-top: #ddd solid 1px;"> 
+		<a href="http://www.obalkyknih.cz/view_auth?auth_id=[% auth.id %]">detail</a> 
+	</td>
+	<td style="padding: 10px; border-top: #ddd solid 1px;">
+		<h2 style="position:relative; top:-5px;">
+			<a href="http://www.obalkyknih.cz/view_auth?auth_id=[% auth.id %]" style="text-decoration: none;">[% auth.auth_name %]</a>
+			&nbsp; <span style="font-size:0.7em;">[% auth.auth_date %]</span>
+		</h2>
+		[% IF auth.auth_activity or auth.auth_occupation %]<span style="position: relative; top:-6px; padding-right: 20px;">[% END %]
+		[% IF auth.auth_occupation %][% auth.auth_occupation %][% END %]
+		[% IF auth.auth_activity and auth.auth_occupation %] &nbsp; / &nbsp; [% END %]
+		[% IF auth.auth_activity %][% auth.auth_activity %][% END %]
+		[% IF auth.auth_activity or auth.auth_occupation %]</span>[% END %]		
+	</td>
+	<td style="padding: 10px; border-top: #ddd solid 1px; text-align:right;">
+		[% IF auth.auth_biography %]<img src="/img/comment.gif" title="[% auth.auth_biography %]" />[% END %]
+		&nbsp;
+		<a href="[% auth.nkp_aut_url %]" target="_blank"><img src="/img/link.png" /></a>
+	</td>
+</tr>
+
+[% last_cover_id = auth.cover.id %]
+[% END %] <!-- FOREACH auths -->
+</table>
+
+<br/>
+<div style="text-align:right;">
+<input type="hidden" name="startat" value="[% last_cover_id %]" />
+
+<a href="?stepback=1">Předchozí strana</a>
+
+[% IF auths_estimate-auths_showing > 0 %]
+&nbsp; &nbsp; &nbsp;
+<input type="submit" class="button big" name="admin_auth_cover" value="Na další stranu" />
+[% END %]
+
+</div>
+
+</form>
+
+[% IF auths.count == 0 %]
+<div class="messageBox error">
+Žádný výsledek.
+</div>
+[% END %]
+
+
+</div> <!-- id="main" -->
+
+[%PROCESS _footer %]

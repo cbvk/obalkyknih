@@ -7,8 +7,13 @@
 					<h3>Nejnovější obálky</h3>
 					<div class="slidesWrap">
 						<ul class="slides">
-[% FOREACH book IN recent %]
-		<li><a href="/view?[%book.bibinfo.to_some_param%]"><img src="/api/cover?[%book.bibinfo.to_some_param%]" width="120" height="170" alt="" /><span class="icon"></span></a></li>
+[% FOREACH cover IN recent %]
+[% IF cover.book %]
+		<li><a href="/view?book_id=[%cover.book.id%]"><img src="/file/cover/[%cover.id%]/medium" width="120" height="170" alt="" /><span class="icon"></span></a></li>
+[% END %]
+[% IF cover.auth %]
+		<li><a href="/view_auth?auth_id=[%cover.auth.id%]"><img src="/file/cover/[%cover.id%]/medium" width="120" height="170" alt="" /><span class="icon"></span></a></li>
+[% END %]
 [% END %]
 						</ul>
 					</div>

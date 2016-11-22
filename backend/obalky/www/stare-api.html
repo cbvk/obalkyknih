@@ -1,0 +1,174 @@
+[% PROCESS _header_tovarna %]
+
+[% PROCESS _header_blue %]
+
+       <div id="text"><div class="in">
+
+<div id="main">
+
+
+<h1>Vypnutí podpory starých verzí API projektu obálkyknih.cz</h1>
+
+
+API 1 
+API 2 
+API 3
+
+Nevýhody 
+
+Výhody: zabráněním výpadkům služby možností
+        získání dalších informací k titulu - obsah, anotace 
+        zrychlení služby 
+   
+
+   1. ledna 2017 dojde k vypnutí starých způsobu využití služeb projektu obálkyknih.cz.
+   Nové API vezre 3 je dostupné již od roku 2013. 
+    
+
+ 
+<p>
+Kterákoli zúčastněná knihovna může aktivně přispívat naskenováním obsahů a obálek s využitím skenovacího programu. 
+Jedinou podmínkou je počítač s operačním systémem Windows ve verzi XP SP3 nebo novějším a deskový skener. 
+</p>
+INFO: <a
+href="https://docs.google.com/spreadsheets/d/1BtYN2a7oNRaiW42FWBDTkO_x2BFdztVZHZQdsTRBA2M/edit?usp=sharing"
+target="_blank">seznam skenovaných periodik dle provádějící knihovny</a> 
+<br><br>
+<br>
+<br>
+
+
+<h2>Typy instalátorů</h2>
+<p>
+Program vyžaduje prostředí .NET 4.0 a v případě Windows XP i speciální knihovnu WIA. Instalátory jsou vydávány ve 2 verzích, administrátorské a uživatelské. 
+Program při každém spuštění kontroluje zda není dostupná aktualizace. Je-li dostupná nová verze, upozorní uživatele a nabídne možnost stažení a instalace.
+</p>
+<p>
+Administrátorský instalátor vyžaduje administrátorské oprávnění na daném PC při první instalaci a každé následné aktualizaci. Umožňuje instalaci pro všechny uživatele na daném PC 
+a zároveň je jeho součástí instalátor .NET 4.0 a WIA pro Windows XP. 
+</p>
+<p>
+Uživatelský instalátor sám nevyžaduje administrátorské oprávnění na daném PC při první instalaci ani při aktualizacích. Před první instalací je ale nutné stáhnout a spustit wia_and_.NET_Installer.exe, který zkontroluje
+jejich přítomnost a případně je nainstaluje. (Vyžaduje administrátorské oprávnění). Každý uživatel na daném počítači si však musí program instalovat zvlášť. Instalátor neobsahuje .NET 4.0 a WIA knihovnu.
+</p>
+
+<h2>Odkazy na instalátory</h2>
+<p>
+Instalátor administrátorské verze: <a href="http://www.obalkyknih.cz/obalkyknih-scanner/obalkyknih-scanner_setup.exe">obalkyknih-scanner_setup.exe</a> <br/>
+Instalátor uživatelské verze: <a href="http://www.obalkyknih.cz/obalkyknih-scanner/obalkyknih-scanner_setupNoAdmin.exe">obalkyknih-scanner_setupNoAdmin.exe</a> <br/>
+Instalátor .NET 4.0 a WIA: <a href="http://www.obalkyknih.cz/obalkyknih-scanner/wia_and_.NET_Installer.exe">wia_and_.NET_Installer.exe</a>
+</p>
+<h2>Základní nastavení</h2>
+<p>
+Po prvním spuštení programu je nutné nastavit siglu knihovny a připojení pro sběr metadatat - Z39.50 nebo X-Server(pro systém Aleph). 
+Další informace k nastavení jsou uvedeny přímo v programu v Menu -> Pomoc -> Návod. Vzorové nastavení pro MZK je uvedené na obrázku níže.
+Dále je nutné nastavit přihlašovací údaje do systému obalkyknih.cz. Zadávají se v okně Přihlašovací údaje (Menu -> Nastavení -> Přihlašovací údaje).
+Registrace do systému je možná na adrese <a href="http://www.obalkyknih.cz/signup">http://www.obalkyknih.cz/signup</a>.<br/>
+<span style="color:red">!!! Vzorové nastavení je platné jen pro MZK. Musíte nastavit hodnoty VAŠEHO Z39.50 serveru, nebo VAŠEHO XServeru a taky VAŠI Databázu!!!</span>
+<br/>
+<img src=/obalkyknih-scanner/scanner-nastaveni.png />
+</p>
+<!--
+<h2>Informační video</h2>
+<p>
+<iframe width="880" height="660" src="//www.youtube.com/embed/IntD1BWwytw?rel=0" frameborder="0" allowfullscreen></iframe>
+</p>-->
+<p>
+Dokumentace k programu je dostupná na adrese <a href="https://docs.google.com/document/d/1hTGa7gy0bOJqznFec-6u8Esr4rIso0pHER-x3X0bCco">https://docs.google.com/document/d/1hTGa7gy0bOJqznFec-6u8Esr4rIso0pHER-x3X0bCco</a>
+</p>
+
+<p>
+<h2>Nejčastější dotazy FAQ</h2>
+<h4>Jak funguje skenovací klient?</h4>
+Pomocí protokolu Z39.50 či X-serveru zjistíme načtením čárového kódu dokumentu z katalogu své knihovny identifikátory titulu - ISBN, ISSN, EAN, č. ČNB, OCLC. 
+Zároveň je nutné zkontrolovat, zda se jedná o stejný titul, např. podle názvu,autora, roku vydání, .... Následně se dle zjištěných identifikátorů vyhledá na serveru obalkyknih.cz, 
+zda existuje obálka a obsah k příslušnému titulu. Nalezne-li, zobrazí obálku a obsah v klientu. Skenujeme co chybí - obálka či obsah, případně obojí.
+Přeskenováním se aktuální obálka i obsah přepíše (například u špatné obálky).
+<br>
+Návody s popisem naleznete zde: <a href="https://github.com/cbvk/obalkyknih/wiki/Online-napoveda-skenovaci-klient" target="_blank">https://github.com/cbvk/obalkyknih/wiki/Online-napoveda-skenovaci-klient</a>. 
+</p>
+
+<p>
+<h4>Pokud  u titulu skenuji jen obsah, co se stane s existující obálkou?</h4>  
+Obálka zůstane stejná. K titulu se přidá jen nově naskenovaný obsah.
+</p>
+
+<p>
+<h4>Jak nastavím kvalitu skenování - rozlišení, počet barev, ...?</h4>   
+Skenovací klient si vše nastaví sám. Proces skenování probíhá automaticky.
+</p>
+
+<p>
+<h4>Jaké identifikátory skenovací klient používá?</h4>
+ISBN (knihy), ISSN (periodika), EAN (CD, DVD disky), č. ČNB, OCLC, vlastní identifikátor.
+</p>
+
+<p>
+<h4>Co je to vlastní identifikátor?</h4>
+Jedná se řetězec složený ze sigly příslušné knihovny a ID zaznamu (pole 001 v MARC 21) oddělené pomlčkou. Skenovací
+klient doplňuje vlastní identifikátor automaticky, v případě, že nejsou dostupné žádné další identifikátory (ISBN,
+ISSN, EAN, č. ČNB, OCLC). 
+</p>
+
+<p>
+<h4>Kdy použít vlastní identifikátor?</h4>
+<font color="red">!!! POUZE !!!</font> v případě, že titul nemá platný identifikátor - ISBN, ISSN, EAN, č. ČNB nebo OCLC.
+Uložením titulu pod vlastním identifikátorem se obálky a obsah zpřístupní pouze pro konkrétní knihovnu, která titul uložila. Všem ostatním knihovnám bude nedostupné. Ukládání pod vlastním identifikátorem 
+je proto nutné se vyhnout, pokud existuje jiná možnost.
+<br>
+Postup:
+<br>
+Nejprve je nutné ověřit v <a href="http://www.caslin.cz" name="Caslin" target="_blank">Souborném katalogu ČR</a>, zda titul nemá přiřazeno číslo ISBN/ISSN.
+<br>
+Pak je nutné hledat tamtéž, zda titul nemá přiřazeno číslo ČNB. Pokud toto číslo záznam neobsahuje, ale jedná se o titul z české produkce, který by ho mít měl, požádáme Souborný katalog ČR o jeho přiřazení (vyplněním formuláře přímo u konkrétního záznamu v SK ČR - je nutné mít přístupové heslo do SK ČR).
+<br>
+Pokud se jedná o zahraniční titul, kontrolujeme např. <a href="http://www.ubka.uni-karlsruhe.de/kvk_en.html" target="_blank">zde</a>, zda titul nemá již přiřazeno číslo OCLC.
+</p>
+
+<p>
+<h4>Jak poznám, že se obálka a obsah správně naskenovaly a uložily na server?</h4>
+Ve skenovacím klientu se po odeslání obálky a obsahu na server zobrazí informační okno "Odeslání úspšné" a náhled obálky a obsahu.  
+
+</p>
+
+<p>
+<h4>Kniha nemá původní obálku, nebo byla převázána.</h4>  
+Skenuji titulni list, pokud je graficky zajimavý. Jinak obálku neskenuji. Obsah ano.
+</p>
+
+<p>
+<h4>Obálka na obálkyknih.cz je nekvalitní.</h4>
+Pokud na serveru máme nekvalitní obálku - nízké rozlišení, znehodnocení razítkem či nálepkou - obálku přeskenujeme.
+Stejně tak postupujeme u obsahu.
+</p>
+
+<p>
+<h4>Mám skenovat ke každé knize i obsah?</h4>
+Ano. Obsahy jsou pro čtenáře důležité. Zvláště u knihoven bez volného výběru a pro čtenáře objednávajících přes webový
+katalog. Zároveň se připravuje poskytování fulltextového vyhledávání obsahů pro knihovní systémy.   
+</p>
+
+<p>
+<h4>Při skenování stránek skenovací klient zkolabuje ... "spadne".</h4>
+Program vypíše chybu a ukončí se. Problém je většinou v poškozeném ovladači skeneru (driveru) v počítači. Oprava spočívá v reinstalaci ovladačů skeneru.   
+</p>
+
+<p>
+<h4>Zjistím někde, kolik obálek/obsahů jsem na server již nahrál?</h4>
+Na adrese <a href="http://servis.obalkyknih.cz/stat/" target="_blank">http://servis.obalkyknih.cz/stat/</a> naleznete statistiky skenování všech knihoven. 
+Přihlašovací údaje jsou stejné jako registrační jméno a heslo pro server obalkyknih.cz. Pokud skenuje v jedné knihovně více lidí, doporučujeme každému vytvořit samostatnou registraci.
+</p>
+
+<br>
+<p>
+Pokud máte jakékoliv dotazy, neváhejte se na nás obrátit: <b>info (at) obalkyknih.cz</b><br>
+<!--<ul>
+<li><b>info (at) obalkyknih.cz</b></li>
+<li>Připomínky lze vkládat na adrese: <a href="https://github.com/moravianlibrary/ObalkyKnih-scanner/issues" target=_blank> https://github.com/moravianlibrary/ObalkyKnih-scanner/issues</a></li>
+</ul> -->
+
+
+
+</p>
+
+[% PROCESS _footer_tovarna %]

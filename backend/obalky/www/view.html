@@ -4,8 +4,6 @@
 
 [% USE date %]
 
-<table cellspacing=4>
-
 [% IF books.size == 0 %]
 <div class="messageBox error">
 Tuto knihu ještě nemáme v databázi!
@@ -36,20 +34,20 @@ Tuto knihu ještě nemáme v databázi!
 
 
 	[% IF recent_cover %]
-		<img class="nob" src="[% recent_cover.get_cover_url %]">
+		<a href="[% recent_cover.get_preview510_url %]" data-lightbox="recent-cover"><img class="nob" src="[% recent_cover.get_cover_url %]"></a>
 		<center><i>Obr.1: Nejaktuálnější obálka tohoto <br/>souborného záznamu</i><br/>
 		<a href="?book_id=[% recent_book_id %]">detail</a></center>
-		<div style="clear: both" /><br/>
+		<div style="clear: both"></div><br/>
 	[% END %]
 	
 
 	[% IF book.cover %]
-	<img class="nob" src="[% book.cover.get_cover_url %]">
+		<a href="[% book.cover.get_preview510_url %]" data-lightbox="book-cover"><img class="nob" src="[% book.cover.get_cover_url %]"></a>
 		[% IF recent_cover %]
 		<center><i>Obr.2: Vlastní obálka tohoto <br/>souborného záznamu</i></center>
-		<div style="clear: both" /><br/>
+		<div style="clear: both"></div><br/>
 		[% END %]
-	<div style="clear: both" />
+	<div style="clear: both"></div>
 	<form onsubmit="return view_abuse_onsubmit();" method="post">
 		<textarea name=note id=abuse_comment style="display: none"></textarea>
 		<input type=hidden name=cover value="[% book.cover.id %]">
@@ -73,40 +71,44 @@ Tuto knihu ještě nemáme v databázi!
 	[% END %]
 
   [% IF detail %]
-  	<i color="gray">Všechny obálky</i><br>
+  	<i color="gray">Všechny obálky</i><br/>
 
 	[% FOREACH cover IN book.covers %]
 	[% IF cover.product %]
 		<a href="[% cover.product.product_url %]"
-			>[% cover.product.eshop.fullname %]</a><br>
+			>[% cover.product.eshop.fullname %]</a><br/>
 	[% END %]
 	<a href="?[% book.bibinfo.to_some_param 
 			%]&book_id=[% book.id %]&set_cover=[% cover.id %]"><img 
 		class="nob [% IF book.cover AND book.cover.id == cover.id 
 					%]img_selected[% ELSE %]img_not_selected[% END %]"
 			src="[% book.cover.get_cover_url %]"></a>
-	<br><br>
+	<br/><br/>
 	[% END %]
 
   [% END %]
+  </td>
 
-	<!-- nadherne CSS -->
+  <!-- nadherne CSS -->
   <td class="nob">
 	<p>
 		[% IF book.bibinfo.authors_human %]
-		<b>Autor: </b>[% book.bibinfo.authors_human %]</br>
+		<b>Autor: </b>[% book.bibinfo.authors_human %]<br/>
 		[% END %]
 
 		[% IF book.bibinfo.year AND !book.part_year %]
-		<b>Rok: </b>[% book.bibinfo.year %]<br>
+		<b>Rok: </b>[% book.bibinfo.year %]<br/>
 		[% END %]
 
 		[% FOREACH part = book.bibinfo.identifiers -%]
-		<b>[% part.name %]: </b>[% part.value %]<br>
+		<b>[% part.name %]: </b>[% part.value %]<br/>
 		[% END -%]
 		
 		[% IF book.id_parent %]
 		<p><a href="?book_id=[% book.id_parent.id %]">Přejít k soubornému záznamu</a></p>
+		[% END %]
+		[% IF idf %]
+		<p><a href="?book_id=[% book.id %]&sort_by=date">Přejít k soubornému záznamu</a></p>
 		[% END %]
 	</p>
 
@@ -116,6 +118,7 @@ Tuto knihu ještě nemáme v databázi!
 			src="/stars?value=[% book.get_rating_avg100 %]" />
 	<b>[% book.get_rating_avg5 %]/5</b>
 	([% book.get_rating_count %] hlasů)
+	[% IF book.is_library_rating(51214) %]<p>Spolupracujeme s <a href="http://www.cbdb.cz" target="_blank">CBDB.cz</a></p>[% END %]
 	</p>
 	[% END %]
 
@@ -126,18 +129,19 @@ Tuto knihu ještě nemáme v databázi!
 	  [% FOREACH product = book.displayable_products -%]
 		<tr><td align=right width="100"><a 
 					href="[% product.product_url %]"><img class="nob"
-					border=0 src="[% product.eshop.logo_url %]"></a>
+					border=0 src="[% product.eshop.logo_url %]"></a></td>
 			<td width="280"><a href="[% product.product_url %]"
-						>[% product.eshop.fullname %]</a>
+						>[% product.eshop.fullname %]</a></td>
 			<td width="50">[% IF product.cover %]
 				  <a href="[% product.product_url %]"><img class="nob"
-					 src="[% product.cover.get_thumbnail_url %]"></a>[% END %]
-<!--			<td>[% product %]-->
-			<td><b>[% product.price_human %]</b>
+					 src="[% product.cover.get_thumbnail_url %]"></a>[% END %]</td>
+<!--			<td>[% product %]--></td>
+			<td><b>[% product.price_human %]</b></td>
  	  [% END -%]
+ 	  </tr>
 	  </table>
 	  </p>
-	  <br>
+	  <br/>
 	[% END %]
 	
 	[% IF parts %]
@@ -148,16 +152,20 @@ Tuto knihu ještě nemáme v databázi!
 			<tr>
 			[% IF part.cover %]
 				<td class="[% IF counter > 9 AND !idf %]hide[% END %]">
-					[% IF part.cover %]<a href="?book_id=[% part.id %]"><img class="nob" src="[% part.cover.get_thumbnail_url %]"></a>[% END %]
+					[% IF part.cover %]<a href="[% part.cover.get_preview510_url %]" data-lightbox="part-cover"
+						data-title="[% IF part.get_column('part_year') %]Rok: [% part.get_column('part_year') %] / [% END %][% IF part.get_column('part_volume') %]Ročník: [% part.get_column('part_volume') %] / [% END %][% IF part.get_column('part_no') %]Číslo: [% part.get_column('part_no_orig') %][% END %]">
+						<img class="nob" src="[% part.cover.get_thumbnail_url %]">
+					</a>[% END %]
 				</td>
 			[% ELSE %]
 				<td><a href="?book_id=[% part.id %]"><img class="nob" src="img/arrow.png"></a></td>
 			[% END %]
 			[% IF part.get_column('part_type') == "2" %]
 				<td class="[% IF counter > 9 AND !idf %]hide[% END %]">
+					<a href="?book_id=[% part.id %]">detail</a> &nbsp; 
 					[% IF part.get_column('part_year') %]Rok: <strong>[% part.get_column('part_year') %]</strong>&nbsp; / [% END %]
 					[% IF part.get_column('part_volume') %]Ročník: <strong>[% part.get_column('part_volume') %]</strong>&nbsp; / [% END %]
-					[% IF part.get_column('part_no') %]Číslo: <strong>[% part.get_column('part_no') %]</strong>[% END %]
+					[% IF part.get_column('part_no') %]Číslo: <strong title="[% part.get_column('part_no') %]" style="cursor:help;">[% part.get_column('part_no_orig') %]</strong>[% END %]
 				</td>
 			[% ELSE %]
 				<td class="[% IF counter > 9 AND !idf %]hide[% END %]">
@@ -191,8 +199,9 @@ Tuto knihu ještě nemáme v databázi!
 	  <p>
 	  <table width="100%">
 	  [% FOREACH marc = book.marcs -%]
-		<tr><td width="100">&nbsp;--><!-- [% marc.id %] --><!--
-			<td><a href="[% marc.fixed_permalink %]">[% marc.library.name %]</a>
+		<tr><td width="100">&nbsp;</td>--><!-- [% marc.id %] --><!--
+			<td><a href="[% marc.fixed_permalink %]">[% marc.library.name %]</a></td>
+		</tr>
  	  [% END -%]
 	  </table>
 	  </p>
@@ -204,8 +213,9 @@ Tuto knihu ještě nemáme v databázi!
 	  <p>
 	  <table width="100%">
 	  [% FOREACH bid = book.tips_ids -%]
-		<tr><td width="100">&nbsp;
-			<td><a href="/view?[%bid.bibinfo.to_some_param%]">[% bid.bibinfo.to_human_title %]</a>
+		<tr><td width="100">&nbsp;</td><
+			<td><a href="/view?[%bid.bibinfo.to_some_param%]">[% bid.bibinfo.to_human_title %]</a></td>
+		</tr>
  	  [% END -%]
 	  </table>
 	  </p>
@@ -267,9 +277,9 @@ Tuto knihu ještě nemáme v databázi!
 		<h3>Napište na knížku první čtenářskou recenzi!</h3>
 	[% END %]
 	<table>
-	<tr><td>Od: 
+	<tr><td>Od:</td> 
 		<td><input id=review_name name=review_name value=""> 
-				([% visitor_blurred_ip %])
+				([% visitor_blurred_ip %])</td>
 		<td align=right valign=top width=200>
 
 <ul id='star-rating' class='star-rating'>
@@ -286,14 +296,14 @@ Tuto knihu ještě nemáme v databázi!
            title='5 star out of 5' class='five-stars'>5</a></li>
 </ul>
 <div id='current-rating-result'></div> <!-- used to show "success" message after vote -->
+	</td></tr>
 
-
-	<tr><td>&nbsp;
+	<tr><td>&nbsp;</td>
 		<td colspan=2>
-		<textarea id=review_text name=review_text cols=50 rows=10></textarea>
-	<tr><td>&nbsp;
+		<textarea id=review_text name=review_text cols=50 rows=10></textarea></td>
+	<tr><td>&nbsp;</td>
 		<td colspan=2>
-		<input type=submit name=review_add value="  Přidat recenzi " />
+		<input type=submit name=review_add value="  Přidat recenzi " /></td>
 	</table>
 	</form>
 	[% END %]
@@ -307,7 +317,7 @@ Tuto knihu ještě nemáme v databázi!
 		<a href="[% recent_toc.get_pdf_url %]"><img class="nob" src="[% recent_toc.get_thumbnail_url %]"></a>
 		<center><i>Obr.3: Nejaktuálnější <br/>obsah tohoto <br/>souborného záznamu</i><br/>
 		<a href="?book_id=[% recent_book_id %]">detail</a></center>
-		<div style="clear: both" /><br/>
+		<div style="clear: both"></div><br/>
 	[% END %]
 
 	[% IF book.toc %]
@@ -315,7 +325,7 @@ Tuto knihu ještě nemáme v databázi!
 			src="[% book.toc.get_thumbnail_url %]"></a>
 		[% IF recent_toc %]
 		<center><i>Obr.4: Vlastní obsah tohoto <br/>souborného záznamu</i></center>
-		<div style="clear: both" /><br/>
+		<div style="clear: both"></div><br/>
 		[% END %]
 	[% END %]
 
@@ -324,7 +334,7 @@ Tuto knihu ještě nemáme v databázi!
 	[% FOREACH toc IN book.tocs %]
 	[% IF toc.product %]
 		<a href="[% toc.product.product_url %]"
-			>[% toc.product.eshop.fullname %]</a><br>
+			>[% toc.product.eshop.fullname %]</a><br/>
 	[% END %]book.toc
 	<a href="?[% book.bibinfo.to_some_param 
 			%]&book_id=[% book.id %]&set_toc=[% toc.id %]">
@@ -360,7 +370,7 @@ Tuto knihu ještě nemáme v databázi!
 	</form>
 	[% END %]
 	
-	<br><br>
+	<br/><br/>
 
 </td></tr>
 
@@ -369,7 +379,7 @@ Tuto knihu ještě nemáme v databázi!
 [% END %] <!-- FOREACH books -->
 </table>
 
-<p style="height: 4em"/>
+<p style="height: 4em"></p>
 
 </div> <!-- id="main" -->
 

@@ -1,0 +1,99 @@
+[% PROCESS _header_tovarna %]
+[% PROCESS _header_blue %]
+[% PROCESS _header_main %]
+
+[% PROCESS _errors %]
+
+[% IF signed %]
+
+[% PROCESS _header_admin_submenu %]
+
+<p />
+
+[% IF library %]
+	<p>
+	Pod Vašim účtem spravujete knihovnu <strong>[%library.code%]</strong>
+	</p>
+	<br />
+
+	[% IF library.flag_active == 0 %]
+		<h2>Váše knihovna zatím není aktivní.</h2>
+		<br />
+		<h3>
+			Prosím vyčkejte na aktivaci správcem systému.<br />
+			O aktivaci budete informováni prostřednictvím emailu.
+		</h3>
+	[% ELSE %]
+		<p style="padding:10px" />
+		<form action="/settings_citace?[% IF !settings %]new=1[% ELSE %]e=[%settings.id%][% END %][% IF params.i %]&i=[% params.i %][% END %]" method="post" id="[% IF !settings %]new[% ELSE %]edit[%settings.id%][% END %]-settings">
+		<fieldset>
+			<legend>[% IF !settings %]Přidat nové nastavení[% ELSE %]Vaše aktuální nastavení[% END %]</legend>
+			<p>
+				<input type="radio" onclick="javascript:TypeCheck();" name="type" value="marcxml" id="type-marcxml" checked [% IF settings.type=='marcxml' %]checked="checked" [% END %]/>
+				<label for="type-marcxml" class="label-wide">MARC XML</label>
+			</p>
+			<p>
+				<input type="radio" onclick="javascript:TypeCheck();"name="type" value="z3950" id="type-z3950" [% IF settings.type=='z3950' %]checked="checked" [% END %]/>
+				<label for="type-z3950" class="label-wide">Z39.50</label>
+			</p>
+			<p>
+				<label for="settings_url">Url:</label>
+				<input type="text" name="url" value="[% settings.url %]" id="settings_url" />
+			</p>
+			<div id="type_check" [% IF settings.type=='z3950' %] style="display:block" [% ELSE %] style="display:none" [% END %]>
+				<p>
+					<label for="settings_port">Port:</label>
+					<input type="text" name="port" value="[% settings.z_port %]" id="settings_port" />
+				</p>
+				<p>
+					<label for="settings_database">Databáze:</label>
+					<input type="text" name="database" value="[% settings.z_database %]" id="settings_database" />
+				</p>
+				<p>
+					<label for="settings_encoding">Kódování:</label>
+					<select name="encoding">
+	  					<option value="UTF-8" [% IF settings.z_encoding=='UTF-8' %]selected[% END %]>UTF-8</option>
+	  					<option value="CP-1250"[% IF settings.z_encoding=='CP-1250' %]selected[% END %]>CP-1250</option>
+						<option value="Marc-8"[% IF settings.z_encoding=='Marc-8' %]selected[% END %]>Marc-8</option>
+					</select>
+				</p>
+				<p>
+					<label for="settings_name">Jméno</label>
+					<input type="text" name="name" value="[% settings.z_name %]" id="settings_name" />
+				</p>
+				<p>
+					<label for="settings_password">Heslo:</label>
+					<input type="text" name="password" value="[% settings.z_password %]" id="settings_password" />
+				</p>
+				<p>
+					<label for="settings_index_sysno">Index Sysno:</label>
+					<input type="text" name="index_sysno" value="[% IF settings.z_index_sysno=='' %]12[% ELSE %][%settings.z_index_sysno %][% END %]" id="settings_index_sysno" />
+				</p>
+			</div>
+			<p>
+				<input type="submit" name="[% IF !settings %]new[% ELSE %]edit[% END %]-settings" value="  [% IF !settings %]Přidat oprávnění[% ELSE %]Upravit oprávnění[% END %]  " id="settings-submit" />
+				[% IF settings %]
+					<input type="submit" name="delete-settings" value="  Smazat oprávnění  " id="settings-delete" formaction="/settings_citace?d=[%settings.id%][% IF params.i %]&i=[% params.i %][% END %]"/>
+				[% END %]
+			</p>
+		</fieldset>
+		</form>
+		
+	[% END %]
+	
+[% ELSE %]
+<p>
+Pod Vašim účtem nespravujete žádnou knihovnu
+</p>
+[% END %]
+	
+<p style="padding: 20px" />
+	
+[% ELSE %]
+
+[% PROCESS _form_signin %]
+
+[% END %]
+
+[% PROCESS _footer_tovarna %]
+

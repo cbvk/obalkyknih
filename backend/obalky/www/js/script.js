@@ -129,13 +129,21 @@ if(glider.length) {
 });
 
 
-
 $(function () {
 
 	$('a.print').click(function(){
 		window.print();
 	});
 	
+	$('input[name="type"]').click(function(){
+		if ($(this).val() == 'z3950') {
+			$('div#type_check').show();
+		}
+		else {
+			$('div#type_check').hide();
+		}
+
+	});
 	
    // SHP form labels
    $('#blue form input').focus(function () {

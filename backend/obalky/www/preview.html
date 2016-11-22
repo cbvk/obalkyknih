@@ -10,6 +10,13 @@
 
 [%FOREACH upload = images -%]
 	<input type=hidden name=id_[%upload.id%] value=[%upload.id%]>
+
+	[% IF upload.auth_id %]
+	<input type=hidden name=type_[%upload.id%] value=auth>
+	[% ELSE %]
+	<input type=hidden name=type_[%upload.id%] value=book>
+	[% END %]
+
 [% IF upload.odd -%]
 <tr class="odd">
 [% ELSE -%]
@@ -17,6 +24,29 @@
 [% END -%]
 	<td width="5%" style="vertical-align: middle">
 			<center><img height=45 src="[%upload.thumbfile%]"></center>
+
+[% IF upload.auth_id %]
+
+	<td width="65%">
+		<table width="100%">
+			<tr>
+				<td width="10%">Autor: <td width="55%"><input id=authors_[%upload.id%] name=authors_[%upload.id%] value="[%upload.authors%]" size=40 disabled=disabled>
+				<td width="10%">ID: <td width="25%"><input id=id_[%upload.id%] name=id_[%upload.id%] value="[%upload.auth_id%]" size=18 disabled=disabled>
+			</tr><tr>
+				<td>Popis: <td><input id=title_[%upload.id%] name=title_[%upload.id%] value="[%upload.title%]" size=40 disabled=disabled>
+				<td>Rok: <td><input id=year_[%upload.id%] name=year_[%upload.id%] value="[%upload.year%]" size=18 disabled=disabled>
+			</tr>
+		</table>
+	</td>
+	<td width="25%">
+		[% IF upload.check_duplicit_file -%]
+			Shoda souborů s
+			<a href="/view_auth?[% upload.authinfo.id %]">[% upload.check_duplicit_file %]</a><br>
+		[% END -%]
+	</td>
+
+[% ELSE %]
+
 	<td width="65%">
 		<table width="100%">
 <tr>
@@ -55,13 +85,17 @@
 			Shoda souborů s
 			<a href="/view?[% upload.bibinfo.to_some_param %]">[% upload.check_duplicit_file %]</a><br>
 		[% END -%]
-	
+	</td>
+
+[% END %]
+
 	<td width="5%">
 		[% IF upload.checked -%]
 			<input type=checkbox name=check_[%upload.id%] checked>
 		[% ELSE -%]
 			<input type=checkbox name=check_[%upload.id%]>
 		[% END -%]
+	</td>
 
 [%END-%]
 </table>

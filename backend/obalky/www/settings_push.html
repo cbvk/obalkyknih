@@ -1,0 +1,96 @@
+[% PROCESS _header_tovarna %]
+[% PROCESS _header_blue %]
+[% PROCESS _header_main %]
+
+[% PROCESS _errors %]
+
+[% IF signed %]
+
+[% PROCESS _header_admin_submenu %]
+
+<p />
+
+[% IF library %]
+	<p>
+	Pod Vašim účtem spravujete knihovnu <strong>[%library.code%]</strong>
+	</p>
+	<br />
+
+	[% IF library.flag_active == 0 %]
+		<h2>Váše knihovna zatím není aktivní.</h2>
+		<br />
+		<h3>
+			Prosím vyčkejte na aktivaci správcem systému.<br />
+			O aktivaci budete informováni prostřednictvím emailu.
+		</h3>
+	[% ELSE %]
+		<p style="padding:10px" />
+		<form action="/settings_push?[% IF !settings %]new=1[% ELSE %]e=[%settings.id%][% END %][% IF params.i %]&i=[% params.i %][% END %]" method="post" id="[% IF !settings %]new[% ELSE %]edit[%settings.id%][% END %]-settings">
+		<fieldset>
+			<legend>[% IF !settings %]Přidat nové nastavení[% ELSE %]Vaše aktuální nastavení[% END %]</legend>
+			<p>
+				<label for="settings_url">Url:</label>
+				<input type="text" name="url" value="[% settings.url %]" id="settings_url" />
+			</p>
+			<p>
+				<label for="settings_port">Port:</label>
+				<input type="text" name="port" value="[% settings.port %]" id="settings_port" />
+			</p>
+			<p>
+				<label for="settings_email">E-mail:</label>
+				<input type="text" name="email" value="[% settings.email %]" id="settings_email" />
+			</p>
+			<p>
+				<input type="checkbox" name="full_container" id="settings_full_container" [% IF settings.full_container %]checked="checked" [% END %]/>
+				<label for="full_container" class="label-wide">Celý kontejner</label>
+			</p>
+			<p>
+				<label class="label-wide">Frekvence zasílání změn</label>
+				<select name="frequency" value="[% settings.frequency %]" id="settings_frequency">
+					<option value=300000 [% IF settings.frequency==300000 %]selected[% END %]>5 minut</option>
+					<option value=600000 [% IF settings.frequency==600000 %]selected[% END %]>10 minut</option>
+					<option value=900000 [% IF settings.frequency==900000 %]selected[% END %]>15 minut</option>
+					<option value=1800000 [% IF settings.frequency==1800000 %]selected[% END %]>30 minut</option>
+					<option value=3600000 [% IF settings.frequency==3600000 %]selected[% END %]>1 hodina</option>
+					<option value=10800000 [% IF settings.frequency==10800000 %]selected[% END %]>3 hodiny</option>
+					<option value=21600000 [% IF settings.frequency==21600000 %]selected[% END %]>6 hodin</option>
+					<option value=43200000 [% IF settings.frequency==43200000 %]selected[% END %]>12 hodin</option>
+					<option value=86400000 [% IF settings.frequency==86400000 %]selected[% END %]>24 hodin</option>
+				</select>
+			</p>
+			<p>
+				<label class="label-wide">Počet záznamů v dávce</label>
+				<select name="item_count" value="[% settings.item_count %]" id="settings_item_count">
+					<option value=5 [% IF settings.item_count==5 %]selected[% END %]>5</option>
+					<option value=20 [% IF settings.item_count==20 %]selected[% END %]>20</option>
+					<option value=50 [% IF settings.item_count==50 %]selected[% END %]>50</option>
+					<option value=100 [% IF settings.item_count==100 %]selected[% END %]>100</option>
+				</select>	
+			</p>
+			<p>
+				<input type="submit" name="[% IF !settings %]new[% ELSE %]edit[% END %]-settings" value="  [% IF !settings %]Přidat oprávnění[% ELSE %]Upravit oprávnění[% END %]  " id="settings-submit" />
+				[% IF settings %]
+					<input type="submit" name="delete-settings" value="  Smazat oprávnění  " id="settings-delete" formaction="/settings_push?d=[%settings.id%][% IF params.i %]&i=[% params.i %][% END %]"/>
+				[% END %]
+			</p>
+		</fieldset>
+		</form>
+		
+	[% END %]
+	
+[% ELSE %]
+<p>
+Pod Vašim účtem nespravujete žádnou knihovnu
+</p>
+[% END %]
+	
+<p style="padding: 20px" />
+	
+[% ELSE %]
+
+[% PROCESS _form_signin %]
+
+[% END %]
+
+[% PROCESS _footer_tovarna %]
+

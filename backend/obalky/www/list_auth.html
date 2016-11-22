@@ -1,0 +1,90 @@
+﻿[%PROCESS _header %]
+
+[% PROCESS _errors %]
+
+[% USE date %]
+
+<table cellspacing=4>
+
+<h1>Vyhledávání autora</h1>
+
+<div>
+	<label>Nalezených záznamů:</label> <strong>[% auths_count %]</strong>
+</div>
+
+[% IF auths_count >= 30 %]
+<div>
+	<label>Zobrazuji záznamy:</label> <strong>[% offset_from %] až [% offset_to %]</strong>
+</div>
+[% END %]
+
+<div style="margin:20px 0; padding: 10px 5px; border-top:#ddd solid 2px; border-bottom:#ddd solid 2px; background-color:#eee;">
+<form action="/list_auth" method="GET">
+	<div style="float:left; padding-top:2px;">
+		<label for="auth_name">Vyhledávání: &nbsp;</label>
+		<input type="text" id="auth_name" name="auth_name" value="[% auth_name %]" placeholder="Jméno autora" />
+	</div>
+	<div style="float:left; margin-left:20px; padding-top:2px;">
+		<input type="text" id="auth_date" name="auth_date" value="[% auth_date %]" placeholder="Datum (nepovinné)" />
+	</div>
+	<div style="float:left; margin-left:20px;">
+		<input type="submit" id="auth_search" name="auth_search" value=" vyhledat " class="button" style="text-transform:uppercase;" />
+	</div>
+	<div style="clear:both"></div>
+</form>
+</div>
+
+<p></p>
+<table class="detail" style="width:100%">
+[% FOREACH auth IN auths.all %]
+<!-- [% auth.id %] / cover [% auth.cover %], detail [% detail %] -->
+
+<tr>
+	<td style="padding: 10px 0; border-top: #ddd solid 1px;">
+		[% IF auth.cover %]
+			<img class="nob" src="[% auth.cover.get_cover_url %]"> &nbsp;
+		[% ELSE %]
+			&nbsp;
+		[% END %] 
+	</td>
+	<td style="width: 50px; padding: 10px 15px; border-top: #ddd solid 1px;"> 
+		<a href="http://www.obalkyknih.cz/view_auth?auth_id=[% auth.id %]">detail</a> 
+	</td>
+	<td style="padding: 10px; border-top: #ddd solid 1px;">
+		<h2 style="position:relative; top:-5px;">
+			<a href="http://www.obalkyknih.cz/view_auth?auth_id=[% auth.id %]" style="text-decoration: none;">[% auth.auth_name %]</a>
+			&nbsp; <span style="font-size:0.7em;">[% auth.auth_date %]</span>
+		</h2>
+		[% IF auth.auth_activity or auth.auth_occupation %]<span style="position: relative; top:-6px; padding-right: 20px;">[% END %]
+		[% IF auth.auth_occupation %][% auth.auth_occupation %][% END %]
+		[% IF auth.auth_activity and auth.auth_occupation %] &nbsp; / &nbsp; [% END %]
+		[% IF auth.auth_activity %][% auth.auth_activity %][% END %]
+		[% IF auth.auth_activity or auth.auth_occupation %]</span>[% END %]		
+	</td>
+	<td style="padding: 10px; border-top: #ddd solid 1px; text-align:right;">
+		[% IF auth.auth_biography %]<img src="/img/comment.gif" title="[% auth.auth_biography %]" />[% END %]
+		&nbsp;
+		<a href="[% auth.nkp_aut_url %]" target="_blank"><img src="/img/link.png" /></a>
+	</td>
+</tr>
+
+[% END %] <!-- FOREACH auths -->
+</table>
+
+[% IF auths_count > offset_to %]
+	<p></p>
+	<p style="text-align:right; padding-right:20px; font-size:1.5em; font-weight:bold;">
+		<a href="/list_auth?[% IF auth_name %]auth_name=[% auth_name %][% END %]&amp;offset=[% offset+30 %][% IF auth_date %]&amp;auth_date=[% auth_date %][% END %]">DALŠÍ &gt;&gt;</a>
+	</p>
+[% END %]
+
+[% IF auths.count == 0 %]
+<div class="messageBox error">
+Žádný výsledek.
+</div>
+[% END %]
+
+
+</div> <!-- id="main" -->
+
+[%PROCESS _footer %]
