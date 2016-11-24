@@ -5,7 +5,7 @@ use strict;
 use Data::Dumper;
 use locale;
 
-sub edit_permission {
+sub edit_settings {
 	my($pkg,$id,$params,$library) = @_;
 	my @errors;
 	
@@ -97,7 +97,7 @@ sub edit_permission {
 	return 1;
 }
 
-sub remove_permission {
+sub remove_settings {
 	my($pkg,$id,$library) = @_;
 	my @errors;
 	
@@ -121,7 +121,7 @@ sub remove_permission {
 	return 1;
 }
 
-sub add_permission {
+sub add_settings {
 	my($pkg,$params,$library) = @_;
 	my @errors;
 	

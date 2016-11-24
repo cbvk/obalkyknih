@@ -1,8 +1,8 @@
 <div id="admin-submenu">
 	<ul>
-		<li[% IF admin_page=='account' %] class="active"[% END %]><a href="/account[% IF params.i %]?i=[%params.i%][% END %]">Administrace oprávnění</a></li>
-		<li[% IF admin_page=='account_review' %] class="active"[% END %]><a href="/account_review[% IF params.i %]?i=[%params.i%][% END %]">Komentáře čtenářů</a></li>
-		<li[% IF admin_page=='account_user' %] class="active"[% END %]><a href="/account_user[% IF params.i %]?i=[%params.i%][% END %]">Uživatelská nastavení</a></li>
+		<li[% IF admin_page=='account' %] class="active"[% END %]><a href="/account[% IF params.i %]?i=[%params.i%][% END %]">Oprávnění</a></li>
+		<li[% IF admin_page=='account_review' %] class="active"[% END %]><a href="/account_review[% IF params.i %]?i=[%params.i%][% END %]">Komentáře</a></li>
+		<li[% IF admin_page=='account_user' %] class="active"[% END %]><a href="/account_user[% IF params.i %]?i=[%params.i%][% END %]">Nastavení</a></li>
 		<li[% IF admin_page=='account_stats' %] class="active"[% END %]><a href="/account_stats[% IF params.i %]?i=[%params.i%][% END %]">Statistiky</a></li>
 		<li[% IF admin_page=='settings_citace' %] class="active"[% END %]><a href="/settings_citace[% IF params.i %]?i=[%params.i%][% END %]">Citace</a></li>
 		<li[% IF admin_page=='settings_push' %] class="active"[% END %]><a href="/settings_push[% IF params.i %]?i=[%params.i%][% END %]">Push</a></li>

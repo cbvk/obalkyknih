@@ -51,6 +51,15 @@ sub find_by_bibinfo {
 	$id->{part_no} = undef unless(defined $id->{part_no});
 	$id->{part_name} = undef unless(defined $id->{part_name});
 	
+	# pokud se v dotazu vyskytuje uuid, vyhledej prioritne podle nej
+	if (defined $id->{uuid}) {
+		my $res = DB->resultset('Product')->search({ uuid => $id->{uuid} });
+		while (my $row = $res->next) {
+			push @books, $row->book;
+		}
+		return wantarray ? @books : $books[0] if (scalar @books);
+	}
+	
 	# dotaz na cislo periodika, nebo cast monografie
 	if ($id->{part_no} or $id->{part_name} or $id->{part_year} or $id->{part_volume}) {
 		@books = $pkg->search_book_part($id);
@@ -60,7 +69,7 @@ sub find_by_bibinfo {
 					my $part_year = $_->get_column('part_year');
 					my $part_volume = $_->get_column('part_volume');
 					if (($part_year && !$part_volume) || (!$part_year && $part_volume)) {
-						my $bibinfo = $_->bibinfo;				
+						my $bibinfo = $_->bibinfo;
 						$bibinfo = $bibinfo->find_missing_year_or_volume ;
 						$bibinfo->save_to($_);
 						$_->invalidate;

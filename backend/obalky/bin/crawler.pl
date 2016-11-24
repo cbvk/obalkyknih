@@ -52,7 +52,7 @@ foreach my $eshop (DB->resultset('Eshop')->all) {
 	next unless($eshop->xmlfeed_url); # test..
 	warn "Crawluju ".$eshop->id." ".$eshop->name."\n" if($ENV{DEBUG});
 
-	my $factory = "Eshop::".$eshop->name if($eshop->name); 
+	my $factory = "Eshop::".$eshop->name if($eshop->name);
 	unless($eshop->name) {
 		$factory = "Eshop::Zbozi" if($eshop->xmlfeed_url);
 	}

@@ -55,6 +55,7 @@ use Eshop::LibraryThing;
 use Eshop::Static;
 use Eshop::Upload;
 use Eshop::NKP_OAI;
+use Eshop::Kramerius_MZK;
 
 sub name { shift->{name} };
 

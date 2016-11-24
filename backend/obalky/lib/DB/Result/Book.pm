@@ -1230,6 +1230,23 @@ sub enrich {
 	$info->{bib_title} = $book->get_column('title') if ($book->get_column('title'));
 	$info->{bib_author} = $book->get_column('authors') if ($book->get_column('authors'));
 	$info->{bib_year} = $book->get_column('year') if ($book->get_column('year'));
+	
+	# 10. UUID (Kramerius); UUID existuje u produktu, do zaznamu knihy se musi poslat pole UUID
+	my $resUUID = DB->resultset('Product')->search({ book => $book->id });
+	my @uuid; my $uuidLib;
+	while (my $rowUUID = $resUUID->next) {
+		if ($rowUUID->get_column('uuid')) {
+			my $uuid = $rowUUID->get_column('uuid');
+			push @uuid, $uuid;
+			my $libsigla = $rowUUID->eshop->library->get_column('code');
+			$uuidLib->{$libsigla} = $uuid;
+		}
+	}
+	$info->{uuid} = \@uuid if (@uuid);
+	$info->{uuid_source} = $uuidLib if ($uuidLib);
+	
+	# 11. Citace CSN ISO 690
+	$info->{csn_iso_690} = $book->get_column('citation') if ($book->get_column('citation') and $book->get_column('citation') ne '');
 
 	return $info;
 }

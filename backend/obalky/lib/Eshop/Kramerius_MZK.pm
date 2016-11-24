@@ -1,4 +1,4 @@
-package Eshop::Kramerius;
+package Eshop::Kramerius_MZK;
 use base 'Eshop::Mechanize';
 use DateTime::Format::ISO8601;
 use DateTime;
@@ -26,12 +26,12 @@ __PACKAGE__->register(crawl => 1, license => 'licensed', czech => 0 );
 sub crawl{
 	my($self,$storable,$from,$to,$tmp_dir,$feed_url,$eshop) = @_;
 	my @type = ("soundrecording","archive","graphic","sheetmusic","manuscript","monograph","periodicalitem");
-	my @list; 
-	foreach (@type){		
-warn "Crawling $_";
+	my @list;
+	foreach (@type){
+		warn "Crawling $_";
 		my @type_list = crawl_type($self,$storable,$from,$to,$tmp_dir,$feed_url,$eshop, $_);
 		push (@list,@type_list) if (@type_list);
-		}
+	}
 	return @list;
 }
 
@@ -237,6 +237,7 @@ sub get_response{
 	my($from,$to,$method) = @_;
 	$method = "map" if ($method eq 'maprecord');
     $query_url = "http://kramerius.mzk.cz/search/api/v5.0/search?q=fedora.model:$method%20AND%20modified_date:[".$from."Z%20TO%20".$to.'Z]&fl=PID&wt=xml' . "&start=$start";
+warn $query_url;
 	$ua = LWP::UserAgent->new;
 	$ua->timeout(60);
 	$req = HTTP::Request->new(GET => $query_url);
@@ -288,19 +289,19 @@ sub downloadtoc{
 }
 
 sub downloadcover{
-	my ($url, $jsondata) = @_;	
+	my ($url, $jsondata) = @_;
 	if (!$jsondata){
 		$ua = LWP::UserAgent->new;
 		$ua->timeout(60);
 		my $PIDreq = HTTP::Request->new(GET => $url);
 		$PIDreq->header('content-type' => 'application/json');
     	my $PIDresp = $ua->request($PIDreq);
-    	$jsondata = decode_json($PIDresp->content); 
+    	$jsondata = decode_json($PIDresp->content);
 	}
 	return if (!$jsondata);
 	my $coverpage;
 	my $coverurl;
-	foreach my $pagemodel (@{$jsondata}){	
+	foreach my $pagemodel (@{$jsondata}){
 		my $page = $pagemodel->{'details'}->{'type'};
 		next if (!$page || (grep /^$page$/i, ("spine","hrbet")));
 		$coverpage = $pagemodel->{'pid'} if (!$coverpage || $page eq 'FrontCover');
@@ -308,7 +309,7 @@ sub downloadcover{
 	}
     $coverurl = "http://kramerius.mzk.cz/search/api/v5.0/item/$coverpage/full" if ($coverpage);
 	return $coverurl;
-		
+	
 }
 
 sub cut_content{

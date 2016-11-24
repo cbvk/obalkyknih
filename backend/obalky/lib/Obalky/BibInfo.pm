@@ -49,9 +49,9 @@ isbn_1234, ean_123, oclc_123, nbn_123, isbn1234_nbn123
 =cut
 
 
-my @keys = qw/ean13 oclc nbn title authors year part_year part_volume part_no part_name part_note auth_id auth_name/;
+my @keys = qw/ean13 oclc nbn uuid title authors year part_year part_volume part_no part_name part_note auth_id auth_name/;
 
-sub param_keys { qw/ean isbn issn oclc nbn title authors year/ }
+sub param_keys { qw/ean isbn issn oclc nbn uuid title authors year/ }
 sub param_keys_part { qw/part_ean part_isbn part_issn part_oclc part_nbn part_title part_authors part_year/ }
 sub extended_keys_part { qw/part_volume part_no part_name part_note part_year/ }
 
@@ -59,9 +59,10 @@ sub new {
 	my($pkg,$object) = @_;
 	my $bibinfo = bless {}, $pkg;
 
-	$bibinfo->{ean13} = $object->ean13 if(defined $object->ean13);
-	$bibinfo->{oclc} = $object->oclc   if(defined $object->oclc);
-	$bibinfo->{nbn}  = $object->nbn	if(defined $object->nbn);
+	$bibinfo->{ean13} = $object->ean13	if(defined $object->ean13);
+	$bibinfo->{oclc} = $object->oclc	if(defined $object->oclc);
+	$bibinfo->{nbn} = $object->nbn		if(defined $object->nbn);
+	$bibinfo->{uuid} = $object->uuid	if(ref $object eq 'DB::Result::Product' and defined $object->uuid);
 
 	$bibinfo->{title} = $object->title if(defined $object->title);
 	my $authors = $object->authors;
@@ -107,6 +108,7 @@ sub differs {
 	return $a->ean13 ne $b->ean13 if($a->ean13 and $b->ean13);
 	return $a->oclc  ne $b->oclc  if($a->oclc  and $b->oclc );
 	return $a->nbn   ne $b->nbn   if($a->nbn   and $b->nbn  );
+	return $a->uuid  ne $b->uuid  if($a->uuid  and $b->uuid );
 	return $a->part_year    ne $b->part_year   if($a->part_year   and $b->part_year );
 	return $a->part_volumer ne $b->part_volume if($a->part_volume and $b->part_volume );
 	return $a->part_no      ne $b->part_no     if($a->part_no     and $b->part_no );
@@ -119,6 +121,11 @@ sub nbn {
 	my($id,$value) = @_;
 	$id->{nbn} = $value if(defined $value);
 	return $id->{nbn};
+}
+sub uuid {
+	my($id,$value) = @_;
+	$id->{uuid} = $value if(defined $value);
+	return $id->{uuid};
 }
 sub oclc {
 	my($id,$value) = @_;
@@ -205,7 +212,7 @@ sub new_from_ean {
 
 sub new_from_string {
 	my($pkg,$string) = @_;
-	my($ean,$oclc,$nbn);
+	my($ean,$oclc,$nbn,$uuid);
 
 	$string = '' unless($string); # should not happen
 
@@ -219,7 +226,7 @@ sub new_from_string {
 				/^(isbn|issn|ean)?\_?(...)?(\d{7}\d?\d?[0-9X])$/i);
 	$ean = $pkg->parse_code($ean) if($ean);
 
-	unless($ean or $oclc or $nbn) {
+	unless($ean or $oclc or $nbn or $uuid) {
 		foreach(split(/\_/,$string)) {
 			my($key,$value) = ($1,$2) if(/^([a-z]+)[\_\:\=]?(.+)$/);
 			unless($value) {
@@ -233,11 +240,13 @@ sub new_from_string {
 				$oclc = $value;
 			} elsif($key eq 'nbn') {
 				$nbn = $value;
+			} elsif($key eq 'uuid') {
+				$uuid = $value;
 			}
 		}
 	}
 #	warn "string=$string, ean=$ean\n";
-	return $pkg->new_from_params({ oclc => $oclc, nbn => $nbn, ean => $ean});
+	return $pkg->new_from_params({ oclc => $oclc, nbn => $nbn, ean => $ean, uuid => $uuid });
 }
 
 sub new_from_params {
@@ -249,8 +258,8 @@ sub new_from_params {
 	$ean13 = $param->{ean13} if($param->{ean13});
 	my $year = ($param->{year} and $param->{year} =~ /(\d{4})/) ? $1 : undef;
 
-	# aspon neco z EAN, OCLC, NBN nebo Title musi byt vyplneno!
-	return unless($ean13 or $param->{oclc} or 
+	# aspon neco z EAN, OCLC, NBN, UUID nebo Title musi byt vyplneno!
+	return unless($ean13 or $param->{oclc} or $param->{uuid} or  
 				  $param->{nbn} or $param->{title}); 
 
 	# todo: normalize oclc, nbn
@@ -260,6 +269,7 @@ sub new_from_params {
 		ean13 => $ean13,
 		oclc => $param->{oclc},
 		nbn => $nbn,
+		uuid => $param->{uuid},
 		title => $param->{title},
 		authors => $param->{authors}, # ujistit se, ze to je pole?
 		# isbns => ?
@@ -285,6 +295,7 @@ sub save_to {
 						if($ENV{DEBUG} and $ENV{DEBUG} > 2);
 	my $hash = $id->save_to_hash();
 	$hash = $id->save_to_hash_part($hash) if (ref $object eq 'DB::Result::Book'); # book ma vic parametru k ulozeni (dily monografii a periodik)
+	$hash->{uuid} = $id->{uuid} if (ref $object eq 'DB::Result::Product'); # uuid se vaze k produktu, ne ku knize
 	$object->update($hash);
 }
 sub save_to_hash {
@@ -312,7 +323,7 @@ sub save_to_hash_part {
 sub to_params {
 	my($id) = @_;
 	my @out;
-	foreach(qw/ean13 oclc nbn part_year part_volume part_no part_name part_note/) {
+	foreach(qw/ean13 oclc nbn uuid part_year part_volume part_no part_name part_note/) {
 		push @out, $_."=".$id->{$_} if($id->{$_});
 	}
 	return join("&",@out);
@@ -327,6 +338,7 @@ sub to_some_id {
 	my $isbn = $id->to_isbn;
 	return $isbn if($isbn);
 	return $id->nbn if($id->nbn);
+	return $id->uuid if($id->uuid);
 	return $id->oclc ? "oclc".$id->oclc : "NULL";
 }
 sub to_some_hash {
@@ -334,6 +346,7 @@ sub to_some_hash {
 	my $isbn = $id->to_isbn;
 	return {isbn => $isbn} if($isbn);
 	return {nbn => $id->nbn} if($id->nbn);
+	return {uuid => $id->uuid} if($id->uuid);
 	return $id->oclc ? {oclc=>"oclc".$id->oclc} : "NULL";
 }
 
@@ -378,7 +391,7 @@ sub to_xml {
 	my($id) = @_;
 	my($isbn,$ean) = $id->isbn_forms;
 	my $info = { isbn => $isbn, ean => $ean, 
-				 oclc => $id->oclc, nbn => $id->nbn };
+				 oclc => $id->oclc, nbn => $id->nbn, uuid => $id->uuid };
 	my @ids;
 #	my $h = new HTML::Tiny;
 	foreach my $key (sort keys %$info) {

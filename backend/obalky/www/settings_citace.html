@@ -24,7 +24,15 @@
 			O aktivaci budete informováni prostřednictvím emailu.
 		</h3>
 	[% ELSE %]
-		<p style="padding:10px" />
+
+		<p class="info info-box">
+			Zvolte prosím metodu a parametry, které mají být použity pro stažení bibliografického záznamu z Vašeho katalogu. Tento záznam bude použit pro vygenerování textu citace.<br/>
+			V případě MARC XML použijte parametr ##sysno## na místě, kde se v URL nachází identifikátor záznamu:<br/>
+			<span class="block-tiny"><strong>http://www.adresa_vasi_knihovny.cz/webova_sluzba/?sysno=##sysno##&format=marcxml</strong> apod.</span><br/>
+			Vzorové volání API OKCZ pro vygenerování textu citace:<br/>
+			<span class="block-tiny"><strong>http://cache.obalkyknih.cz:1339/api/citace/?sysno=123456789</strong></span><br/>
+		</p>		
+
 		<form action="/settings_citace?[% IF !settings %]new=1[% ELSE %]e=[%settings.id%][% END %][% IF params.i %]&i=[% params.i %][% END %]" method="post" id="[% IF !settings %]new[% ELSE %]edit[%settings.id%][% END %]-settings">
 		<fieldset>
 			<legend>[% IF !settings %]Přidat nové nastavení[% ELSE %]Vaše aktuální nastavení[% END %]</legend>

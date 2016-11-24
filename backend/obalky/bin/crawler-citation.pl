@@ -3,7 +3,7 @@
 # Crawler - stahuj vsechno, co ma nakladatel nove
 
 use Data::Dumper;
-use DateTime::Format::ISO8601;
+use DateTime::Format::MySQL;
 use DateTime;
 use Storable; # ??
 
@@ -13,16 +13,9 @@ use JSON;
 use Encode qw(encode_utf8);
 
 use Fcntl qw(:flock);
-#Vylucny beh crawleru
-open(SELF,"<",$0) or die "Cannot open $0 - $!";
-while (!flock(SELF, LOCK_EX|LOCK_NB)){
-	warn "Waiting";
-  	sleep 3600;
-	last;
-}
+
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-
 use Eshop;
 use DB;
 
@@ -36,43 +29,48 @@ if($mode eq 'period') {
 	$from = DateTime::Format::ISO8601->parse_datetime( $force_from );
 	$to   = DateTime::Format::ISO8601->parse_datetime( $force_to );
 }
-my $crawlable =  DateTime->today()->subtract(days => 0);
-my @eshops = Eshop->get_crawled();
-my %found;
 
-foreach my $eshop (DB->resultset('Eshop')->search({ type => 'citace'})) {
+#moznost upravit existujici citace starsi nez tyden
+my $crawlable =  DateTime->today()->subtract(days => 7);
+my @crawler_eshops = Eshop->get_crawled();
+my @eshops;
+
+#vyselektuje crawlery vhodne na zber citaci
+foreach (@crawler_eshops) {
+	my @tmp_eshop = DB->resultset('Eshop')->search({ name => $_->{name}}) if ($_->{name});
+	push (@eshops,$tmp_eshop[0]) if ($tmp_eshop[0] && $tmp_eshop[0]->type eq 'citace');	
+}
+my %found;
+foreach my $eshop (@eshops) {
 	# trida, ktera se o tento eshop stara..
 	next if($ENV{OBALKY_ESHOP} and $eshop->id ne $ENV{OBALKY_ESHOP});
 	warn "Crawluju ".$eshop->id." ".$eshop->name."\n" if($ENV{DEBUG});
 
-	my $factory = "Eshop::".$eshop->name if($eshop->name);
+	my $factory = "Eshop::".$eshop->name if($eshop->name); 
 	my $name = $eshop->name || $eshop->id; # nase jednoznacne id eshopu
 	unless($factory) {
 		warn "Nevim jak crawlovat $name (".$eshop->fullname.")\n";
 		next;
 	}
 	next unless($factory->can('crawl'));
-
 	$found{$name} = 0;
-
 	warn "Crawling $name from $from to $to\n" if($DEBUG);
 
 	my @list;
 
-
-	eval { @list = $factory->crawl($from,$to) };
+	eval { @list = $factory->crawl($from,$to)
+		    };
 	warn $factory."->crawl(): $@" if($@);
-	
-	my $i = 0;
 	while(my ($rec,$bibinfo) = splice(@list,0,2)) {
 		next unless ($rec and $bibinfo);
-		$i++;
 		my $book = DB->resultset('Book')->find_by_bibinfo($bibinfo);
 		if ($book){
 			if (($book->citation && $crawlable > $book->citation_found)){
+				my @previous_citation_eshop =  DB->resultset('Eshop')->search({ id => $book->citation_source});
+				my $priority = $previous_citation_eshop[0]->priority;
 				#prepise citaci jestli ma crawlujici eshop vyssi prioritu
-				$citation = get_citation($rec) if ($eshop->priority > DB->resultset('Eshop')->search({ id => $book->citation_source}));
-			}
+				$citation = get_citation($rec) if ($eshop->priority > $priority);
+			}		
 			elsif (!$book->citation){
 				$citation = get_citation($rec);
 			}
@@ -87,21 +85,29 @@ foreach my $eshop (DB->resultset('Eshop')->search({ type => 'citace'})) {
 			$citation = get_citation($rec);
 		}
 		if ($citation){
-			#$book->update({citation => $citation,  citation_found => DateTime->now(), citation_source => $eshop->id  });
-			warn "Adding citation : \n$citation" if($ENV{DEBUG});;
+			$found{$name}++;
+			$book->update({citation => $citation,  citation_found => DateTime->now(), citation_source => $eshop->id  });
+			warn "Adding citation : \n$citation" if($ENV{DEBUG});
 		}
 	}
+	
+	open(LOG,">>utf8","/opt/obalky/www/data/crawler.csv") or die;
+	my($sec,$min,$hour,$mday,$mon,$year) = localtime(time);
+	my $now = sprintf("%04d-%02d-%02dT%02d:%02d",
+					$year+1900,$mon+1,$mday,$hour,$min);
+	print LOG "$now\t$name\t$from\t$to\t".$found{$name}."\n";
+	close(LOG);
 }
+
 
 
 
 sub get_citation{
 	my ($rec) = @_;	
-	my $ua = LWP::UserAgent->new();  
-	#komunikacia s FE
-	
-	warn Dumper(encode_json($rec));
-	my $resp = $ua->post('http://10.89.56.1:1339/citace',$rec,'Content-type' => 'application/json;charset=utf-8',Content => encode_json($rec));
+	my $ua = LWP::UserAgent->new();
+
+	#komunikacia s FE - treba upravit adresu
+	my $resp = $ua->post('http://192.168.1.165:1339/citace',$rec,'Content-type' => 'application/json;charset=utf-8',Content => encode_json($rec));
 	return $resp->content;
 	
 }
