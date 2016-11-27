@@ -225,6 +225,7 @@ __PACKAGE__->table("book");
 =head2 citation_source
 
   data_type: 'integer'
+  is_foreign_key: 1
   is_nullable: 1
 
 =head2 citation_time
@@ -308,7 +309,7 @@ __PACKAGE__->add_columns(
   "part_note_orig",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "citation_source",
-  { data_type => "integer", is_nullable => 1 },
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "citation_time",
   {
     data_type => "datetime",
@@ -359,6 +360,26 @@ __PACKAGE__->has_many(
   "DB::Result::Book",
   { "foreign.id_parent" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 citation_source
+
+Type: belongs_to
+
+Related object: L<DB::Result::Library>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "citation_source",
+  "DB::Result::Library",
+  { id => "citation_source" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
 );
 
 =head2 cover
@@ -677,8 +698,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-09-19 07:35:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Mv9I7B0BQMPXQFJVnMa6pg
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-11-27 11:19:49
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wCcB6fIPmroXzsySUjFwCg
 
 use Obalky::Media;
 use Data::Dumper;
@@ -1239,14 +1260,16 @@ sub enrich {
 			my $uuid = $rowUUID->get_column('uuid');
 			push @uuid, $uuid;
 			my $libsigla = $rowUUID->eshop->library->get_column('code');
-			$uuidLib->{$libsigla} = $uuid;
+			$uuidLib->{$libsigla}->{uuid} = $uuid;
+			$uuidLib->{$libsigla}->{url} = $rowUUID->get_column('product_url');
 		}
 	}
 	$info->{uuid} = \@uuid if (@uuid);
-	$info->{uuid_source} = $uuidLib if ($uuidLib);
+	$info->{dig_obj} = $uuidLib if ($uuidLib);
 	
 	# 11. Citace CSN ISO 690
 	$info->{csn_iso_690} = $book->get_column('citation') if ($book->get_column('citation') and $book->get_column('citation') ne '');
+	$info->{csn_iso_690_source} = $book->citation_source->get_column('name') if ($book->get_column('citation_source') and $book->get_column('citation_source') ne '');
 
 	return $info;
 }

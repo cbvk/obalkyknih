@@ -266,7 +266,7 @@ sub settings_push : Local {
     	$c->stash->{settings} = DB->resultset('LibrarySettingsPush')->find({ library=>$id });
     }
     
-    $c->stash->{admin_page} = 'account';
+    $c->stash->{admin_page} = 'settings_push';
     $c->stash->{signed} = $signed;
 	$c->stash->{library} = $library;
 	$c->stash->{is_admin} = $c->req->param('i') ? 1 : 0;
@@ -321,7 +321,7 @@ sub settings_citace : Local {
     	$c->stash->{settings} = DB->resultset('LibrarySettingsCitace')->find({ library=>$id });
     }
     
-    $c->stash->{admin_page} = 'account';
+    $c->stash->{admin_page} = 'settings_citace';
     $c->stash->{signed} = $signed;
 	$c->stash->{library} = $library;
 	$c->stash->{is_admin} = $c->req->param('i') ? 1 : 0;
@@ -495,6 +495,8 @@ sub account_stats : Local {
     
     $c->stash->{admin_page} = 'account_stats';
     $c->stash->{signed} = $signed;
+    $c->stash->{library} = $library;
+	$c->stash->{is_admin} = $c->req->param('i') ? 1 : 0;
     $c->stash->{library_admin} = $library_admin;
 }
 sub admin_stats : Local {
@@ -521,6 +523,8 @@ sub admin_stats : Local {
     
     $c->stash->{admin_page} = 'account_stats';
     $c->stash->{signed} = $signed;
+    $c->stash->{library} = $library;
+	$c->stash->{is_admin} = $c->req->param('i') ? 1 : 0;
     $c->stash->{library_admin} = $library_admin;
 }
 sub logout : Local {

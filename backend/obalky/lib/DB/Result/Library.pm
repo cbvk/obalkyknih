@@ -177,6 +177,21 @@ __PACKAGE__->add_unique_constraint("library_code", ["code"]);
 
 =head1 RELATIONS
 
+=head2 books
+
+Type: has_many
+
+Related object: L<DB::Result::Book>
+
+=cut
+
+__PACKAGE__->has_many(
+  "books",
+  "DB::Result::Book",
+  { "foreign.citation_source" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 eshops
 
 Type: has_many
@@ -313,8 +328,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-11-14 14:21:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:pYhK8ZjdfETGUNCWgr05aQ
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-11-27 11:19:49
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:rTyuFvBwibHEh9NOhHoK3g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

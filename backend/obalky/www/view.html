@@ -110,6 +110,13 @@ Tuto knihu ještě nemáme v databázi!
 		[% IF idf %]
 		<p><a href="?book_id=[% book.id %]&sort_by=date">Přejít k soubornému záznamu</a></p>
 		[% END %]
+		
+		[% IF book.citation %]
+		<br/><b>Citace</b> (dle ČSN ISO 690):<br/>
+		[% book.citation %]<br/>
+		<span style="font-size:0.8rem;float:right;">Zdroj: [% book.citation_source.name %]</span><br/>
+		<div style="clear:both;"></div>
+		[% END %]
 	</p>
 
 	[% IF book.get_rating_count %]
@@ -118,7 +125,7 @@ Tuto knihu ještě nemáme v databázi!
 			src="/stars?value=[% book.get_rating_avg100 %]" />
 	<b>[% book.get_rating_avg5 %]/5</b>
 	([% book.get_rating_count %] hlasů)
-	[% IF book.is_library_rating(51214) %]<p>Spolupracujeme s <a href="http://www.cbdb.cz" target="_blank">CBDB.cz</a></p>[% END %]
+	[% IF book.is_library_rating(51214) %] &nbsp;&nbsp;&nbsp;&nbsp;<font style="font-size:x-small"> spolupracujeme s <a href="http://www.cbdb.cz" target="_blank">CBDB.cz</a></font>[% END %]
 	</p>
 	[% END %]
 
@@ -186,8 +193,8 @@ Tuto knihu ještě nemáme v databázi!
 		[% counter = counter + 1 %]
 		[% END %]
 			<tr><td>&nbsp;</td><td>
-				[% IF sort_by != 'id' %]<a href="?book_id=[% book.id %]&sort_by=id[% IF idf %]&idf=[%idf%][% END %]">Seřaďit podle data skenování</a>[% ELSE %]<strong>Seřaďit podle data skenování</strong>[% END %] |
-				[% IF sort_by != 'date' %]<a href="?book_id=[% book.id %]&sort_by=date[% IF idf %]&idf=[%idf%][% END %]">Seřaďit podle aktuálnosti</a>[% ELSE %]<strong>Seřaďit podle aktuálnosti</strong>[% END %]
+				[% IF sort_by != 'id' %]<a href="?book_id=[% book.id %]&sort_by=id[% IF idf %]&idf=[%idf%][% END %]">Seřadit podle data skenování</a>[% ELSE %]<strong>Seřadit podle data skenování</strong>[% END %] |
+				[% IF sort_by != 'date' %]<a href="?book_id=[% book.id %]&sort_by=date[% IF idf %]&idf=[%idf%][% END %]">Seřadit podle aktuálnosti</a>[% ELSE %]<strong>Seřadit podle aktuálnosti</strong>[% END %]
 			</td></tr>
 		</table>
 		<br/><br/>
