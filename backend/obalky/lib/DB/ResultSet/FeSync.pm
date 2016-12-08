@@ -227,28 +227,6 @@ sub send_fe_request {
 }
 
 
-=head2 request_sync_remove
-
-Pro zadane dilo provede vymazani na vsech frontendech
-
-=cut
-sub request_sync_remove {
-	my($pkg,$bibinfo,$fe,$forced) = @_;
-	my $sync_params = $bibinfo->save_to_hash();
-	if ($sync_params->{ean13}) {
-		$sync_params->{isbn} = $sync_params->{ean13};
-		delete $sync_params->{ean13};
-	}
-	delete $sync_params->{title};
-	delete $sync_params->{authors};
-	delete $sync_params->{year};
-	if ($sync_params) {
-		$sync_params->{remove} = 'true';
-		DB->resultset('FeSync')->set_sync($sync_params, 'metadata_changed', $fe, $forced);
-	}
-}
-
-
 =head2 book_sync_remove
 
 Pro zadane dilo provede vymazani na vsech frontendech podle book_id
@@ -264,6 +242,11 @@ sub book_sync_remove {
 		$sync_params->{isbn} = $book->get_column('ean13') if ($book->get_column('ean13'));
 		$sync_params->{nbn} = $book->get_column('nbn') if ($book->get_column('nbn'));
 		$sync_params->{oclc} = $book->get_column('oclc') if ($book->get_column('oclc'));
+		my $metadata = $book->enrich;
+		$sync_params->{metadata} = {
+			'value' => to_json($metadata),
+			'type' => 'post'
+		} if (defined $metadata);
 	} else {
 		$sync_params->{book_id} = $id;
 	}

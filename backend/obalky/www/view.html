@@ -128,6 +128,23 @@ Tuto knihu ještě nemáme v databázi!
 	[% IF book.is_library_rating(51214) %] &nbsp;&nbsp;&nbsp;&nbsp;<font style="font-size:x-small"> spolupracujeme s <a href="http://www.cbdb.cz" target="_blank">CBDB.cz</a></font>[% END %]
 	</p>
 	[% END %]
+	
+	[% IF book.displayable_dig_obj %]
+      <h3>Digitální objekty</h3>
+	  <p>
+	  <table width="100%" cellspacing=4>
+	  [% FOREACH product = book.displayable_dig_obj -%]
+		<tr><td align=right width="100"><a 
+					href="[% product.product_url %]"><img class="nob"
+					border=0 src="[% product.eshop.logo_url %]"></a></td>
+			<td width="300"><a href="[% product.product_url %]"
+						>[% product.eshop.fullname %]</a></td>
+ 	  [% END -%]
+ 	  </tr>
+	  </table>
+	  </p>
+	  <br/>
+	[% END %]
 
 	[% IF book.displayable_products %]
       <h3>Knihkupci a nakladatelé</h3>

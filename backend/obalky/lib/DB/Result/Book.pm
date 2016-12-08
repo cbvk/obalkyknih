@@ -711,7 +711,17 @@ sub displayable_products {
 	my @displayable;
 	foreach my $product ($book->products) {
 		my $factory = $product->eshop->factory;
-		push @displayable, $product if($factory->{display});
+		push @displayable, $product if($factory->{display} and substr($factory->name, 0, 9) ne 'Kramerius');
+	}
+	return @displayable;
+}
+
+sub displayable_dig_obj {
+	my($book) = @_;
+	my @displayable;
+	foreach my $product ($book->products) {
+		my $factory = $product->eshop->factory;
+		push @displayable, $product if($factory->{display} and substr($factory->name, 0, 9) eq 'Kramerius');
 	}
 	return @displayable;
 }
