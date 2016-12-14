@@ -310,7 +310,7 @@ Pridej nove nastaveni citaci na vsechny frontendy
 
 =cut
 sub request_sync_settings_citace_create {
-	my($pkg, $library, $type, $url, $port, $database, $encoding, $name, $password, $index_sysno) = @_;
+	my($pkg, $library, $type, $url, $database, $encoding, $name, $password, $index_sysno) = @_;
 	
 	my $sync_params = ($type eq 'marcxml') ? 
 	{
@@ -325,7 +325,6 @@ sub request_sync_settings_citace_create {
 		sigla => $library->get_column('code'),
 		type => $type,
 		url => $url,
-		port => $port,
 		database => $database,
 		encoding => $encoding,
 		name => $name,
@@ -363,13 +362,12 @@ Pridej nove nastaveni Push api na vsechny frontendy
 
 =cut
 sub request_sync_settings_push_create {
-	my($pkg, $library, $url, $port, $email, $fe, $full_container, $frequency, $item_count) = @_;
+	my($pkg, $library, $url, $email, $fe, $full_container, $frequency, $item_count) = @_;
 	
 	my $sync_params = {
 		settings_push_create => 'true',
 		sigla => $library->get_column('code'),
 		url => $url,
-		port => $port,
 		email => $email,
 		full_container => $full_container,
 		frequency => $frequency,

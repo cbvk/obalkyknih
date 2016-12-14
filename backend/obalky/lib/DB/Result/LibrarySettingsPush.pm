@@ -57,12 +57,6 @@ __PACKAGE__->table("library_settings_push");
   is_nullable: 0
   size: 255
 
-=head2 port
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 0
-
 =head2 email
 
   data_type: 'varchar'
@@ -105,8 +99,6 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 0 },
   "url",
   { data_type => "varchar", is_nullable => 0, size => 255 },
-  "port",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "email",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "fe",
@@ -174,8 +166,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-11-14 14:21:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ca7WQ/kpzOvx+Atr6UXliw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-12-14 01:36:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:g5fcWVIXZrOnqK6cMgMd0g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

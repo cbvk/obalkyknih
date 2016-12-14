@@ -33,10 +33,6 @@
 				<input type="text" name="url" value="[% settings.url %]" id="settings_url" />
 			</p>
 			<p>
-				<label for="settings_port">Port:</label>
-				<input type="text" name="port" value="[% settings.port %]" id="settings_port" />
-			</p>
-			<p>
 				<label for="settings_email">E-mail:</label>
 				<input type="text" name="email" value="[% settings.email %]" id="settings_email" />
 			</p>
@@ -61,10 +57,11 @@
 			<p>
 				<label class="label-wide">Počet záznamů v dávce</label>
 				<select name="item_count" value="[% settings.item_count %]" id="settings_item_count">
-					<option value=5 [% IF settings.item_count==5 %]selected[% END %]>5</option>
 					<option value=20 [% IF settings.item_count==20 %]selected[% END %]>20</option>
 					<option value=50 [% IF settings.item_count==50 %]selected[% END %]>50</option>
 					<option value=100 [% IF settings.item_count==100 %]selected[% END %]>100</option>
+					<option value=500 [% IF settings.item_count==500 %]selected[% END %]>500</option>
+					<option value=1000 [% IF settings.item_count==1000 %]selected[% END %]>1000</option>
 				</select>	
 			</p>
 			<p>

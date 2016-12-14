@@ -758,7 +758,7 @@ sub get_settings_push : Local {
 		'+as' => 'sigla'});
 	foreach ($resSettings->all) {
 		push @settings, ({
-							'sigla'=>$_->get_column('sigla'), 'url'=>$_->url, 'port'=>$_->port, 
+							'sigla'=>$_->get_column('sigla'), 'url'=>$_->url, 
 							'email'=>$_->email, 'full_container'=>$_->full_container, 
 							'frequency'=>$_->frequency, 'item_count'=>$_->item_count
 		});

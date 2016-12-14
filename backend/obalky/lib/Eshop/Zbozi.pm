@@ -11,6 +11,7 @@ use strict;
 use File::Path;# qw(make_path remove_tree);
 use Digest::MD5 qw(md5 md5_hex md5_base64);
 use Encode;
+use Clone 'clone';
 
 use DB;
 use strict;
@@ -112,9 +113,11 @@ sub process_shopitem {
 	
 	# MULTIPLE EANS (Zbozi.cz)
 	my @eans; my @params;
-	if ($item->{eans} and ref $item->{eans}->{ean} eq 'ARRAY') {
-		my @xml_eans = @{$item->{eans}->{ean}};
+	if (($item->{eans} and ref $item->{eans}->{ean} eq 'ARRAY') or ($item->{EANS} and ref $item->{EANS}->{EAN} eq 'ARRAY')) {
+		my @xml_eans = @{$item->{eans}->{ean}} if ($item->{eans}); # parametry malymi pismeny
+		my @xml_eans = @{$item->{EANS}->{EAN}} if ($item->{EANS}); # parametry velkymi pismeny
 		foreach my $ean_tmp (@xml_eans) {
+			
 			$ean_tmp = Obalky::BibInfo->parse_code($ean_tmp);
 			next if ($ean_tmp ~~ @eans or (defined $ean and $ean eq $ean_tmp));
 			if (not defined $ean) {
@@ -125,7 +128,8 @@ sub process_shopitem {
 			}
 		}
 	}
-	$ean = $item->{eans}->{ean} if ($item->{eans} and ref($item->{eans}->{ean}) eq '');
+	push @params, { 'ean13'=>$item->{eans}->{ean}, 'nbn'=>undef, 'oclc'=>undef } if ($item->{eans} and $item->{eans}->{ean} ne '');
+	push @params, { 'ean13'=>$item->{EANS}->{EAN}, 'nbn'=>undef, 'oclc'=>undef } if ($item->{EANS} and $item->{EANS}->{EAN} ne '');
 	
 	# Flexibooks: ebook ISBN
 	$ean = $item->{isbn_ebook} if ($eshop->get_column('id')==7027 and !$ean);
@@ -189,8 +193,8 @@ sub process_shopitem {
 	# ANOTACE
 	$info->{review_impact} = $Obalky::Media::REVIEW_ANNOTATION;
 	$info->{review_html} = $item->{DESCRIPTION} || $custom_description;
-	$info->{review_html} =~ s/"$//g;
-	$info->{review_html} =~ s/^"//g;
+	$info->{review_html} =~ s/"$//g if (defined $info->{review_html});
+	$info->{review_html} =~ s/^"//g if (defined $info->{review_html});
 	$info->{review_library} = $eshop->get_column('library') if ($eshop);
 	
 	# INFORMACE V ELEMENTU <PARAM>
@@ -320,6 +324,9 @@ sub crawl {
 	system("wget -q $feed_url -O $tmp_dir/feed.xml") and die "$tmp_dir: $!";
 	warn "Got xml feed\n" if($ENV{DEBUG});
 	
+	#system("sed -i $feed_url -O $tmp_dir/feed.xml") and die "$tmp_dir: $!";
+	#warn "Sanitized xml feed\n" if($ENV{DEBUG});
+	
 	my $max = 35000;
 	$max = $ENV{OBALKY_ESHOP_ITEMS} if ($ENV{OBALKY_ESHOP_ITEMS});
 	
@@ -338,7 +345,7 @@ sub crawl {
 		return ();
 	}
 
-	my $demo = $ENV{DEBUG} ? 35000 : 3_000_000; # vsechno naraz..
+	my $demo = $ENV{DEBUG} ? 20000 : 3_000_000; # vsechno naraz..
 
 	my $items = @{$xml->{$el_shopitem}};
 	warn "$items SHOPITEMs\n" if($ENV{DEBUG});
@@ -354,10 +361,53 @@ sub crawl {
 		my $lastmonth = time-31*24*60*60; # znovu sklid starsi nez mesic
 		next if($storable->{$md5} and $storable->{$md5} > $lastmonth);
 		$storable->{$md5} = time;
-
+		
 		my $book = $self->process_shopitem($tmp_dir,$item,$eshop);
 		warn Dumper($book) if($ENV{DEBUG} and $ENV{DEBUG} > 1);
-		push @books, $book if($book);
+		if ($book) {
+			my @params = @{$book}[4];
+			
+			# rozmnozit, kniha ma vice EAN (vydani)
+			if (@params) {
+				push @books, $book;
+				foreach my $itemEan (@{$params[0]}) {
+					my @newBook = map { @$_ } $book;
+					
+					# kopie bibinfo
+					my $newBookBibinfo = bless { %{$newBook[0]} }, ref $newBook[0];
+					
+					# instrukce pro vytvoreni vazby
+					my $newBookMedia = bless { %{$newBook[1]} }, ref $newBook[1];
+					$newBookMedia->{relation} = {
+						type => 1,
+						parent_ean13 => $newBookBibinfo->{ean13},
+						parent_nbn => $newBookBibinfo->{nbn},
+						parent_oclc => $newBookBibinfo->{oclc}
+					};
+					$newBook[1] = $newBookMedia;
+					
+					# nove parametry
+					$newBookBibinfo->{ean13} = $itemEan->{ean13};
+					$newBookBibinfo->{nbn} = $itemEan->{nbn};
+					$newBookBibinfo->{oclc} = $itemEan->{oclc};
+					
+					# kvuli povinne unikatnosti URL produktu
+					my $productPostfix = '';
+					$productPostfix = $itemEan->{ean13} if ($itemEan->{ean13});
+					$productPostfix = ($productPostfix ne '' ? $productPostfix.'_' : '') . $itemEan->{nbn} if ($itemEan->{nbn});
+					$productPostfix = ($productPostfix ne '' ? $productPostfix.'_' : '') . $itemEan->{oclc} if ($itemEan->{oclc});
+					$newBook[2] = $newBook[2].'#'.$productPostfix;
+					
+					$newBook[0] = $newBookBibinfo;
+					$newBook[4] = [];
+					push @books, [@newBook];
+				}
+			}
+			
+			else {
+				push @books, $book; # kniha nema dalsie EAN (vydani)
+			}
+		}
 		last unless($demo--);
 		
 		$i++;

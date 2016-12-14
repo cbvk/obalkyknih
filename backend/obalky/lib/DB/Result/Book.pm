@@ -347,6 +347,36 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 book_relation_book_parents
+
+Type: has_many
+
+Related object: L<DB::Result::BookRelation>
+
+=cut
+
+__PACKAGE__->has_many(
+  "book_relation_book_parents",
+  "DB::Result::BookRelation",
+  { "foreign.book_parent" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 book_relation_book_relations
+
+Type: has_many
+
+Related object: L<DB::Result::BookRelation>
+
+=cut
+
+__PACKAGE__->has_many(
+  "book_relation_book_relations",
+  "DB::Result::BookRelation",
+  { "foreign.book_relation" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 books
 
 Type: has_many
@@ -698,8 +728,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-11-27 11:19:49
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wCcB6fIPmroXzsySUjFwCg
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-12-09 19:11:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qLiLMES34YPIEYSqKJvdZA
 
 use Obalky::Media;
 use Data::Dumper;
@@ -805,8 +835,10 @@ sub recalc_rating {
 		# napocitej rating
 		if(defined $_->rating) {
 			if ($_->rating > 0) {
-				if($_->product) { $ers += $_->rating; $erc++ }
-						   else { $rs  += $_->rating; $rc++ }
+				my $ratingCnt = 1;
+				$ratingCnt = $_->cnt if ($_->cnt);
+				if($_->product) { $ers += $_->rating; $erc += $ratingCnt; }
+						   else { $rs  += $_->rating; $rc += $ratingCnt; }
 			}
 		}
 	}
@@ -881,8 +913,7 @@ sub get_rating_avg5 { # nutne asi jen kvuli view
 	my($rs,$rc) = $book->get_rating;
 	return undef unless $rc;
 	my $avg = $rs/$rc;
-	return $avg/20 unless($avg % 20);
-	return sprintf("%1.1f",$book->get_rating_avg100/20);
+	return sprintf("%1.1f",$avg/20);
 }
 sub is_library_rating { # pouzito ve view
 	my($book,$library) = @_;

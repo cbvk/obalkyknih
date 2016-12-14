@@ -450,6 +450,24 @@ sub save_to {
 		}
 	}
 	
+	# 7. Relation
+	if ($media->{relation}) {
+		my $relation = $media->{relation};
+		my $bibinfoParams = {
+			ean13 => $relation->{parent_ean13},
+			nbn => $relation->{parent_nbn},
+			oclc => $relation->{parent_oclc}
+		};
+		my $bibinfoRelParent = Obalky::BibInfo->new_from_params($bibinfoParams);
+		my $bookRelParent = DB->resultset('Book')->find_by_bibinfo($bibinfoRelParent);
+		warn Dumper($bibinfoRelParent);
+		#relace jeste neni, pridej
+		if (defined $bookRelParent) {
+			my $resRelation = DB->resultset('BookRelation')->search({ -or => [{ book_parent=>$bookRelParent->id, book_relation=>$book->id }, { book_parent=>$book->id, book_relation=>$bookRelParent->id }] });
+			DB->resultset('BookRelation')->create({ book_parent=>$bookRelParent->id, book_relation=>$book->id, relation_type=>1 }) unless ($resRelation->count);
+		}
+	}
+	
 }
 
 sub price_human {

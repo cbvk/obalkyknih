@@ -12,7 +12,6 @@ sub edit_settings {
 	push @errors, "Neplatný identifikátor oprávnění.\n"  unless ($id =~ /^\d+$/);
 	
 	my $url = $params->{url};
-	my $port = $params->{port};
 	my $email = $params->{email};
 	my $full_container = $params->{full_container} eq "on" ? 1 : 0;
 	my $frequency = $params->{frequency};
@@ -24,10 +23,8 @@ sub edit_settings {
 	if ($settings) {
 		if (!$url) {
 			push @errors, "Nutne vyplnit Url.\n";
-		} elsif (!$port) {
-			push @errors, "Nutne vyplnit Port.\n";
-		} else {
-			push @errors, "Port je mimo rozsah.\n" if (($port+0) < 0 || ($port+0) > 65535);
+		}
+		else {
 			push @errors, "Na tuto akci nemate opravneni.\n" unless ($settings->get_column('library') == $library->id);
 		}
 	} else {
@@ -41,9 +38,6 @@ sub edit_settings {
 		
 		if ($settings->get_column('url') ne $url) {
 			$modifiedParams->{url} .= $url;
-		}
-		if ($settings->get_column('port') ne $port) {
-			$modifiedParams->{port} .= $port;
 		}
 		if ($settings->get_column('email') ne $email) {
 			$modifiedParams->{email} .= $email;
@@ -62,7 +56,6 @@ sub edit_settings {
 		if ($modifiedParams) {
 			$settings->update({
 				url => $url,
-				port => $port,
 				email => $email,
 				full_container => $full_container,
 				frequency => $frequency,
@@ -130,7 +123,6 @@ sub add_settings {
 	my($fe_id) = @row;
 	
 	my $url = $params->{url};
-	my $port = $params->{port};
 	my $email = $params->{email};
 	my $full_container = $params->{full_container} eq "on";
 	my $frequency = $params->{frequency};
@@ -142,17 +134,12 @@ sub add_settings {
 	
 	if (!$url) {
 		push @errors, "Nutne vyplnit Url.\n";
-	} elsif (!$port) {
-		push @errors, "Nutne vyplnit Port.\n";
-	} else {
-		push @errors, "Port je mimo rozsah.\n" if (($port+0) < 0 || ($port+0) > 65535);
 	}
 	
 	unless (@errors) {
 		DB->resultset('LibrarySettingsPush')->create({
 			library => $library,
 			url => $url,
-			port => $port,
 			email => $email,
 			full_container => $full_container,
 			frequency => $frequency,
@@ -162,7 +149,7 @@ sub add_settings {
 		# prenes novou hodnotu na vsechny FE
 		my $fe = DB->resultset('FeList')->search({ id => $fe_id });
 		warn Dumper($fe);
-		DB->resultset('FeSync')->request_sync_settings_push_create($library, $url, $port, $email, $fe, $full_container, $frequency, $item_count);
+		DB->resultset('FeSync')->request_sync_settings_push_create($library, $url, $email, $fe, $full_container, $frequency, $item_count);
 	} else {
 		die $errors[0]."\n" if(@errors == 1);
 		die "<ul>".(join("\n",map "<li>$_</li>", @errors))."</ul>\n";
