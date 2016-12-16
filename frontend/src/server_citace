@@ -1,0 +1,4 @@
+#!/bin/bash
+
+tsc node_modules/okcz_citace_v1_server.ts;node okcz_citace.js
+

@@ -1,0 +1,4 @@
+#!/bin/bash
+
+tsc node_modules/okcz19_server.ts;node okcz19.js
+

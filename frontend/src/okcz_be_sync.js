@@ -1,10 +1,9 @@
 // version 1
 
 // mongodb://url:port/database  - spojeni na mongodb
-var urlmongo = "mongodb://localhost:27017/test"
+var urlmongo = "mongodb://localhost:27017/okcz_db"
 // adresa backendu
 var urlMain = "www.obalkyknih.cz"
-//var urlMain = "10.90.90.14"
 // timeout dotazu na backend (ms)
 var timeout = 5 * 1000;
 // pole obsahuje _id vsech synch. udalosti
