@@ -114,14 +114,14 @@ sub save_to_source{
 			warn 'PREHRAVAM OBRAZEK PRODUKTU NA ZAKLADE PRIORITY ROZLISENI ...' if ($ENV{DEBUG});
 			my ($cover_old_icon,$cover_old_thumb,$cover_old_medium,$cover_old_orig) = (undef,undef,undef,undef);
 			if ($source->cover) {
-				$cover_old_icon = $product->cover->get_column('file_icon');
-				$cover_old_thumb = $product->cover->get_column('file_thumb');
-				$cover_old_medium = $product->cover->get_column('file_medium');
-				$cover_old_orig = $product->cover->get_column('file_orig');
+				$cover_old_icon = $source->cover->get_column('file_icon');
+				$cover_old_thumb = $source->cover->get_column('file_thumb');
+				$cover_old_medium = $source->cover->get_column('file_medium');
+				$cover_old_orig = $source->cover->get_column('file_orig');
 			}
 			
 			$cover = DB->resultset('Cover')->create_from_file($auth,$source,$tmp);
-	
+			
 			$cover->update({ orig_url => $cover_url, auth_source => $source }) if($cover);
 			$source->update({ cover => $cover, cover_url => $cover_url });
 			$auth->update({ cover => $cover });
@@ -143,7 +143,7 @@ sub save_to_source{
 		} else {
 			warn 'OBRAZEK PRODUKTU NENI NUTNE PREHRAT ...' if ($ENV{DEBUG});
 		}
-	}	
+	}
 
 	#nahra anotaciu
 	if ($annotation) {

@@ -1,7 +1,5 @@
 #!/usr/bin/perl -w
 
-# Crawler - stahuj vsechno, co ma nakladatel nove
-
 use Data::Dumper;
 use DateTime::Format::MySQL;
 use DateTime;
@@ -28,10 +26,11 @@ my $to   = DateTime->today()->subtract(days => 1);
 if($mode eq 'period') {
 	$from = DateTime::Format::ISO8601->parse_datetime( $force_from );
 	$to   = DateTime::Format::ISO8601->parse_datetime( $force_to );
+	$to   =~ s/00:00:00/23:59:59/g;
 }
 
 #moznost upravit existujici citace starsi nez tyden
-my $crawlable =  DateTime->today()->subtract(days => 7);
+my $crawlable =  DateTime->today()->subtract(days => 90);
 my @crawler_eshops = Eshop->get_crawled();
 my @eshops;
 
@@ -57,6 +56,7 @@ foreach my $eshop (@eshops) {
 	warn "Crawling $name from $from to $to\n" if($DEBUG);
 
 	my @list;
+	my $cnt = 0;
 
 	eval { @list = $factory->crawl($from,$to)
 		    };
@@ -65,15 +65,15 @@ foreach my $eshop (@eshops) {
 		next unless ($rec and $bibinfo);
 		my $book = DB->resultset('Book')->find_by_bibinfo($bibinfo);
 		if ($book){
-			if (($book->citation && $crawlable > $book->citation_found)){
-				my @previous_citation_eshop =  DB->resultset('Eshop')->search({ id => $book->citation_source});
-				my $priority = $previous_citation_eshop[0]->priority;
-				#prepise citaci jestli ma crawlujici eshop vyssi prioritu
-				$citation = get_citation($rec) if ($eshop->priority > $priority);
-			}		
-			elsif (!$book->citation){
+# !!! todo			if (($book->citation && $crawlable > $book->citation_time)){
+#				my @previous_citation_eshop =  DB->resultset('Eshop')->search({ id => $book->citation_source});
+#				my $priority = $previous_citation_eshop[0]->priority;
+#				#prepise citaci jestli ma crawlujici eshop vyssi prioritu
+#				$citation = get_citation($rec) if ($eshop->priority > $priority);
+#			}		
+#			elsif (!$book->citation){
 				$citation = get_citation($rec);
-			}
+#			}
 		}
 		
 		else {
@@ -86,10 +86,14 @@ foreach my $eshop (@eshops) {
 		}
 		if ($citation){
 			$found{$name}++;
-			$book->update({citation => $citation,  citation_found => DateTime->now(), citation_source => $eshop->id  });
+			$book->update({citation => $citation,  citation_time => DateTime->now(), citation_source => $eshop->id  });
 			warn "Adding citation : \n$citation" if($ENV{DEBUG});
 		}
-	}
+		
+		$cnt++;			
+		warn 'citace #'.$cnt if ($cnt % 50 == 0);
+	}			
+	warn 'citace #'.$cnt;
 	
 	open(LOG,">>utf8","/opt/obalky/www/data/crawler.csv") or die;
 	my($sec,$min,$hour,$mday,$mon,$year) = localtime(time);
@@ -107,7 +111,8 @@ sub get_citation{
 	my $ua = LWP::UserAgent->new();
 
 	#komunikacia s FE - treba upravit adresu
-	my $resp = $ua->post('http://192.168.1.165:1339/citace',$rec,'Content-type' => 'application/json;charset=utf-8',Content => encode_json($rec));
+	#my $resp = $ua->post('http://192.168.122.1:1339/citace',$rec,'Content-type' => 'application/json;charset=utf-8',Content => encode_json($rec));
+	my $resp = $ua->post('http://cache2.obalkyknih.cz:8080/citace',$rec,'Content-type' => 'application/json;charset=utf-8',Content => encode_json($rec));
 	return $resp->content;
 	
 }

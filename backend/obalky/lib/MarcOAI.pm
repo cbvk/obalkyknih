@@ -72,6 +72,8 @@ sub start_element {
                 $tag = $element->{Attributes}->{'{}tag'}->{Value};
                 $ind1 = $element->{Attributes}->{'{}ind1'}->{Value};
                 $ind2 = $element->{Attributes}->{'{}ind2'}->{Value};
+                $ind1 = ' ' unless($ind1);
+                $ind2 = ' ' unless($ind2);
                 push @stack, { 'name' => $name, 'tag' => $tag, 'ind1' => $ind1, 'ind2' => $ind2 };
         }
         

@@ -114,7 +114,7 @@ Tuto knihu ještě nemáme v databázi!
 		[% IF book.citation %]
 		<br/><b>Citace</b> (dle ČSN ISO 690):<br/>
 		[% book.citation %]<br/>
-		<span style="font-size:0.8rem;float:right;">Zdroj: [% book.citation_source.name %]</span><br/>
+		<span style="font-size:0.8rem;float:right;">Zdroj: [% book.citation_source.fullname %]</span><br/>
 		<div style="clear:both;"></div>
 		[% END %]
 	</p>
@@ -147,7 +147,7 @@ Tuto knihu ještě nemáme v databázi!
 	[% END %]
 
 	[% IF book.displayable_products %]
-      <h3>Knihkupci a nakladatelé</h3>
+      <h3>Dostupné zdroje <!--Knihkupci a nakladatelé--></h3>
 	  <p>
 	  <table width="100%" cellspacing=4>
 	  [% FOREACH product = book.displayable_products -%]

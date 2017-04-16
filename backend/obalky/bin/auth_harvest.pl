@@ -122,7 +122,7 @@ while(my $auth = $auth_list->next) {
 		
 		die $name unless($product_url);
 
-		$source->add_product_auth($source,$product_authinfo,$product_media,$product_url);
+		$source->add_auth_source($product_authinfo,$product_media,$product_url);
 
 		unlink($TMP_DIR."/".$filename) if($filename);
 		last;

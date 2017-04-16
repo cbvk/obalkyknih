@@ -11,6 +11,7 @@ use DateTime::Format::MySQL;
 use JSON;
 use URI::Escape;
 use Scalar::Util qw(reftype);
+use Digest::MD5 qw(md5_hex);
 use HTML::Entities;
 use Obalky::Config;
 
@@ -125,6 +126,7 @@ sub do_sync {
 	$search_params = {
 		flag_synced => 0,
 		retry_date => { '<=', "$date $time" }
+		#,'me.id' => 4408508 #debug
 	} unless ($forced);
 	
 	$search_params = {
@@ -196,12 +198,14 @@ sub send_fe_request {
 	
 	my $req;
 	my $url = 'http://'.$sync->get_column('ip_addr').':'.$sync->get_column('port').'/?'.join('&', @$params);
+	#warn $url; #debug
 
 	if (!$post_data) {
 		$req = HTTP::Request->new(GET => $url);
 	} else {
 		$req = HTTP::Request->new(POST => $url);
-		$req->content('{'.join(',', @$post_data).'}');
+		my $content = encode('UTF-8', '{'.join(',', @$post_data).'}');
+		$req->content($content);
 	}
 
 	$req->header('content-type' => 'application/json');
@@ -236,6 +240,7 @@ sub book_sync_remove {
 	my($pkg,$id,$fe,$forced) = @_;
 	return unless($id);
 	my $sync_params;
+	my $checksum_differs = 1;
 	my $book = DB->resultset('Book')->find($id);
 	if ($book) {
 		$sync_params->{book_id} = $book->get_column('id_parent') ? $book->get_column('id_parent') : $id;
@@ -243,14 +248,21 @@ sub book_sync_remove {
 		$sync_params->{nbn} = $book->get_column('nbn') if ($book->get_column('nbn'));
 		$sync_params->{oclc} = $book->get_column('oclc') if ($book->get_column('oclc'));
 		my $metadata = $book->enrich;
+		my $metadata_json = to_json($metadata);
+		my $metadata_checksum = md5_hex($metadata_json);
+		$checksum_differs = 0 if ($metadata_checksum eq $book->get_column('metadata_checksum'));
+		if ($checksum_differs) {
+			my $dt = DateTime->now(time_zone=>'local');
+			$book->update({ metadata_checksum => $metadata_checksum, metadata_change => $dt->datetime });
+		}
 		$sync_params->{metadata} = {
-			'value' => to_json($metadata),
+			'value' => $metadata_json,
 			'type' => 'post'
 		} if (defined $metadata);
 	} else {
 		$sync_params->{book_id} = $id;
 	}
-	if ($sync_params) {
+	if ($sync_params and $checksum_differs) {
 		$sync_params->{remove} = 'true';
 		DB->resultset('FeSync')->set_sync($sync_params, 'metadata_changed', $fe, $forced);
 	}
@@ -260,7 +272,7 @@ sub auth_sync_remove {
 	my($pkg,$id,$fe,$forced) = @_;
 	return unless($id);
 	my $sync_params;
-
+	
 	$sync_params->{auth_id} = $id;
 	if ($sync_params) {
 		$sync_params->{remove_auth} = 'true';
@@ -279,7 +291,7 @@ sub request_sync_perm {
 		permcreate => 'true',
 		sigla => $library->get_column('code'),
 		$type => $value
-	};
+	};	
 	DB->resultset('FeSync')->set_sync($sync_params, 'perm_changed');
 }
 
@@ -292,7 +304,10 @@ sub request_sync_settings_citace_remove {
 		sigla => $library->get_column('code')
 	};
 	
-	DB->resultset('FeSync')->set_sync($sync_params, 'settings_citace_changed');
+	# pouze instance FE na portu 8080
+	my $fe = DB->resultset('FeList')->search({ port => 8080 });
+	
+	DB->resultset('FeSync')->set_sync($sync_params, 'settings_citace_changed', $fe);
 }
 
 sub request_sync_settings_citace_modify {
@@ -301,7 +316,10 @@ sub request_sync_settings_citace_modify {
 	$modifiedParams->{settings_citace_modify} .= 'true';
 	$modifiedParams->{sigla} .= $library->get_column('code');
 	
-	DB->resultset('FeSync')->set_sync($modifiedParams, 'settings_citace_changed');
+	# pouze instance FE na portu 8080
+	my $fe = DB->resultset('FeList')->search({ port => 8080 });
+	
+	DB->resultset('FeSync')->set_sync($modifiedParams, 'settings_citace_changed', $fe);
 }
 
 =head2 request_sync_settings_citace
@@ -332,7 +350,10 @@ sub request_sync_settings_citace_create {
 		index_sysno => $index_sysno
 	};
 	
-	DB->resultset('FeSync')->set_sync($sync_params, 'settings_citace_changed');
+	# pouze instance FE na portu 8080
+	my $fe = DB->resultset('FeList')->search({ port => 8080 });
+	
+	DB->resultset('FeSync')->set_sync($sync_params, 'settings_citace_changed', $fe);
 }
 
 sub request_sync_settings_push_remove {

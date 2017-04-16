@@ -234,6 +234,18 @@ __PACKAGE__->table("book");
   datetime_undef_if_invalid: 1
   is_nullable: 1
 
+=head2 metadata_checksum
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 32
+
+=head2 metadata_change
+
+  data_type: 'datetime'
+  datetime_undef_if_invalid: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -311,6 +323,14 @@ __PACKAGE__->add_columns(
   "citation_source",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "citation_time",
+  {
+    data_type => "datetime",
+    datetime_undef_if_invalid => 1,
+    is_nullable => 1,
+  },
+  "metadata_checksum",
+  { data_type => "char", is_nullable => 1, size => 32 },
+  "metadata_change",
   {
     data_type => "datetime",
     datetime_undef_if_invalid => 1,
@@ -396,13 +416,13 @@ __PACKAGE__->has_many(
 
 Type: belongs_to
 
-Related object: L<DB::Result::Library>
+Related object: L<DB::Result::Eshop>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "citation_source",
-  "DB::Result::Library",
+  "DB::Result::Eshop",
   { id => "citation_source" },
   {
     is_deferrable => 1,
@@ -728,8 +748,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-12-09 19:11:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qLiLMES34YPIEYSqKJvdZA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-04-15 01:55:35
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:PpBcsfp9pgEJniJtgYJVFA
 
 use Obalky::Media;
 use Data::Dumper;
@@ -1309,8 +1329,14 @@ sub enrich {
 	$info->{dig_obj} = $uuidLib if ($uuidLib);
 	
 	# 11. Citace CSN ISO 690
-	$info->{csn_iso_690} = $book->get_column('citation') if ($book->get_column('citation') and $book->get_column('citation') ne '');
-	$info->{csn_iso_690_source} = $book->citation_source->get_column('name') if ($book->get_column('citation_source') and $book->get_column('citation_source') ne '');
+	if ($book->get_column('citation_source') and $book->get_column('citation_time') and $book->get_column('citation') and $book->get_column('citation') ne '' and $book->get_column('citation_source') ne '') {
+		my $dt = $book->get_column('citation_time');
+		$info->{csn_iso_690} = $book->get_column('citation');
+		$info->{csn_iso_690_source} = $book->citation_source->get_column('fullname').' '.substr($dt,8,2).'.'.substr($dt,5,2).'.'.substr($dt,0,4);
+	}
+	
+	# 12. spolupracujeme s
+	$info->{cooperating_with} = 'http://www.cbdb.cz|CBDB.cz' if ($book->is_library_rating(51214));
 
 	return $info;
 }

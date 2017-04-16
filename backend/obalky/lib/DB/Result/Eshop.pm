@@ -418,6 +418,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 books
+
+Type: has_many
+
+Related object: L<DB::Result::Book>
+
+=cut
+
+__PACKAGE__->has_many(
+  "books",
+  "DB::Result::Book",
+  { "foreign.citation_source" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 library
 
 Type: belongs_to
@@ -469,8 +484,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-09-19 07:35:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SqNQB/YCtwTzhYu0nqm5ZQ
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-01-02 14:46:53
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jGLKRsimurxvvdLty7FhsA
 
 
 use Data::Dumper;
@@ -571,44 +586,42 @@ sub add_product {
 	return $product;
 }
 
-sub add_product_auth {
-	my($self,$eshop,$authinfo,$media,$source_url) = @_;
-
+sub add_auth_source {
+	my($eshop,$authinfo,$media,$source_url) = @_;
+	
 	my $auth = DB->resultset('Auth')->find_by_authinfo($authinfo);
-
+	
 	my $exists = DB->resultset('AuthSource')->find({ source_url => $source_url });
-		
+	
 	my $source = DB->resultset('AuthSource')->update_or_create(
 		{ eshop => $eshop->id, auth => $auth, modified => DateTime->now(), source_url => $source_url },
 		{ key => 'auth_source_eshop_auth' } );
 	#$source->update({ modified => DateTime->now() });
 	#$source->update({ source_url => $source_url }) if (defined $source_url and defined $source->get_column('source_url') and $source_url ne $source->get_column('source_url'));
 	
-	warn "add_product($source_url): updated ".($source?$source->id:'-')."\n"
+	warn "add_auth_source($source_url): updated ".($source?$source->id:'-')."\n"
 				if($ENV{DEBUG});
-
+	
 	my $downloadSuccess = $media->save_to($source);
-
+	
 	unless ($downloadSuccess) { #zlyhal download media
 		if ($exists) { #treba vymazat zaznam ked pred tym neexistoval
 			$exists->delete();
 		}
 		return;
 	};
-
+	
 	$authinfo->save_to($source);
-
+	
 	$source->update({
-		name => $authinfo->get_fullname(),
-		year => $authinfo->{auth_date},
 		source_url => $source_url
 	});
 	
 	my $auth_authinfo = $auth->authinfo;
 	$auth_authinfo->save_to($auth) if($auth_authinfo->merge($authinfo));
-
-	#$auth->actualize_by_source($source,1);
-
+	
+	$auth->actualize_by_source($source,1);
+	
 	return $source;
 }
 

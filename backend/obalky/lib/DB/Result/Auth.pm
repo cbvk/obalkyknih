@@ -417,6 +417,7 @@ sub enrich {
 	$author = $auth->get_column('auth_name') if ($auth->get_column('auth_name'));
 	$info->{auth_name} = (substr($author,-1) eq ',') ? substr($author,0,-1) : $author;
 	$info->{auth_year} = $auth->get_column('auth_date') if ($auth->get_column('auth_date'));
+	$info->{auth_biographical_or_historical_data} = $auth->get_column('auth_biography') if ($auth->get_column('auth_biography'));
 	
 	# 3. Odkazy
 	$info->{links} = [];
@@ -440,7 +441,6 @@ sub actualize_by_source {
 	
 	# pokud se neco zmenilo, je potreba zaznam zneplatnit a pozadat taky FE o zneplatneni
 	$invalidate = ($auth->cover->id!=$source->cover->id) ? 1 : 0 if ($auth->cover and $source->cover);
-	$invalidate = ($auth->toc->id!=$source->toc->id) ? 1 : $invalidate if ($auth->toc and $source->toc);
 	
 	my ($oldPriority,$newPriority,$oldDim,$newDim) = (0,0,0,1); #init
 	my $eshopId = $source->eshop->get_column('id');

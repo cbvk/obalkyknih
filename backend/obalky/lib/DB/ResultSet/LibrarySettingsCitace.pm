@@ -24,7 +24,7 @@ sub edit_settings {
 	
 	my $settings = DB->resultset('LibrarySettingsCitace')->find($id);
 	if ($settings) {
-		if (!($url && ($type eq 'marcxml' || ($port && $database && $encoding && $name && $password && $index_sysno)))) {
+		if (!($url && ($type eq 'marcxml' || ($port && $database && $encoding && $index_sysno)))) {
 			push @errors, "Nutne vyplnit vsechny hodnoty.\n";
 		} else {
 			my $ip = $url =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
@@ -36,7 +36,7 @@ sub edit_settings {
 			push @errors, "Na tuto akci nemate opravneni.\n" unless ($settings->get_column('library') == $library->id);
 			
 			if ($type eq 'z3950') {
-				push @errors, "Port je mimo rozsah.\n" if ($port lt 0 || $port gt 65535);
+#				push @errors, "Port je mimo rozsah.\n" if ($port lt 0 || $port gt 65535);
 				push @errors, "Spatne zvolene kodovani.\n" if ($encoding ne 'UTF-8' && $encoding ne 'CP-1250' && $encoding ne 'Marc-8');
 			}
 		}
@@ -137,7 +137,7 @@ sub add_settings {
 	
 	push @errors, "Neplatny identifikator knihovny.\n" unless ($library);
 	
-	if (!($url && ($type eq 'marcxml' || ($port && $database && $encoding && $name && $password && $index_sysno)))) {
+	if (!($url && ($type eq 'marcxml' || ($port && $database && $encoding && $index_sysno)))) {
 		push @errors, "Nutne vyplnit vsechny hodnoty.\n";
 	} else {
 		my $ip = $url =~ /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
@@ -148,7 +148,7 @@ sub add_settings {
 		push @errors, "Zadali jste neplatnou hodnotu url.\n" if ($urltype eq 'ref' && !$ref);
 		
 		if ($type eq 'z3950') {
-			push @errors, "Port je mimo rozsah.\n" if ($port lt 0 || $port gt 65535);
+#			push @errors, "Port je mimo rozsah.\n" if ($port lt 0 || $port gt 65535);
 			push @errors, "Spatne zvolene kodovani.\n" if ($encoding ne 'UTF-8' && $encoding ne 'CP-1250' && $encoding ne 'Marc-8');
 		}
 	}

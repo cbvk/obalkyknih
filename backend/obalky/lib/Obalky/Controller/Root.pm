@@ -707,10 +707,10 @@ sub view : Local {
 		$toc = DB->resultset('Toc')->find($c->req->param("toc")) if ($c->req->param("toc"));
 		my $note = $c->req->param('note');
 		my $spamQuestion = $c->req->param('spamQuestion');
+		
 		my $book = DB->resultset('Book')->find($c->req->param('book'));
-		my $abuse = DB->resultset('Abuse')->
-					abuse($book,$cover,$toc,$c->req->address,$referer,$note)
-						if($spamQuestion eq 23);
+		my $abuse = DB->resultset('Abuse')->abuse($book,$cover,$toc,$c->req->address,$referer,$note) if ($spamQuestion eq 23);
+		
 		$c->stash->{error} = "Děkujeme za nahlášení, chybnou obálku se ".
 					"pokusíme co nejdřív opravit." if($abuse);
 	}
@@ -848,6 +848,12 @@ sub view : Local {
 	$c->stash->{menu} = "index";
 }
 
+sub autority : Path('obalkyknih-autority') {
+	my($self,$c) = @_;
+    $self->blue_stash($c);
+	$c->stash->{menu} = "about";
+}
+
 sub view_auth : Local {
 	my($self,$c) = @_;
 	my($library,$seance,$visitor) = Obalky->visit($c);
@@ -856,6 +862,19 @@ sub view_auth : Local {
 	
 	my $auth = undef;
 	return unless($c->req->param('auth_id'));
+	
+	# auth abuse
+	if($c->req->param('report')) {
+		my $cover = DB->resultset('Cover')->find($c->req->param("cover")) if ($c->req->param("cover"));
+		my $note = $c->req->param('note');
+		my $spamQuestion = $c->req->param('spamQuestion');
+		
+		my $auth = DB->resultset('Auth')->find($c->req->param('auth'));
+		my $abuse = DB->resultset('Abuse')->abuse_auth($auth,$cover,$c->req->address,$referer,$note) if ($spamQuestion eq 23);
+		
+		$c->stash->{error} = "Děkujeme za nahlášení, chybnou obálku se ".
+					"pokusíme co nejdřív opravit." if($abuse);
+	}
 	
 	# ziskani zaznamu autority
 	if ($c->req->param('auth_id')) {

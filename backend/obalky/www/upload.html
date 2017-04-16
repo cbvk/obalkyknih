@@ -1,4 +1,4 @@
-﻿[%PROCESS _header %]
+[%PROCESS _header %]
 
 <h1>Vložení naskenovaných obálek</h1>
 
@@ -11,7 +11,7 @@
 
 	<p><label for="file">Vložte soubor:</label>
 		<input type=file id="file" size=40 name=file></p>
-	<p class="small">Vložte soubor s naskenovaným obrázkem obálky knížky. 
+	<p class="small">Vložte soubor s naskenovaným obrázkem obálky knížky nebo autoritami. 
 		Máte-li obrázku víc, vložte <a href="http://www.winzip.com" 
 		target="_blank">ZIP</a> 
 archiv složky.</p>
@@ -21,7 +21,7 @@ archiv složky.</p>
 </fieldset>
 
 	<p>
-		<input type="submit" name="signup" class="button big" value="  Vložit obálky...  " />
+		<input type="submit" name="signup" class="button big" value="  Vložit soubor ...  " />
 	</p>
 </form>
 
@@ -30,8 +30,9 @@ archiv složky.</p>
 	<legend>Poznámky</legend>
 
 <p>
-Soubor s obrázkem knížky musí ve svém názvu obsahovat ISBN kód.
-Kód může být zapsán v 10 i 13 místné notaci, s pomlčkami nebo bez.
+Soubor s obrázkem knížky musí ve svém názvu obsahovat identifikátor (ISBN, ISSN, EAN, č. ČNB, OCLC či vlastní identifikátor).
+Kód ISBN může být zapsán v 10 i 13 místné notaci, s pomlčkami nebo bez.
+ID autorit vychází z databáze <a href="http://autority.nkp.cz/" alt="Portál Národní autority ČR">Národní autority ČR</a>.  
 </p>
 
 <p>Příklady správných jmen souborů:
@@ -45,6 +46,7 @@ Kód může být zapsán v 10 i 13 místné notaci, s pomlčkami nebo bez.
 <li>boa001-001261462.jpg
 <li>80-7203-884-8.PNG
 <li>8072038848.jpg
+<li>jk01083016.jpg
 </ul>
 
 

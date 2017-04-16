@@ -711,9 +711,11 @@ sub _do_import {
 								cover_url => "$product_url/auth_01", 
 								cover_tmpfile => "$dir/auth_01"
 							});
-			$auth->add_cover($authMedia);
+			my $auth_source_url = "http://obalkyknih.cz/import/$today/$seq";
+			my $authinfo = $auth->authinfo;
+			my $auth_source = $eshop->add_auth_source($authinfo,$authMedia,$auth_source_url);
 		}
-		$self->_do_log("auth import done ".$auth->id);
+		$self->_do_log("auth import done ".$auth->id) if (defined $auth->id);
 	}
 
     $self->_do_log("import done");

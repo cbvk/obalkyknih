@@ -123,11 +123,13 @@ __PACKAGE__->set_primary_key("id");
 
 =item * L</hostname>
 
+=item * L</port>
+
 =back
 
 =cut
 
-__PACKAGE__->add_unique_constraint("hostname", ["hostname"]);
+__PACKAGE__->add_unique_constraint("hostname", ["hostname", "port"]);
 
 =head1 RELATIONS
 
@@ -162,8 +164,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-11-14 14:21:17
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9Wrj/pt/ANkve3eo3lvvKw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-04-15 01:55:35
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:E/mN08PlSjIteMXQNnYhag
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

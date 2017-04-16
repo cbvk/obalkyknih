@@ -100,6 +100,8 @@ sub find_by_bibinfo {
    			map { push @book_ids, $_->id; } @books;
    			$books[0]->{_column_data}{book_range_ids} = \@book_ids;
    		}
+   		#nepokracujeme, hledame cislo periodika, ne souborny zaznam
+   		return wantarray ? @books : $books[0];
 	}
 	
 	# dotazy na zaznam book (souborny zaznam)
@@ -257,10 +259,10 @@ sub normalize_part {
 	}
 	
 	# svazek je druhy v poradi
-	if ($str =~ m/(sv(\.{0,1})|svazek|svazky)/) {
+	if ($str =~ m/(sv\.|svazek|svazky)/) {
 		map {
 			push @specialParts, $_ if (defined $_ and scalar @specialParts < 2 and ($_ ne 'sv' && $_ ne 'sv.' && $_ ne 'svazek' && $_ ne 'svazky'));
-		} $str =~ m/([0-9\s\.\-]*(sv(\.{0,1})|svazek|svazky)[0-9\s]*)/g;
+		} $str =~ m/([0-9\s\.\-]*(sv\.|svazek|svazky)[0-9\s]*)/g;
 	}
 	
 	# ulozeni do spravneho poradi dil-svazek
@@ -349,7 +351,11 @@ sub search_book_part {
 	my @books;
 	
 	# PERIODIKUM
+#warn $id->{part_year};   #debug
+#warn $id->{part_volume}; #debug
+#warn $id->{part_no};     #debug
 	if ($id->{part_year} or $id->{part_volume}) {
+#warn 'PERIODIKUM';       #debug
 		my (@partYear,@partVolume,@partNo) = (undef,undef,undef);
 		@partYear = @{$id->{part_year}} if ($id->{part_year});
 		@partVolume = @{$id->{part_volume}} if ($id->{part_volume});
@@ -376,6 +382,7 @@ sub search_book_part {
 	
 	# MONOGRAFIE
 	else {
+#warn 'MONOGRAFIE';       #debug
 	   	# zamezeni tomu, aby se nalezl zaznam na zaklade shody prazdneho vstupu jednoho s poli s prazdnym obsahem stejneho pole v DB
 	   	my ($part_no, $part_name) = (' ',' ');
 	   	$part_no = $id->{part_no} if ($id->{part_no});
@@ -416,21 +423,21 @@ sub search_book_part {
 }
 
 sub search_book_part_helper {
-	my ($pkg,$items,$partYear,$partVolume,$partNo,) = @_;
+	my ($pkg,$items,$partYearReq,$partVolumeReq,$partNoReq) = @_;
 	my @books;
 	
 	# dodatecne dohledame i podle slouceneho pole, separovaneho carkou
-	push @$partYear, join(',', @{$partYear}) if (scalar @$partYear > 1);
-	push @$partVolume, join(',', @{$partVolume}) if (scalar @$partVolume > 1);
-	push @$partNo, join(',', @{$partNo}) if (scalar @$partNo > 1);
+	push @$partYearReq, join(',', @{$partYearReq}) if (scalar @$partYearReq > 1);
+	push @$partVolumeReq, join(',', @{$partVolumeReq}) if (scalar @$partVolumeReq > 1);
+	push @$partNoReq, join(',', @{$partNoReq}) if (scalar @$partNoReq > 1);
 	
 	map {
-		for (my $i=0; $i<scalar @$partYear; $i++) {
-			my $partYear = @$partYear[$i];
-			for (my $j=0; $j<scalar @$partVolume; $j++) {
-				my $partVolume = @$partVolume[$j];
-				for (my $k=0; $k<scalar @$partNo; $k++) {
-					my $partNo = @$partNo[$k];
+		for (my $i=0; $i<scalar @$partYearReq; $i++) {
+			my $partYear = @$partYearReq[$i];
+			for (my $j=0; $j<scalar @$partVolumeReq; $j++) {
+				my $partVolume = @$partVolumeReq[$j];
+				for (my $k=0; $k<scalar @$partNoReq; $k++) {
+					my $partNo = @$partNoReq[$k];
 					
 					my ($partNoDb, $partVolumeDb, $partYearDb) = (undef, undef, undef);
 					$partYearDb = $_->get_column("part_year") if ($_->get_column("part_year"));
@@ -442,12 +449,15 @@ sub search_book_part_helper {
 					#$partVolumeDb = join(',',@partVolumeRange) if ($partVolumeDb and !($partVolumeDb =~ /[a-z]/i));
 					#$partYearDb = join(',',@partYearRange) if ($partYearDb and !($partYearDb =~ /[a-z]/i));
 					
+#warn Dumper('partYear:'.$partYear.'/'.$partYearDb.' ; partVolume:'.$partVolume.'/'.$partVolumeDb.' ; partNo:'.$partNo.'/'.$partNoDb); #debug
+
 					# presna shoda rok + cislo
 					if ($partYear and $partNo and $partYearDb and $partNoDb and 
 					    $partYearDb eq $partYear and $partNoDb eq $partNo and
-					    ($partVolume eq $partVolumeDb or undef $partVolume)
+					    ($partVolume eq $partVolumeDb or not $partVolume or not $partVolumeDb)
 					)
 					{
+						#warn '*1'; #debug
 						push @books, $_;
 						next;
 					}
@@ -455,9 +465,10 @@ sub search_book_part_helper {
 					# presna shoda rocnik + cislo
 					if ($partVolume and $partNo and $partVolumeDb and $partNoDb and 
 					    $partVolumeDb eq $partVolume and $partNoDb eq $partNo and
-					    ($partNo eq $partNoDb or undef $partNo)
+					    ($partYear eq $partYearDb or not $partYear or not $partYearDb)
 					)
 					{
+						#warn '*2'; #debug
 						push @books, $_;
 						next;
 					}
@@ -466,9 +477,11 @@ sub search_book_part_helper {
 					# pokud hledame periodika v rozsahu 1-6 = 1,2,3,4,5,6 a zaznam ulozeny v db. je napr. dvoucislo 3,4
 					if ($partYear and $partNo and $partYearDb and $partNoDb and 
 					    $partYearDb eq $partYear and 
-					    ($partVolume eq $partVolumeDb or undef $partVolume) and
-					    $partNo=~/\,/ and $partNoDb=~/\,/ and $partNo=~$partNoDb)
+					    ($partVolume eq $partVolumeDb or not $partVolume) and
+					    $partNo=~/\,/ and $partNoDb=~/\,/ and 
+					    ($partNo=~$partNoDb or $partNoDb=~$partNo))
 					{
+						#warn '*3'; #debug
 						push @books, $_;
 						next;
 					}
@@ -477,9 +490,11 @@ sub search_book_part_helper {
 					# pokud hledame periodika v rozsahu 1-6 = 1,2,3,4,5,6 a zaznam ulozeny v db. je napr. dvoucislo 3,4
 					if ($partVolume and $partNo and $partVolumeDb and $partNoDb and 
 					    $partVolumeDb eq $partVolume and
-					    ($partNo eq $partNoDb or undef $partNo) and
-					    $partNo=~/\,/ and $partNoDb=~/\,/ and $partNo=~$partNoDb)
+					    ($partNo eq $partNoDb or not $partNo) and
+					    $partNo=~/\,/ and $partNoDb=~/\,/ and 
+					    ($partNo=~$partNoDb or $partNoDb=~$partNo))
 					{
+						#warn '*4'; #debug
 						push @books, $_;
 						next;
 					}
@@ -487,6 +502,7 @@ sub search_book_part_helper {
 					# oprava vstupu; pokud se na vstupu rok a rocnik shoduje, jeden z nich nebude potrebny
 					if ($partYear and $partVolume and $partYear eq $partVolume)
 					{
+						#warn '*5'; #debug
 						$partVolume = undef if (length($partYear) == 4);
 						$partYear = undef   if (length($partYear) != 4);
 					}
@@ -497,6 +513,7 @@ sub search_book_part_helper {
 						($partYear and !$partVolume and $partYearDb eq $partYear and !$partNoDb) or
 						(!$partYear and $partVolume and $partVolumeDb eq $partVolume and !$partNoDb))
 					{
+						#warn '*6'; #debug
 						push @books, $_;
 						next;
 					}

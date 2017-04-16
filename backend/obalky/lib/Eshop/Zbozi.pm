@@ -114,8 +114,9 @@ sub process_shopitem {
 	# MULTIPLE EANS (Zbozi.cz)
 	my @eans; my @params;
 	if (($item->{eans} and ref $item->{eans}->{ean} eq 'ARRAY') or ($item->{EANS} and ref $item->{EANS}->{EAN} eq 'ARRAY')) {
-		my @xml_eans = @{$item->{eans}->{ean}} if ($item->{eans}); # parametry malymi pismeny
-		my @xml_eans = @{$item->{EANS}->{EAN}} if ($item->{EANS}); # parametry velkymi pismeny
+		my @xml_eans;
+		@xml_eans = @{$item->{eans}->{ean}} if ($item->{eans}); # parametry malymi pismeny
+		@xml_eans = @{$item->{EANS}->{EAN}} if ($item->{EANS}); # parametry velkymi pismeny
 		foreach my $ean_tmp (@xml_eans) {
 			
 			$ean_tmp = Obalky::BibInfo->parse_code($ean_tmp);

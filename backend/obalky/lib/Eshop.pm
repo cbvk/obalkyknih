@@ -57,6 +57,7 @@ use Eshop::Upload;
 use Eshop::NKP_OAI;
 use Eshop::Kramerius_MZK;
 use Eshop::Kramerius_CBVK;
+use Eshop::CitaceZ39;
 
 sub name { shift->{name} };
 

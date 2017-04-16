@@ -239,5 +239,26 @@ $(function () {
 		$(this).parent().parent().hide();
 		return false;
 	});
+	
+	// Delete auth cover on admin_auth_cover
+	$('.auth-cover-del').on('click', function(){
+		var id = $(this).data('id'),
+		    img = $(this).next(); 
+		
+		img.attr('src', '/img/loading_small.gif');
+		
+		$.ajax({
+	        url: 'http://'+window.location.hostname+'/admin_auth_cover',
+			data: 'del='+id,
+	        type: 'POST',
+	        success: function(data, textStatus, XMLHttpRequest) {
+	        	img.attr('src', '/img/spacer.gif');
+			},
+			failure: function(data, textStatus, XMLHttpRequest) {
+				img.attr('src', '/img/error_big.gif');
+			}
+		});
+		return false;
+	});
 
 });

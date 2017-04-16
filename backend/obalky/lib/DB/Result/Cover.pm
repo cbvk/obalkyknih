@@ -200,18 +200,6 @@ __PACKAGE__->set_primary_key("id");
 
 =head1 UNIQUE CONSTRAINTS
 
-=head2 C<cover_auth_source>
-
-=over 4
-
-=item * L</auth_source>
-
-=back
-
-=cut
-
-__PACKAGE__->add_unique_constraint("cover_auth_source", ["auth_source"]);
-
 =head2 C<cover_checksum>
 
 =over 4
@@ -469,8 +457,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-08-07 00:32:08
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:K+1Lbp06bVcf3wf2XpTHSA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-04-16 01:10:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/Dm+wCgWs20jsaAwf4sNYg
 
 use Data::Dumper;
 use Image::Info qw(image_info dim);

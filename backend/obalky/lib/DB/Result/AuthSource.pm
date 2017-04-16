@@ -170,21 +170,6 @@ __PACKAGE__->add_unique_constraint("auth_source_eshop_auth", ["eshop", "auth"]);
 
 =head1 RELATIONS
 
-=head2 active_cover
-
-Type: might_have
-
-Related object: L<DB::Result::Cover>
-
-=cut
-
-__PACKAGE__->might_have(
-  "active_cover",
-  "DB::Result::Cover",
-  { "foreign.auth_source" => "self.id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 auth
 
 Type: belongs_to
@@ -220,6 +205,21 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 covers
+
+Type: has_many
+
+Related object: L<DB::Result::Cover>
+
+=cut
+
+__PACKAGE__->has_many(
+  "covers",
+  "DB::Result::Cover",
+  { "foreign.auth_source" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 eshop
 
 Type: belongs_to
@@ -236,8 +236,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-08-07 00:00:56
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:yJ0kfFx3gffibNDEbq1fMw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-04-16 01:10:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0s/oJkKVkJIbi5NSTro24g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -29,10 +29,10 @@ Tuto knihu, nebo autora ještě nemáme v databázi!
 		<div style="clear: both" /><br/>
 		[% END %]
 	<div style="clear: both" />
-<!--	<form onsubmit="return view_abuse_onsubmit();" method="post">
+	<form onsubmit="return view_abuse_onsubmit();" method="post">
 		<textarea name=note id=abuse_comment style="display: none"></textarea>
-		<input type=hidden name=cover value="[% book.cover.id %]">
-		<input type=hidden name=book value="[% book.id %]">
+		<input type=hidden name=cover value="[% auth.cover.id %]">
+		<input type=hidden name=auth value="[% auth.id %]">
 		<input type=hidden name=referer value="[% referer %]">
 
 		<div id="antispam">
@@ -47,9 +47,8 @@ Tuto knihu, nebo autora ještě nemáme v databázi!
 		</div>
 
 		<input name=report class="button" type="submit" 
-			value=" Ohlásit chybnou obálku ">
+			value=" Ohlásit chybnou foto ">
 	</form>
--->
 	[% END %]
   </td>
 

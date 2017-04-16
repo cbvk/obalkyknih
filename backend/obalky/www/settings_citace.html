@@ -30,7 +30,7 @@
 			V případě MARC XML použijte parametr ##sysno## na místě, kde se v URL nachází identifikátor záznamu:<br/>
 			<span class="block-tiny"><strong>http://www.adresa_vasi_knihovny.cz/webova_sluzba/?sysno=##sysno##&format=marcxml</strong> apod.</span><br/>
 			Vzorové volání API OKCZ pro vygenerování textu citace:<br/>
-			<span class="block-tiny"><strong>http://cache.obalkyknih.cz:1339/api/citace/?sysno=123456789</strong></span><br/>
+			<span class="block-tiny"><strong>http://cache.obalkyknih.cz:8080/api/citace/?sysno=123456789</strong></span><br/>
 		</p>		
 
 		<form action="/settings_citace?[% IF !settings %]new=1[% ELSE %]e=[%settings.id%][% END %][% IF params.i %]&i=[% params.i %][% END %]" method="post" id="[% IF !settings %]new[% ELSE %]edit[%settings.id%][% END %]-settings">
@@ -46,7 +46,7 @@
 			</p>
 			<p>
 				<label for="settings_url">Url:</label>
-				<input type="text" name="url" value="[% settings.url %]" id="settings_url" />
+				<input type="text" name="url" value="[% settings.url %]" id="settings_url" style="width:700px;" />
 			</p>
 			<div id="type_check" [% IF settings.type=='z3950' %] style="display:block" [% ELSE %] style="display:none" [% END %]>
 				<p>
@@ -65,11 +65,11 @@
 						<option value="Marc-8"[% IF settings.z_encoding=='Marc-8' %]selected[% END %]>Marc-8</option>
 					</select>
 				</p>
-				<p>
+				<p style="display:none;">
 					<label for="settings_name">Jméno</label>
 					<input type="text" name="name" value="[% settings.z_name %]" id="settings_name" />
 				</p>
-				<p>
+				<p style="display:none;">
 					<label for="settings_password">Heslo:</label>
 					<input type="text" name="password" value="[% settings.z_password %]" id="settings_password" />
 				</p>

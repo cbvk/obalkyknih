@@ -2,7 +2,7 @@
 		<div id="blue"><div class="in">
 			<div class="left">
 				<form action="/view"><label for="search">Zadejte ISBN…</label><input type="text" id="search" name="isbn" value="" /><input type="submit" class="button big" value="Vyhledat" /></form>
-			   <p>Správcem projektu je <a href="http://www.mzk.cz">Moravská zemská knihovna</a> a <a href="http://www.cbvk.cz">Jihočeská vědecká knihovna v Českých Budějovicích</a>.</p>
+			   <p><font style="font-size:80%;">Vyhledávat v databázi titulů je možné dle ISBN, ISSN, EAN, č. ČNB, OCLC či vlastního identifikátoru. Vyhledávat lze i v databázi autorů dle <a href="http://autority.nkp.cz/" alt="Portál Národní autority ČR">id autority</a> či jména.</font></p>			   
 			</div>
 			<div class="center">
 				<p>Projekt ObalkyKnih.cz sdružuje různé zdroje informací
