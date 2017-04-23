@@ -144,6 +144,18 @@ __PACKAGE__->table("auth");
   is_nullable: 1
   size: 50
 
+=head2 metadata_checksum
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 32
+
+=head2 metadata_change
+
+  data_type: 'datetime'
+  datetime_undef_if_invalid: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -186,6 +198,14 @@ __PACKAGE__->add_columns(
   },
   "viafID",
   { accessor => "viaf_id", data_type => "varchar", is_nullable => 1, size => 50 },
+  "metadata_checksum",
+  { data_type => "char", is_nullable => 1, size => 32 },
+  "metadata_change",
+  {
+    data_type => "datetime",
+    datetime_undef_if_invalid => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -298,8 +318,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-09-07 12:22:04
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1xJx9hLK0HX8/hvotCRu6g
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-04-16 14:07:10
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mfXhuYfqLbkRNnfjmVFwyQ
 
 use Data::Dumper;
 use DB;

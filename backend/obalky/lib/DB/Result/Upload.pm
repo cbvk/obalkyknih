@@ -262,6 +262,7 @@ sub checked {
 #	return 0 unless($upload->isbn);
 #	return 0 unless($upload->check_isbn_format($upload->isbn));
 #	return 0 if($upload->check_duplicit_isbn);
+	return 0 if($upload->check_duplicit_book);
 	return 0 if($upload->check_duplicit_file);
 	return 1;
 }
@@ -284,6 +285,20 @@ sub check_duplicit_file {
 	return undef unless(@objects);
 	## predpokladame, ze je duplicitni jen s jednou dalsi
 	return $upload->{cache_file} = join(" ",map $_->id, @objects);
+}
+
+sub check_duplicit_book {
+	my($upload) = @_;
+	my $book;
+	my $bibinfo = Obalky::BibInfo->new_from_params({
+		ean13 => $upload->get_column('ean13'),
+		nbn => $upload->get_column('nbn'),
+		oclc => $upload->get_column('oclc')
+	});
+	$book = DB->resultset('Book')->find_by_bibinfo($bibinfo) if ($bibinfo);
+	return 0 unless ($book);
+	return 0 unless ($book->cover);
+	return $book;
 }
 
 sub check_isbn_format { # aktualne vzdy vraci OK

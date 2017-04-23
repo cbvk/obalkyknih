@@ -79,11 +79,15 @@
 		[ END -] -->
 <!--		[% IF upload.check_duplicit_isbn -%]
 			Duplicitní ISBN s 
-			<a href="[% upload.check_duplicit_isbn %]">[% upload.check_duplicit_isbn %]</a><br>
+			<a href="[% upload.check_duplicit_isbn %]" target="_blank">[% upload.check_duplicit_isbn %]</a><br>
 		[% END -%]-->
 		[% IF upload.check_duplicit_file -%]
 			Shoda souborů s
-			<a href="/view?[% upload.bibinfo.to_some_param %]">[% upload.check_duplicit_file %]</a><br>
+			<a href="/view?[% upload.bibinfo.to_some_param %]" target="_blank">[% upload.check_duplicit_file %]</a><br>
+		[% END -%]
+		[% IF upload.check_duplicit_book -%]
+			Už má obálku
+			<a href="/view?[% upload.bibinfo.to_some_param %]" target="_blank"><img src="[% upload.check_duplicit_book.cover.get_icon_url %]" /></a>
 		[% END -%]
 	</td>
 

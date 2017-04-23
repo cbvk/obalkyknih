@@ -11,7 +11,9 @@ use DateTime::Format::MySQL;
 use JSON;
 use URI::Escape;
 use Scalar::Util qw(reftype);
-use Digest::MD5 qw(md5_hex);
+use Digest::MD5 qw(md5 md5_hex md5_base64);
+use String::CRC::Cksum qw(cksum);
+use Encode qw(encode);
 use HTML::Entities;
 use Obalky::Config;
 
@@ -241,6 +243,7 @@ sub book_sync_remove {
 	return unless($id);
 	my $sync_params;
 	my $checksum_differs = 1;
+	
 	my $book = DB->resultset('Book')->find($id);
 	if ($book) {
 		$sync_params->{book_id} = $book->get_column('id_parent') ? $book->get_column('id_parent') : $id;
@@ -272,8 +275,32 @@ sub auth_sync_remove {
 	my($pkg,$id,$fe,$forced) = @_;
 	return unless($id);
 	my $sync_params;
+	my $checksum_differs = 1;
 	
-	$sync_params->{auth_id} = $id;
+	$sync_params->{book_id} = $id;
+	
+	my $auth = DB->resultset('Auth')->find($id);
+	if ($auth) {
+		my $metadata = $auth->enrich;
+		my $metadata_json = to_json($metadata);
+warn '*1.1';
+warn md5_base64($metadata_json);
+warn '*1.2';
+		my $metadata_checksum = md5($metadata_json);
+warn Dumper($metadata_checksum);
+warn '*2';
+		$checksum_differs = 0 if ($metadata_checksum eq $auth->get_column('metadata_checksum'));
+		if ($checksum_differs) {
+			my $dt = DateTime->now(time_zone=>'local');
+			$auth->update({ metadata_checksum => $metadata_checksum, metadata_change => $dt->datetime });
+		}
+warn '*3';
+		$sync_params->{metadata} = {
+			'value' => $metadata_json,
+			'type' => 'post'
+		} if (defined $metadata);
+	}
+warn '*4';
 	if ($sync_params) {
 		$sync_params->{remove_auth} = 'true';
 		DB->resultset('FeSync')->set_sync($sync_params, 'metadata_changed', $fe, $forced);
