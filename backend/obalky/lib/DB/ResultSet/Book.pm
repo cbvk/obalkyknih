@@ -131,6 +131,17 @@ sub find_by_bibinfo {
 		$acceptable = 0 if ($part_type);
    		return $first_row if(@books and not wantarray and $acceptable);
    		
+   		push @books, $pkg->search({ ismn=>$id->{ismn} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{ismn});
+		$acceptable=1; $i=0; $part_type=undef; $first_row=undef;
+		foreach (@books) {
+			next unless (defined $_);
+			$part_type = $_->get_column('part_type');
+			$first_row = $_ unless ($i);			
+			$i++;
+		}
+		$acceptable = 0 if ($part_type);
+   		return $first_row if(@books and not wantarray and $acceptable);
+   		
    		push @books, $pkg->search({ oclc=>$id->{oclc} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{oclc});
    		$acceptable=1; $i=0; $part_type=undef; $first_row=undef;
 		foreach (@books) {
@@ -373,6 +384,11 @@ sub search_book_part {
 	   	push @books, $pkg->search_book_part_helper([ $pkg->search({ nbn => $id->{nbn}, part_type => 2 }) ], \@partYear, \@partVolume, \@partNo)
 				if ($id->{nbn});
 		return @books if(@books);
+		
+		# cast periodika podle ISMN
+	   	push @books, $pkg->search_book_part_helper([ $pkg->search({ ismn => $id->{ismn}, part_type => 2 }) ], \@partYear, \@partVolume, \@partNo)
+				if ($id->{ismn});
+		return @books if(@books);
 	   	
 	   	# cast periodika podle OCLC
 	   	push @books, $pkg->search_book_part_helper([ $pkg->search({ oclc => $id->{oclc}, part_type => 2 }) ], \@partYear, \@partVolume, \@partNo)
@@ -398,6 +414,11 @@ sub search_book_part {
 				if ($id->{nbn} and ($id->{part_no} or $id->{part_name}));
 	   	return @books if (@books);
 	   	
+	   	# cast monografie podle ISMN
+		push @books, $pkg->search({ ismn => $id->{ismn}, part_type => 1, -or=>{part_no => $part_no, part_name => $part_name} })
+				if ($id->{ismn} and ($id->{part_no} or $id->{part_name}));
+	   	return @books if (@books);
+	   	
 	   	# cast monografie podle OCLC
 		push @books, $pkg->search({ oclc => $id->{oclc}, part_type => 1, -or=>{part_no => $part_no, part_name => $part_name} })
 				if ($id->{oclc} and ($id->{part_no} or $id->{part_name}));
@@ -411,6 +432,11 @@ sub search_book_part {
 	   	# souborne zaznamy podle NBN
 		push @books, $pkg->search({ nbn => $id->{nbn}, part_type => undef }, { order_by => \'cover DESC' })
 				if ($id->{nbn});
+	   	return @books if(@books);
+	   	
+	   	# souborne zaznamy podle ISMN
+		push @books, $pkg->search({ ismn => $id->{ismn}, part_type => undef }, { order_by => \'cover DESC' })
+				if ($id->{ismn});
 	   	return @books if(@books);
 	   	
 	   	# souborne zaznamy podle OCLC

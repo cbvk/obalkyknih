@@ -85,7 +85,7 @@ sub signup {
 	
 	#reCaptcha verify
 	my $ua = LWP::UserAgent->new;
-	my $reCaptchaResult = $ua->request(POST 'https://www.google.com/recaptcha/api/siteverify',
+	my $reCaptchaResult = $ua->request(POST => 'https://www.google.com/recaptcha/api/siteverify',
 		[ secret => $Obalky::Config::RECAPTCHA_SECRET, response => $hash->{'g-recaptcha-response'} ]);
 
 	my @errors;

@@ -9,6 +9,7 @@ use Obalky::Media;
 use Data::Dumper;
 use File::Copy qw(move);
 use URI::Encode qw(uri_encode);
+use LWP::UserAgent;
 use utf8;
 use Business::ISBN;
 use Business::ISSN;
@@ -711,8 +712,7 @@ sub view : Local {
 		my $book = DB->resultset('Book')->find($c->req->param('book'));
 		my $abuse = DB->resultset('Abuse')->abuse($book,$cover,$toc,$c->req->address,$referer,$note) if ($spamQuestion eq 23);
 		
-		$c->stash->{error} = "Děkujeme za nahlášení, chybnou obálku se ".
-					"pokusíme co nejdřív opravit." if($abuse);
+		$c->stash->{error} = "Děkujeme za nahlášení, chybnou obálku se pokusíme co nejdřív opravit." if($abuse);
 	}
 
 	if($c->req->param('review_add')) {
@@ -721,14 +721,30 @@ sub view : Local {
 		my $text    = $c->req->param('review_text');
 		my $rating  = $c->req->param('review_rating');
 		my $book = DB->resultset('Book')->find($book_id) if($book_id);
-		die "Zakazano vkladani odkazu do recenzi" if($text =~ /http\:\/\//);
-		if($name and $book and $text) {
-			my $html = $text; $html =~ s/\n\n/<p>/g;
-			my @reviews = $book->reviews;
-			$book->add_review($library,$visitor,{ 
-				impact => $Obalky::Media::REVIEW_COMMENT, rating => $rating, 
-				html_text => $html, visitor_ip => $c->req->address,
-				visitor_name => $name }) unless(@reviews > 300); # ?
+		die "Zakazano vkladani odkazu do recenzi" if($text =~ /http\:\/\// or $text =~ /https\:\/\//);
+		
+		if($name and $book and ($text ne '' or $rating)) {
+			
+			#reCaptcha verify
+			my $ua = LWP::UserAgent->new;
+			my $reCaptchaResult = $ua->request(POST => 'https://www.google.com/recaptcha/api/siteverify',
+				[ secret => $Obalky::Config::RECAPTCHA_SECRET, response => $c->req->param('g-recaptcha-response') ]);
+			warn Dumper($reCaptchaResult->content);
+			
+			if (index($reCaptchaResult->content, '"success": true') == -1) {
+				$c->stash->{error} = 'Potvrďte, že nejste robot.';
+			} else {
+				$text = undef if ($text eq '');
+				$rating = $rating * 20 if ($rating);
+				my $impact = $Obalky::Media::REVIEW_VOTE;
+				$impact = $Obalky::Media::REVIEW_COMMENT if ($text);
+				my $html = $text; $html =~ s/\n\n/<p>/g;
+				my @reviews = $book->reviews;
+				$book->add_review($library,$visitor,{
+					impact => $impact, rating => $rating, 
+					html_text => $html, visitor_ip => $c->req->address,
+					visitor_name => $name }) unless(@reviews > 300); # ?
+			}
 		}
 	}
 
@@ -899,7 +915,9 @@ sub view_auth : Local {
 	        my $media = Obalky::Media->new_from_info({
 							cover_url => $upload->cover_url, 
 							cover_tmpfile => $upload->cover_tmpfile });
-			$auth->add_cover($media);
+			#$auth->add_cover($media);
+			my $source = DB->resultset('Eshop')->find(109); #upload/import
+			$source->add_auth_source($auth->authinfo,$media,$upload->cover_url);
 			DB->resultset('FeSync')->auth_sync_remove($auth->id);
 		}
 	}

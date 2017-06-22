@@ -49,10 +49,10 @@ isbn_1234, ean_123, oclc_123, nbn_123, isbn1234_nbn123
 =cut
 
 
-my @keys = qw/ean13 oclc nbn uuid title authors year part_year part_volume part_no part_name part_note auth_id auth_name/;
+my @keys = qw/ean13 ismn oclc nbn uuid title authors year part_year part_volume part_no part_name part_note auth_id auth_name/;
 
-sub param_keys { qw/ean isbn issn oclc nbn uuid title authors year/ }
-sub param_keys_part { qw/part_ean part_isbn part_issn part_oclc part_nbn part_title part_authors part_year/ }
+sub param_keys { qw/ean isbn issn ismn oclc nbn uuid title authors year/ }
+sub param_keys_part { qw/part_ean part_isbn part_issn part_ismn part_oclc part_nbn part_title part_authors part_year/ }
 sub extended_keys_part { qw/part_volume part_no part_name part_note part_year/ }
 
 sub new {
@@ -60,6 +60,7 @@ sub new {
 	my $bibinfo = bless {}, $pkg;
 
 	$bibinfo->{ean13} = $object->ean13	if(defined $object->ean13);
+	$bibinfo->{ismn} = $object->ismn	if(defined $object->ismn);
 	$bibinfo->{oclc} = $object->oclc	if(defined $object->oclc);
 	$bibinfo->{nbn} = $object->nbn		if(defined $object->nbn);
 	$bibinfo->{uuid} = $object->uuid	if(ref $object eq 'DB::Result::Product' and defined $object->uuid);
@@ -106,6 +107,7 @@ zda jsou stejne
 sub differs {
 	my($a,$b) = @_;
 	return $a->ean13 ne $b->ean13 if($a->ean13 and $b->ean13);
+	return $a->ismn  ne $b->ismn  if($a->ismn  and $b->ismn);
 	return $a->oclc  ne $b->oclc  if($a->oclc  and $b->oclc );
 	return $a->nbn   ne $b->nbn   if($a->nbn   and $b->nbn  );
 	return $a->uuid  ne $b->uuid  if($a->uuid  and $b->uuid );
@@ -145,6 +147,11 @@ sub issn {
 	my($id,$issn) = @_;
 	return $id->ean($issn);
 }
+sub ismn {
+	my($id,$value) = @_;
+	$id->{ismn} = $value if(defined $value);
+	return $id->{ismn};
+}
 sub parse_code {
 	my($pkg,$code) = @_;
 	if($code) { # 8, 10, 12 or 13
@@ -158,7 +165,7 @@ sub parse_code {
 			return $toean.check_digit($toean);
 		} 
 		
-		# ISBN
+		# ISBN, ISMN (10 mistne)
 		elsif(length($code) == 10) {
 			$obj = Business::ISBN->new($code);
 			return unless($obj and $obj->is_valid);
@@ -170,7 +177,10 @@ sub parse_code {
 		# UPC
 		elsif(length($code) == 12) {
 			return '0'.$code;
-		} 
+		}
+		elsif(length($code) == 11) {
+			return '00'.$code;
+		}
 		
 		# EAN
 		elsif(length($code) == 13) {
@@ -212,7 +222,7 @@ sub new_from_ean {
 
 sub new_from_string {
 	my($pkg,$string) = @_;
-	my($ean,$oclc,$nbn,$uuid);
+	my($ean,$oclc,$nbn,$ismn,$uuid);
 
 	$string = '' unless($string); # should not happen
 
@@ -225,8 +235,15 @@ sub new_from_string {
 	$ean   = ($2||"").$3 if(not $oclc and not $nbn and $eanvalue =~ 
 				/^(isbn|issn|ean)?\_?(...)?(\d{7}\d?\d?[0-9X])$/i);
 	$ean = $pkg->parse_code($ean) if($ean);
+	
+	$ismn  = lc($1) if(lc($string) =~ /(m-[\d\-]+)/i);
+	if ($ismn) {
+		$ismn =~ s/\-//g;
+		my @ismn_parts = split / /, $ismn;
+		$ismn = $ismn_parts[0];
+	}
 
-	unless($ean or $oclc or $nbn or $uuid) {
+	unless($ean or $oclc or $nbn or $ismn or $uuid) {
 		foreach(split(/\_/,$string)) {
 			my($key,$value) = ($1,$2) if(/^([a-z]+)[\_\:\=]?(.+)$/);
 			unless($value) {
@@ -240,13 +257,15 @@ sub new_from_string {
 				$oclc = $value;
 			} elsif($key eq 'nbn') {
 				$nbn = $value;
+			} elsif($key eq 'ismn') {
+				$ismn = $value;
 			} elsif($key eq 'uuid') {
 				$uuid = $value;
 			}
 		}
 	}
 #	warn "string=$string, ean=$ean\n";
-	return $pkg->new_from_params({ oclc => $oclc, nbn => $nbn, ean => $ean, uuid => $uuid });
+	return $pkg->new_from_params({ oclc => $oclc, nbn => $nbn, ismn => $ismn, ean => $ean, uuid => $uuid });
 }
 
 sub new_from_params {
@@ -258,17 +277,27 @@ sub new_from_params {
 	$ean13 = $param->{ean13} if($param->{ean13});
 	my $year = ($param->{year} and $param->{year} =~ /(\d{4})/) ? $1 : undef;
 
-	# aspon neco z EAN, OCLC, NBN, UUID nebo Title musi byt vyplneno!
+	# aspon neco z EAN, OCLC, NBN, ISMN, UUID nebo Title musi byt vyplneno!
 	return unless($ean13 or $param->{oclc} or $param->{uuid} or  
-				  $param->{nbn} or $param->{title}); 
+				  $param->{nbn} or $param->{ismn} or $param->{title}); 
 
-	# todo: normalize oclc, nbn
+	# todo: normalize oclc, nbn, ismn
 	my $nbn;
 	$nbn = lc($param->{nbn}) if (defined $param->{nbn});
+	
+	my $ismn;
+	$ismn = lc($param->{ismn}) if (defined $param->{ismn});
+	if ($ismn) {
+		$ismn =~ s/\-//g;
+		my @ismn_parts = split / /, $ismn;
+		$ismn = $ismn_parts[0];
+	}
+	
 	return bless {
 		ean13 => $ean13,
 		oclc => $param->{oclc},
 		nbn => $nbn,
+		ismn => $ismn,
 		uuid => $param->{uuid},
 		title => $param->{title},
 		authors => $param->{authors}, # ujistit se, ze to je pole?
@@ -301,7 +330,7 @@ sub save_to {
 sub save_to_hash {
 	my($id,$hash) = @_;
 	$hash ||= {};
-	map $hash->{$_} = $id->{$_}, grep $id->{$_}, qw/ean13 oclc nbn title year/;
+	map $hash->{$_} = $id->{$_}, grep $id->{$_}, qw/ean13 ismn oclc nbn title year/;
 	$hash->{authors} = ($id->{authors} and ref $id->{authors}) ?
 						join(";",@{$id->{authors}}) : $id->{authors} || '';
 	return $hash;
@@ -323,7 +352,7 @@ sub save_to_hash_part {
 sub to_params {
 	my($id) = @_;
 	my @out;
-	foreach(qw/ean13 oclc nbn uuid part_year part_volume part_no part_name part_note/) {
+	foreach(qw/ean13 ismn oclc nbn uuid part_year part_volume part_no part_name part_note/) {
 		push @out, $_."=".$id->{$_} if($id->{$_});
 	}
 	return join("&",@out);
@@ -338,6 +367,7 @@ sub to_some_id {
 	my $isbn = $id->to_isbn;
 	return $isbn if($isbn);
 	return $id->nbn if($id->nbn);
+	return $id->ismn if($id->ismn);
 	return $id->uuid if($id->uuid);
 	return $id->oclc ? "oclc".$id->oclc : "NULL";
 }
@@ -346,6 +376,7 @@ sub to_some_hash {
 	my $isbn = $id->to_isbn;
 	return {isbn => $isbn} if($isbn);
 	return {nbn => $id->nbn} if($id->nbn);
+	return {ismn => $id->ismn} if($id->ismn);
 	return {uuid => $id->uuid} if($id->uuid);
 	return $id->oclc ? {oclc=>"oclc".$id->oclc} : "NULL";
 }
@@ -391,7 +422,7 @@ sub to_xml {
 	my($id) = @_;
 	my($isbn,$ean) = $id->isbn_forms;
 	my $info = { isbn => $isbn, ean => $ean, 
-				 oclc => $id->oclc, nbn => $id->nbn, uuid => $id->uuid };
+				 oclc => $id->oclc, nbn => $id->nbn, ismn => $id->ismn, uuid => $id->uuid };
 	my @ids;
 #	my $h = new HTML::Tiny;
 	foreach my $key (sort keys %$info) {
@@ -414,6 +445,7 @@ sub identifiers {
     }
 	push @ids, {"name"=>"OCLC Number","value"=>$id->oclc} if($id->oclc);
 	push @ids, {"name"=>"NKP-CNB","value"=>$id->nbn} if($id->nbn);
+	push @ids, {"name"=>"ISMN","value"=>$id->ismn} if($id->ismn);
 	return \@ids;
 }
 
@@ -487,6 +519,12 @@ sub find_missing_year_or_volume {
 			{ -group_by => 'part_volume', -order_by => \'COUNT(*) DESC' })->next if ($bibinfo->{nbn});
 		$bibinfo->{part_volume} = $res->get_column('part_volume') if ($res);
 		return $bibinfo if ($res);
+		
+		$res = DB->resultset('Book')->search(
+			{ ismn => $bibinfo->{ismn}, part_year => $bibinfo->{part_year}, part_volume => { -not => undef } },
+			{ -group_by => 'part_volume', -order_by => \'COUNT(*) DESC' })->next if ($bibinfo->{ismn});
+		$bibinfo->{part_volume} = $res->get_column('part_volume') if ($res);
+		return $bibinfo if ($res);
 	}
 	if ($bibinfo->{part_volume}) {
 		my $res;
@@ -505,6 +543,12 @@ sub find_missing_year_or_volume {
 		$res = DB->resultset('Book')->search(
 			{ nbn => $bibinfo->{nbn}, part_volume => $bibinfo->{part_volume}, part_year => { -not => undef } },
 			{ -group_by => 'part_year', -order_by => \'COUNT(*) DESC' })->next if ($bibinfo->{nbn});
+		$bibinfo->{part_year} = $res->get_column('part_year') if ($res);
+		return $bibinfo if ($res);
+		
+		$res = DB->resultset('Book')->search(
+			{ ismn => $bibinfo->{ismn}, part_volume => $bibinfo->{part_volume}, part_year => { -not => undef } },
+			{ -group_by => 'part_year', -order_by => \'COUNT(*) DESC' })->next if ($bibinfo->{ismn});
 		$bibinfo->{part_year} = $res->get_column('part_year') if ($res);
 		return $bibinfo if ($res);
 	}

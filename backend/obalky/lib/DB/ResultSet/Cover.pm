@@ -139,6 +139,9 @@ sub create_from_file {
 		my $auth = $book;
 		my $source = $product;
 		
+		my $cover_source = DB->resultset('Cover')->search({ auth_source => $source->id }, { key => 'cover_auth_source' })->next;
+		$cover_source->delete if ($cover_source);
+		
 		$cover = eval { DB->resultset('Cover')->update_or_create({
 			auth => $auth, auth_source => $source, checksum => $checksum,
 			file_medium => $file_cover, file_thumb => $file_thumb,

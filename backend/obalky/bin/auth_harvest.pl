@@ -37,7 +37,7 @@ my $last_month = DateTime->today()->subtract(days => 30);
 #my $max_eshop_id = DB->resultset('Eshop')->search({ type => 'auth' })->max_id;
 my $max_eshop_id = 7040;
 
-my $rowsCount = 10000;
+my $rowsCount = 2500;
 
 open(OFFSET,'</opt/obalky/bin/_auth_offset') or die('OFFSET read failed');
 my $offset = <OFFSET>;
@@ -83,7 +83,7 @@ while(my $auth = $auth_list->next) {
 	my $time_start = [gettimeofday];
 
 	my $last_harvest   = $auth->harvest_last_time;
-	my $last_max_eshop = $auth->harvest_max_eshop;;
+	my $last_max_eshop = $auth->harvest_max_eshop;
 
 	my($url,$filename);
 	my $found = 0;

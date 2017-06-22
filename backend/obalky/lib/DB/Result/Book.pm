@@ -246,6 +246,12 @@ __PACKAGE__->table("book");
   datetime_undef_if_invalid: 1
   is_nullable: 1
 
+=head2 ismn
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 20
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -336,6 +342,8 @@ __PACKAGE__->add_columns(
     datetime_undef_if_invalid => 1,
     is_nullable => 1,
   },
+  "ismn",
+  { data_type => "varchar", is_nullable => 1, size => 20 },
 );
 
 =head1 PRIMARY KEY
@@ -748,8 +756,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-04-15 01:55:35
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:PpBcsfp9pgEJniJtgYJVFA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-04-24 17:47:48
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:i7Lvk39ACvl7eCQk97+tSQ
 
 use Obalky::Media;
 use Data::Dumper;
@@ -1182,7 +1190,8 @@ sub enrich {
 
 	$info->{book_id} = $book->id;
 	$info->{ean} = $book_bibinfo->ean13 if $book_bibinfo->ean13;
-	$info->{nbn}  = $book_bibinfo->nbn if $book_bibinfo->nbn;
+	$info->{nbn} = $book_bibinfo->nbn if $book_bibinfo->nbn;
+	$info->{ismn} = $book_bibinfo->ismn if $book_bibinfo->ismn;
 	$info->{oclc} = $book_bibinfo->oclc if $book_bibinfo->oclc;
 	$info->{part_year} = $book_bibinfo->{part_year}     if ($book_bibinfo->{part_year} and $book->get_column('part_year'));
 	$info->{part_volume} = $book_bibinfo->{part_volume} if ($book_bibinfo->{part_volume} and $book->get_column('part_volume'));
@@ -1198,7 +1207,8 @@ sub enrich {
 		my $bibinfo_most_recent = $book_most_recent->bibinfo;
 		$part_info->{book_id} = $book_most_recent->id;
 		$part_info->{ean} = $bibinfo_most_recent->ean13 if $bibinfo_most_recent->ean13;
-		$part_info->{nbn}  = $bibinfo_most_recent->nbn if $bibinfo_most_recent->nbn;
+		$part_info->{nbn} = $bibinfo_most_recent->nbn if $bibinfo_most_recent->nbn;
+		$part_info->{ismn} = $bibinfo_most_recent->ismn if $bibinfo_most_recent->ismn;
 		$part_info->{oclc} = $bibinfo_most_recent->oclc if $bibinfo_most_recent->oclc;
 		$part_info->{part_year} = $bibinfo_most_recent->{part_year} if $bibinfo_most_recent->{part_year};
 		$part_info->{part_volume} = $bibinfo_most_recent->{part_volume} if $bibinfo_most_recent->{part_volume};
@@ -1211,18 +1221,22 @@ sub enrich {
 	if ($book->get_column('id_parent')) {
 		$info->{book_id_parent} = $book->get_column('id_parent');
 		my $book_parent = DB->resultset('Book')->find($book->get_column('id_parent'));
-		# inicializace kodu rodice (pokud neexistuji a nalezeny dil ma dany identifikator, stale muze byt jako part_standalone)
-		my ($bookParentEan13, $bookParentNbn, $bookParentOclc) = ('','','');
-		# naplneni identifikatoru rodice, pokud existuji
-		$bookParentEan13 = $book_parent->ean13 if ($book_parent->ean13);
-		$bookParentNbn   = $book_parent->nbn if ($book_parent->nbn);
-		$bookParentOclc  = $book_parent->oclc if ($book_parent->oclc);
-		$info->{part_ean_standalone} = $book_parent->ean13 ne $book->ean13 ? 1 : 0 if ($book->ean13);
-		$info->{part_nbn_standalone} = $book_parent->nbn ne $book->nbn ? 1 : 0 if ($book->nbn);
-		$info->{part_oclc_standalone} = $book_parent->oclc ne $book->oclc ? 1 : 0 if ($book->oclc);
-		# byl vyhledan rozsah; vytvorime odkaz, ktery zobrazi pouze vyhledane zaznamy
-		if ($book->{_column_data}{book_range_ids} && ($info->{part_year} || $info->{part_volume} || $info->{part_no})) {
-			$idf_backlink = 'http://www.obalkyknih.cz/view?book_id='.$book_parent->id.'&sort_by=date&idf=' . join(',', @{$book->get_column('book_range_ids')});
+		if ($book_parent) {
+			# inicializace kodu rodice (pokud neexistuji a nalezeny dil ma dany identifikator, stale muze byt jako part_standalone)
+			my ($bookParentEan13, $bookParentNbn, $bookParentIsmn, $bookParentOclc) = ('','','','');
+			# naplneni identifikatoru rodice, pokud existuji
+			$bookParentEan13 = $book_parent->ean13 if ($book_parent->ean13);
+			$bookParentNbn   = $book_parent->nbn if ($book_parent->nbn);
+			$bookParentIsmn  = $book_parent->ismn if ($book_parent->ismn);
+			$bookParentOclc  = $book_parent->oclc if ($book_parent->oclc);
+			$info->{part_ean_standalone} = $book_parent->ean13 ne $book->ean13 ? 1 : 0 if ($book->ean13);
+			$info->{part_nbn_standalone} = $book_parent->nbn ne $book->nbn ? 1 : 0 if ($book->nbn);
+			$info->{part_ismn_standalone} = $book_parent->ismn ne $book->ismn ? 1 : 0 if ($book->ismn);
+			$info->{part_oclc_standalone} = $book_parent->oclc ne $book->oclc ? 1 : 0 if ($book->oclc);
+			# byl vyhledan rozsah; vytvorime odkaz, ktery zobrazi pouze vyhledane zaznamy
+			if ($book->{_column_data}{book_range_ids} && ($info->{part_year} || $info->{part_volume} || $info->{part_no})) {
+				$idf_backlink = 'http://www.obalkyknih.cz/view?book_id='.$book_parent->id.'&sort_by=date&idf=' . join(',', @{$book->get_column('book_range_ids')});
+			}
 		}
 	}
 

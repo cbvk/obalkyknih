@@ -135,6 +135,12 @@ __PACKAGE__->table("upload");
   is_nullable: 1
   size: 50
 
+=head2 ismn
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 20
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -175,6 +181,8 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 32 },
   "auth_id",
   { data_type => "varchar", is_nullable => 1, size => 50 },
+  "ismn",
+  { data_type => "varchar", is_nullable => 1, size => 20 },
 );
 
 =head1 PRIMARY KEY
@@ -232,8 +240,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-03-31 15:17:25
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:l/Kjn8RLyENBRULQJ0MFpA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-05-02 11:09:56
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:I9tFBKAHhMcycmja5h5yzg
 
 
 use Data::Dumper;

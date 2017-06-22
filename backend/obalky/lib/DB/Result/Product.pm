@@ -168,6 +168,12 @@ __PACKAGE__->table("product");
   is_nullable: 1
   size: 50
 
+=head2 ismn
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 20
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -224,6 +230,8 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 0, size => 255 },
   "uuid",
   { data_type => "varchar", is_nullable => 1, size => 50 },
+  "ismn",
+  { data_type => "varchar", is_nullable => 1, size => 20 },
 );
 
 =head1 PRIMARY KEY
@@ -449,8 +457,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-11-21 11:36:49
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:yEaSdNPS4b3S8gDGVCwLMg
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-04-25 12:25:47
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AnxLITzBZrmQtL+NbhXoGg
 
 
 sub media { Obalky::Media->new(shift) }

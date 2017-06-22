@@ -423,6 +423,7 @@ sub enrich {
 	if($cover) {
 		$info->{cover_thumbnail_url} = $cover->get_thumbnail_url($secure);
 		$info->{cover_medium_url}    = $cover->get_cover_url($secure);
+		$info->{cover_preview510_url} = $cover->get_preview510_url($secure);
 		$info->{cover_icon_url}      = $cover->get_icon_url($secure);
 		$info->{backlink_url}        = 'http://www.obalkyknih.cz/view_auth?auth_id='.$info->{auth_id};
 		# publikovat originalni rozmery obrazku

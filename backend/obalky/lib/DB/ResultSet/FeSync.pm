@@ -12,7 +12,6 @@ use JSON;
 use URI::Escape;
 use Scalar::Util qw(reftype);
 use Digest::MD5 qw(md5 md5_hex md5_base64);
-use String::CRC::Cksum qw(cksum);
 use Encode qw(encode);
 use HTML::Entities;
 use Obalky::Config;
@@ -218,6 +217,7 @@ sub send_fe_request {
 		$ret->update({flag_synced => 1, retry_date => undef});
 	}
 	else {
+		warn Dumper($resp);
 		# chyba pri kontaktovani FE instance, zaznacit nejblissi termin dalsiho pokusu o kontakt
 		my $ret = DB->resultset('FeSync')->find($sync->id);
 		my $retry_count = $sync->get_column('retry_count');
@@ -251,7 +251,7 @@ sub book_sync_remove {
 		$sync_params->{nbn} = $book->get_column('nbn') if ($book->get_column('nbn'));
 		$sync_params->{oclc} = $book->get_column('oclc') if ($book->get_column('oclc'));
 		my $metadata = $book->enrich;
-		my $metadata_json = to_json($metadata);
+		my $metadata_json = encode('UTF-8', to_json($metadata));
 		my $metadata_checksum = md5_hex($metadata_json);
 		$checksum_differs = 0 if ($metadata_checksum eq $book->get_column('metadata_checksum'));
 		if ($checksum_differs) {
@@ -282,25 +282,18 @@ sub auth_sync_remove {
 	my $auth = DB->resultset('Auth')->find($id);
 	if ($auth) {
 		my $metadata = $auth->enrich;
-		my $metadata_json = to_json($metadata);
-warn '*1.1';
-warn md5_base64($metadata_json);
-warn '*1.2';
-		my $metadata_checksum = md5($metadata_json);
-warn Dumper($metadata_checksum);
-warn '*2';
+		my $metadata_json = encode('UTF-8', to_json($metadata));
+		my $metadata_checksum = md5_hex($metadata_json);
 		$checksum_differs = 0 if ($metadata_checksum eq $auth->get_column('metadata_checksum'));
 		if ($checksum_differs) {
 			my $dt = DateTime->now(time_zone=>'local');
 			$auth->update({ metadata_checksum => $metadata_checksum, metadata_change => $dt->datetime });
 		}
-warn '*3';
 		$sync_params->{metadata} = {
 			'value' => $metadata_json,
 			'type' => 'post'
 		} if (defined $metadata);
 	}
-warn '*4';
 	if ($sync_params) {
 		$sync_params->{remove_auth} = 'true';
 		DB->resultset('FeSync')->set_sync($sync_params, 'metadata_changed', $fe, $forced);

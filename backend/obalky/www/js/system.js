@@ -37,29 +37,36 @@ function view_review_onsubmit() {
 		alert('Do pole "Od" zadejte Vaše jméno.');
 		return false;
 	}
-/*	if(rating.value == 0) {
-		alert('Klikněte na příslušný počet hvězdiček.');
-		return false;
-	}*/
-	if(text.value.length < 30) {
+	var textLength = text.value.length;
+	alert(textLength);
+	if(textLength && textLength < 30) {
 		alert('Napište recenzi k dané knížce (alespoň 30 znaků).');
 		return false;
-		
 	}
 	return true;
 }
 
+function vote(obj,id,amnt){
+	$('#review_rating').val(amnt);
+	$('.star-rating a').removeClass('active');
+	$('#review_recaptcha').show();
+	for (i=amnt; i>0; i--) {
+		$('.star-rating a.s' + i).addClass('active');
+	}
+}
 
-function vote(id,amnt){
-	$.ajax({
-		type: "POST",
-		url: "/vote",
-		data: "book=" + id + "&vote=" + amnt,
-		dataType: "json",
-		success: function(res){
-			$('#current-rating').width(res.width);
-			$('#current-rating-result').html(res.status);
-			$('#star-rating').hide();
+function starsOver(amnt){
+	$('.star-rating a').removeClass('hover');
+	for (i=amnt; i>0; i--) {
+		el = '.star-rating a.s' + i;
+		if (!$(el).is('.active')) {
+			$(el).addClass('hover');
 		}
-	});
+	}
+}
+
+function showRecaptcha(){
+	if (!$('#review_recaptcha').is(':visible')) {
+		$('#review_recaptcha').toggle("highlight");
+	}
 }

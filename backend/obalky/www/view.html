@@ -302,34 +302,37 @@ Tuto knihu ještě nemáme v databázi!
 	[% END %]
 	<table>
 	<tr><td>Od:</td> 
-		<td><input id=review_name name=review_name value=""> 
+		<td><input id=review_name name=review_name value="" onkeydown="showRecaptcha()"> 
 				([% visitor_blurred_ip %])</td>
 		<td align=right valign=top width=200>
 
-<ul id='star-rating' class='star-rating'>
+<ul id="star-rating" class="star-rating">
     <li class='current-rating' id='current-rating' style="width: 37px"></li>
-    <li><a href="#" onclick="vote([% book.id %],1); return false;" 
-           title='1 star out of 5' class='one-star'>1</a></li>
-    <li><a href="#" onclick="vote([% book.id %],2); return false;" 
-           title='2 star out of 5' class='two-stars'>2</a></li>
-    <li><a href="#" onclick="vote([% book.id %],3); return false;" 
-           title='3 star out of 5' class='three-stars'>3</a></li>
-    <li><a href="#" onclick="vote([% book.id %],4); return false;" 
-           title='4 star out of 5' class='four-stars'>4</a></li>
-    <li><a href="#" onclick="vote([% book.id %],5); return false;" 
-           title='5 star out of 5' class='five-stars'>5</a></li>
+    <li><a href="#" onclick="vote(this,[% book.id %],1); return false;"
+           title='1 star out of 5' class='s1'>1</a></li>
+    <li><a href="#" onclick="vote(this,[% book.id %],2); return false;"
+           title='2 star out of 5' class='s2'>2</a></li>
+    <li><a href="#" onclick="vote(this,[% book.id %],3); return false;"
+           title='3 star out of 5' class='s3'>3</a></li>
+    <li><a href="#" onclick="vote(this,[% book.id %],4); return false;"
+           title='4 star out of 5' class='s4'>4</a></li>
+    <li><a href="#" onclick="vote(this,[% book.id %],5); return false;"
+           title='5 star out of 5' class='s5'>5</a></li>
 </ul>
 <div id='current-rating-result'></div> <!-- used to show "success" message after vote -->
 	</td></tr>
 
 	<tr><td>&nbsp;</td>
 		<td colspan=2>
-		<textarea id=review_text name=review_text cols=50 rows=10></textarea></td>
+		<textarea id=review_text name=review_text cols=50 rows=5 onkeydown="showRecaptcha()"></textarea></td>
+	<tr><td>&nbsp;</td>
+	    <td colspan=2><div id="review_recaptcha"><div class="g-recaptcha" data-sitekey="6LdFDxgTAAAAAHQKFJBlrT351_ALAeQbq62dQLj6"></div></div>
 	<tr><td>&nbsp;</td>
 		<td colspan=2>
-		<input type=submit name=review_add value="  Přidat recenzi " /></td>
+		<input type=submit name=review_add value="  Přidat recenzi / hodnocení " /></td>
 	</table>
 	</form>
+	<script src='https://www.google.com/recaptcha/api.js?hl=cs'></script>
 	[% END %]
 
 
