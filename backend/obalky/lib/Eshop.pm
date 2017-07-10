@@ -58,6 +58,7 @@ use Eshop::NKP_OAI;
 use Eshop::Kramerius_MZK;
 use Eshop::Kramerius_CBVK;
 use Eshop::CitaceZ39;
+use Eshop::Ebook_MLP;
 
 sub name { shift->{name} };
 

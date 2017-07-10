@@ -252,6 +252,12 @@ __PACKAGE__->table("book");
   is_nullable: 1
   size: 20
 
+=head2 doc_type
+
+  data_type: 'tinyint'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -344,6 +350,8 @@ __PACKAGE__->add_columns(
   },
   "ismn",
   { data_type => "varchar", is_nullable => 1, size => 20 },
+  "doc_type",
+  { data_type => "tinyint", extra => { unsigned => 1 }, is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -756,8 +764,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-04-24 17:47:48
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:i7Lvk39ACvl7eCQk97+tSQ
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-06-23 12:41:58
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AxAG5iOFJRH+eOSXVVS6Vw
 
 use Obalky::Media;
 use Data::Dumper;

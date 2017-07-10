@@ -54,7 +54,7 @@ __PACKAGE__->table("eshop");
 
   data_type: 'enum'
   default_value: 'cover'
-  extra: {list => ["cover","auth","citace"]}
+  extra: {list => ["cover","auth","citace","ebook"]}
   is_nullable: 0
 
 =head2 try_count
@@ -277,7 +277,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "enum",
     default_value => "cover",
-    extra => { list => ["cover", "auth", "citace"] },
+    extra => { list => ["cover", "auth", "citace", "ebook"] },
     is_nullable => 0,
   },
   "try_count",
@@ -484,8 +484,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-01-02 14:46:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jGLKRsimurxvvdLty7FhsA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-06-23 15:35:04
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+UX11TAQ9F64+TA7/T6vpA
 
 
 use Data::Dumper;
@@ -547,7 +547,7 @@ sub add_product {
    	# uloz bibinfo do productu
 	$bibinfo->save_to($product);
 	# podle bibinfo zakutalizovat book?
-	$media->save_to($product);
+	$media->save_to($product) if ($media);
 
 	my $book_bibinfo = $book->bibinfo;
 	$book_bibinfo->save_to($book) if($book_bibinfo->merge($bibinfo));

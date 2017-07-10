@@ -75,6 +75,19 @@ __PACKAGE__->table("product_params");
   is_nullable: 1
   size: 64
 
+=head2 other_param_type
+
+  data_type: 'tinyint'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
+=head2 other_param_value
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -95,6 +108,15 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 32 },
   "nbn",
   { data_type => "varchar", is_nullable => 1, size => 64 },
+  "other_param_type",
+  {
+    data_type => "tinyint",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
+  "other_param_value",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
 );
 
 =head1 PRIMARY KEY
@@ -126,6 +148,26 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "RESTRICT", on_update => "RESTRICT" },
 );
 
+=head2 other_param_type
+
+Type: belongs_to
+
+Related object: L<DB::Result::ProductParamsType>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "other_param_type",
+  "DB::Result::ProductParamsType",
+  { id => "other_param_type" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
 =head2 product
 
 Type: belongs_to
@@ -142,8 +184,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-05-31 10:02:42
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:aas5fXdclEExqgV5gstnmw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-06-23 17:45:59
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:O1XJZGEDgB56pFg3DmVohA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

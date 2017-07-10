@@ -109,7 +109,6 @@ sub save_to_source{
 		# Nahravame pokud
 		# 1) se zmenil obrazek a zaroven
 		# 2) je vyssi rozliseni, nebo se jedna o upload sken. klientem + webem
-warn '************** 1 ****************';
 		if ( $checksum_old ne $checksum_new
 		     && (($new_dim > $old_dim and $id_eshop_current != $DB::Result::Eshop::ESHOP_UPLOAD) || $id_eshop == $DB::Result::Eshop::ESHOP_UPLOAD) )
 		{
@@ -127,7 +126,6 @@ warn '************** 1 ****************';
 			$cover->update({ orig_url => $cover_url, auth_source => $source }) if($cover);
 			$source->update({ cover => $cover, cover_url => $cover_url });
 			$auth->update({ cover => $cover });
-warn '************** 2 ****************';
 			
 			# smazat nahrazene obrazky, pokud se uz nikde nepouziva
 			if ($cover_old_orig && !DB->resultset('Cover')->search({ file_orig => $cover_old_orig })->count) {

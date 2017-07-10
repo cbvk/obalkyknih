@@ -217,7 +217,6 @@ sub send_fe_request {
 		$ret->update({flag_synced => 1, retry_date => undef});
 	}
 	else {
-		warn Dumper($resp);
 		# chyba pri kontaktovani FE instance, zaznacit nejblissi termin dalsiho pokusu o kontakt
 		my $ret = DB->resultset('FeSync')->find($sync->id);
 		my $retry_count = $sync->get_column('retry_count');

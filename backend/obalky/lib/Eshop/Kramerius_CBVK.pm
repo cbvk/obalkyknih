@@ -24,32 +24,30 @@ __PACKAGE__->register(crawl => 1, license => 'licensed', czech => 0 );
 
 
 sub crawl{
-	my($self,$storable,$from,$to,$tmp_dir,$feed_url,$eshop) = @_;
-	#my @type = ("soundrecording","archive","graphic","sheetmusic","manuscript","monograph","periodicalitem");#debug
-	my @type = ("monograph");
+	my($self,$eshop,$from,$to,$tmp_dir,$feed_url,$eshop) = @_;
+	my @type = ("soundrecording","archive","graphic","sheetmusic","manuscript","monograph","periodicalitem");
 	my @list;
 	foreach (@type){
 		warn "Crawling $_";
-		my @type_list = crawl_type($self,$storable,$from,$to,$tmp_dir,$feed_url,$eshop, $_);
+		my @type_list = crawl_type($self,$eshop,$from,$to,$tmp_dir,$feed_url,$eshop, $_);
 		push (@list,@type_list) if (@type_list);
 	}
 	return @list;
 }
 
 sub crawl_type{
-	my($self,$storable,$from,$to,$tmp_dir,$feed_url,$eshop,$method) = @_;
+	my($self,$eshop,$from,$to,$tmp_dir,$feed_url,$eshop,$method) = @_;
 	my (@books,$root_pid);
 	get_response($from,$to,$method);
-	warn Dumper($resp);
 	if ($resp->is_success) {
-			$xml = eval { XMLin($resp->content,SuppressEmpty => 1, ForceArray =>['doc']) };
-			$res = $xml->{'result'};
-			$numFound = $res->{'numFound'};
-			my $numberOfQueries = ceil($numFound / 10);
-			warn Dumper('Pocet zaznamov:' . $numFound. '\n URL : ');#.$query_url);
-		     for (my $i=1;$i <= $numberOfQueries ;$i++){
-		     	 foreach my $xml_item (@{$res->{'doc'}}) {
-		     	my ($PIDxml,$PID,$PIDurl,$PIDua,$PIDreq,$PIDresp,$content);
+		$xml = eval { XMLin($resp->content,SuppressEmpty => 1, ForceArray =>['doc']) };
+		$res = $xml->{'result'};
+		$numFound = $res->{'numFound'};
+		my $numberOfQueries = ceil($numFound / 10);
+		warn 'Pocet zaznamov: ' . $numFound;
+		for (my $i=1;$i <= $numberOfQueries ;$i++){
+			foreach my $xml_item (@{$res->{'doc'}}) {
+				my ($PIDxml,$PID,$PIDurl,$PIDua,$PIDreq,$PIDresp,$content);
 				$PID = $xml_item->{'str'}->{'content'};
 				$PIDurl = 'http://kramerius.cbvk.cz/search/api/v5.0/item/' . $PID .'/streams/BIBLIO_MODS';
 				$PIDua = LWP::UserAgent->new;
@@ -106,18 +104,18 @@ sub crawl_type{
 					#ziskani vsech autoru
 					$authors='';
 					foreach my $author (@{$authorslist}){
-							my $tmpauth;
-							if (ref $author->{'namePart'}[0] eq 'HASH' and $author->{'namePart'}[1]->{'content'}){
-								foreach my $namePart (@{$author->{'namePart'}}){
-									$tmpauth = $namePart->{'content'};
-									last if ($namePart->{'type'} && $namePart->{'type'} eq 'given');
-								}
+						my $tmpauth;
+						if (ref $author->{'namePart'}[0] eq 'HASH' and $author->{'namePart'}[1]->{'content'}){
+							foreach my $namePart (@{$author->{'namePart'}}){
+								$tmpauth = $namePart->{'content'};
+								last if ($namePart->{'type'} && $namePart->{'type'} eq 'given');
 							}
-							else {
-								$tmpauth = $author->{'namePart'}[0];
-							}							
-							
-							$authors = $authors . $tmpauth.", "; #if (ref $author->{'namePart'}[0]->{'content'} eq 'HASH');
+						}
+						else {
+							$tmpauth = $author->{'namePart'}[0]->{'content'};
+						}							
+						
+						$authors = $authors . $tmpauth.", "; #if (ref $author->{'namePart'}[0]->{'content'} eq 'HASH');
 					}
 					if ($authors eq ''){
 						$authors = undef;
@@ -125,7 +123,7 @@ sub crawl_type{
 					else {
 						$authors = substr($authors, 0, -2);
 					}
-								
+					
 					my (@eans,@params);
 					my ($ean,$oclc,$nbn,$sysno,$urnnbn);
 	     			foreach my $identifier (@{$OBJIdentifiers}){
@@ -160,24 +158,24 @@ sub crawl_type{
 					}
 					
 					# zaznamy bez parametrov pouzitelnych i v inych knizniciach nebereme
-					next if (!$ean && !$oclc && !$nbn);
+					#next if (!$ean && !$oclc && !$nbn);
 					
-					#kdyz urnnbn je jediny identifikator					
+					#kdyz urnnbn je jediny identifikator
 					$nbn = $sysno || $urnnbn if (!$oclc && !$nbn && !$ean);
 					#Kdyz objekt obsahuje vice EAN
-					if (@eans){
+					if (@eans) {
 						my $ean = shift(@eans);
-						if (@eans > 0){
-							foreach my $param (@eans){
+						if (@eans > 0) {
+							foreach my $param (@eans) {
 								push @params, { 'ean13'=>$param, 'nbn'=>undef, 'oclc'=>undef } if ($param);
 							}
 						}
 					}
-					else{
+					else {
 						push(@eans,undef);
 					}
-					next if (!$ean && !$oclc && !$nbn);
-					if ($method eq 'periodicalitem'){
+					
+					if ($method eq 'periodicalitem') {
 						$rootbibinfo = Obalky::BibInfo->new_from_params({
 							ean => $ean,
 							nbn => $nbn,
@@ -213,8 +211,7 @@ sub crawl_type{
 					($jdata, $info->{tocpdf_tmpfile}) = downloadtoc($PID,$PIDua,$tmp_dir,$custom_ean) if ($method eq 'periodicalitem' || $method eq 'monograph');
 					$info->{cover_url} = downloadcover($book_url, $jdata);
 					$media = Obalky::Media->new_from_info($info);
-					push(@books, [$bibinfo, $media, $product_url, undef,\@params  ]);
-					warn Dumper($bibinfo);
+					push(@books, [$bibinfo, $media, $product_url, undef, \@params ]);
 				}
 				
 				else {
@@ -224,27 +221,28 @@ sub crawl_type{
 		    last if ($i == $numberOfQueries);
 	        $start += 10;
 	     	get_response($from,$to,$method);
-	     	if ($resp->is_success){
+	     	if ($resp->is_success) {
 	     		$xml = eval { XMLin($resp->content,SuppressEmpty => 1, ForceArray =>['doc']) };
 				$res = $xml->{'result'};	    					
-	     	}
-	     	else {
-	     		print STDERR $resp->status_line, " - chyba pri dalsom dotaze na zaznam knih";
-	     	}
-	     	
-	   }
-	   return @books; 
+			}
+			else {
+				print STDERR $resp->status_line, " - chyba pri dalsom dotaze na zaznam knih";
+			}
+		
+		}
+		return @books; 
 	}
-		else {
-			print STDERR $resp->status_line, " - chyba pri dotaze na zoznam knih\n";
+	else {
+		print STDERR $resp->status_line, " - chyba pri dotaze na zoznam knih\n";
 	}	
 }
-sub get_response{
+
+sub get_response {
 	my($from,$to,$method) = @_;
 	$method = "map" if ($method eq 'maprecord');
-    $query_url = "http://kramerius.cbvk.cz/search/api/v5.0/search?q=fedora.model:$method%20AND%20modified_date:[".$from."Z%20TO%20".$to.'Z]&fl=PID&wt=xml' . "&start=$start";
+    $query_url = "http://kramerius.cbvk.cz/search/api/v5.0/search?q=fedora.model:$method%20AND%20modified_date:[".$from."Z%20TO%20".$to."Z]&fl=PID&wt=xml&start=$start";
     #$query_url = "http://kramerius.cbvk.cz/search/api/v5.0/search?q=fedora.model:$method%20AND%20PID:%22uuid:744fc0a0-79c8-11e2-b212-005056827e52%22&fl=PID&wt=xml&start=$start";
-warn $query_url;
+warn "\n".$query_url."\n";
 	$ua = LWP::UserAgent->new;
 	$ua->timeout(60);
 	$req = HTTP::Request->new(GET => $query_url);
@@ -259,7 +257,7 @@ sub getEAN{
 	return $parsedIdentifier;	
 }
 
-sub downloadtoc{
+sub downloadtoc {
 	my ($PID,$PIDua,$tmp_dir,$ean) = @_; 
 	my $toc_dir = "$tmp_dir/$PID";
 	my $PIDjsonurl = 'http://kramerius.cbvk.cz/search/api/v5.0/item/'. $PID .'/children';
@@ -271,9 +269,9 @@ sub downloadtoc{
     my $index = 0;
     my $toc_page;
     my $toc_file;
-	foreach my $pagemodel (@{$jsondata}){
-		if (($pagemodel->{'details'}->{'type'} eq 'TableOfContents')){
-			if ($index == 0){
+	foreach my $pagemodel (@{$jsondata}) {
+		if (($pagemodel->{'details'}->{'type'} eq 'TableOfContents')) {
+			if ($index == 0) {
 				system("rm -rf $toc_dir");
 				mkdir ($toc_dir	);
 			}
@@ -286,8 +284,8 @@ sub downloadtoc{
 			}
 		}
 	}
-	if ($index != 0){
-		$toc_file = "$tmp_dir/$ean.pdf";
+	if ($index != 0) {
+		$toc_file = "$tmp_dir/$PID.pdf";
 		system("convert $toc_dir/* $toc_file");
 		system("rm -rf $toc_dir");
 	}
