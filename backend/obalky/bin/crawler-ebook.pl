@@ -29,8 +29,8 @@ if($mode eq 'period') {
 	$to   =~ s/00:00:00/23:59:59/g;
 }
 
-$from = '2017-03-27T10:49:42';   #debug
-$to = '2017-03-27T10:50:53';     #debug
+$from = '2017-06-22T10:52:53';   #debug
+$to = '2017-06-30T10:53:53';     #debug
 
 #moznost upravit existujici citace starsi nez tyden
 my $crawlable =  DateTime->today()->subtract(days => 90);
@@ -65,10 +65,15 @@ foreach my $eshop (@eshops) {
 	eval { @list = $factory->crawl($from,$to)
 		    };
 	warn $factory."->crawl(): $@" if($@);
-	while(my ($rec,$bibinfo,$media,$product_url) = splice(@list,0,4)) {
-		next unless ($rec and $bibinfo);
+
+	while(my ($digitalRecords,$bibinfo,$media,$product_url) = splice(@list, 0, 4)) {
+		next unless ($digitalRecords and $bibinfo);
+		my (@productExts, @extArray);
+		foreach my $rec (@{$digitalRecords}){
+			my ($ext) = $rec =~ /.*\.(.*)/;
+			push (@productExts, $ext);
+		}		
 		my $product = DB->resultset('Product')->search({ product_url => $product_url })->next;
-		
 		# v DB uz existuje
 		if ($product) {
 			warn "Product exists  " if($ENV{DEBUG});
@@ -80,12 +85,12 @@ foreach my $eshop (@eshops) {
 			$product = $eshop->add_product($bibinfo,$media,$product_url);
 			$product->book->update({ doc_type => 3 }); # eshop
 		}
-warn $product->id;
-		
+		add_params_types(\@productExts);
+		add_params($product, $digitalRecords, \@productExts);
 		$cnt++;			
-		warn 'ebook #'.$cnt if ($cnt % 50 == 0);
 	}			
-	warn 'ebook #'.$cnt;
+	
+	warn 'ebooks: #'.$cnt if ($ENV{DEBUG});
 	
 	open(LOG,">>utf8","/opt/obalky/www/data/crawler.csv") or die;
 	my($sec,$min,$hour,$mday,$mon,$year) = localtime(time);
@@ -93,4 +98,46 @@ warn $product->id;
 					$year+1900,$mon+1,$mday,$hour,$min);
 	print LOG "$now\t$name\t$from\t$to\t".$found{$name}."\n";
 	close(LOG);
+}		
+
+# aktualizuje zoznam koncoviek 
+sub add_params_types{
+	my ($exts) = @_;
+	
+	foreach my $ext (@{$exts}){
+		DB->resultset('ProductParamsType')->find_or_create({type => $ext, description => "Ebook ".$ext." format", flag_ebook => 1});
+	}
+}
+
+sub add_params{
+	my ($product, $urls, $exts) = @_;
+
+	# nacita zoznam ProductParams pre danu book/product kombinanciu
+	my @params = DB->resultset('ProductParams')->search({book => $product->book->id, product => $product->id, ean13 => $product->ean13, oclc => $product->oclc, nbn => $product->nbn});
+	
+	# zmaze neaktualne polozky
+	foreach my $param (@params){	
+		$param->delete() if (!($param->other_param_type->get_column('type') ~~ @{$exts}));
+	}
+
+	# aktualizuje polozky, ktorych URL bolo pozmenene
+	# ulozi novo najdene polozky
+	foreach my $i (0 .. ((@{$urls}) -1)){
+		my $url = @{$urls}[$i];
+		my $ext = @{$exts}[$i];
+		my $param_id = DB->resultset('ProductParamsType')->find({type => $ext, flag_ebook => 1})->id;
+		
+		my $productParam = DB->resultset('ProductParams')->find({book => $product->book->id, product => $product->id, ean13 => $product->ean13, oclc => $product->oclc, 
+			nbn => $product->nbn, other_param_type => $param_id});
+			
+		if ($productParam){
+			if ($productParam->other_param_value ne $url){				
+				$productParam->update({other_param_value => $url}) if ($productParam and ($productParam->other_param_value ne $url));
+			}
+		}
+		else{
+			DB->resultset('ProductParams')->create({book => $product->book->id, product => $product->id, ean13 => $product->ean13, oclc => $product->oclc, 
+				nbn => $product->nbn, other_param_value => $url,other_param_type => $param_id});
+		}		
+	}
 }

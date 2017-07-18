@@ -48,13 +48,13 @@ __PACKAGE__->table("eshop");
 
   data_type: 'varchar'
   is_nullable: 0
-  size: 16
+  size: 32
 
 =head2 type
 
   data_type: 'enum'
   default_value: 'cover'
-  extra: {list => ["cover","auth","citace","ebook"]}
+  extra: {list => ["cover","auth","citace","ebook","kramerius"]}
   is_nullable: 0
 
 =head2 try_count
@@ -272,12 +272,12 @@ __PACKAGE__->add_columns(
   "id",
   { data_type => "integer", is_auto_increment => 1, is_nullable => 0 },
   "name",
-  { data_type => "varchar", is_nullable => 0, size => 16 },
+  { data_type => "varchar", is_nullable => 0, size => 32 },
   "type",
   {
     data_type => "enum",
     default_value => "cover",
-    extra => { list => ["cover", "auth", "citace", "ebook"] },
+    extra => { list => ["cover", "auth", "citace", "ebook", "kramerius"] },
     is_nullable => 0,
   },
   "try_count",
@@ -387,20 +387,6 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("id");
 
-=head1 UNIQUE CONSTRAINTS
-
-=head2 C<eshop_weburl>
-
-=over 4
-
-=item * L</web_url>
-
-=back
-
-=cut
-
-__PACKAGE__->add_unique_constraint("eshop_weburl", ["web_url"]);
-
 =head1 RELATIONS
 
 =head2 auth_sources
@@ -484,8 +470,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-06-23 15:35:04
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+UX11TAQ9F64+TA7/T6vpA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-07-13 11:18:19
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:USnUjOErihh7aR0ws4+dgw
 
 
 use Data::Dumper;

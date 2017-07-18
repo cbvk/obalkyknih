@@ -55,8 +55,7 @@ use Eshop::LibraryThing;
 use Eshop::Static;
 use Eshop::Upload;
 use Eshop::NKP_OAI;
-use Eshop::Kramerius_MZK;
-use Eshop::Kramerius_CBVK;
+use Eshop::Kramerius;
 use Eshop::CitaceZ39;
 use Eshop::Ebook_MLP;
 

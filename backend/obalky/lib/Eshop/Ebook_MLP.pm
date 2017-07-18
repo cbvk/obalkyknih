@@ -26,11 +26,10 @@ sub crawl{
 		'metadataHandler' => 'MarcOAI'
 	);
 
-	warn Dumper("http://web2.mlp.cz/cgi/oai?verb=ListRecords&set=ebook&metadataPrefix=marc21&from=$from"."&until="."$to");
+	warn "http://web2.mlp.cz/cgi/oai?verb=ListRecords&set=ebook&metadataPrefix=marc21&from=$from"."&until="."$to" if ($ENV{DEBUG});
 	my $cnt = 0;
 	while (!$finished) {
 		while (my $record = $records->next()) {
-#warn Dumper($record);
 			my $metadata = $record->metadata();
 			if (defined $metadata->{marc} && $metadata->{marc}->field('001')) {
 				my %rec;
@@ -80,13 +79,16 @@ sub crawl{
 						push(@ebook_files, $t856u);
 					}
 				}
-				
+				if (!$product_url){
+					my $id = $record->header()->identifier;
+					($id) = $id =~ /.*:(.*)/;
+					$product_url = 'http://search.mlp.cz/searchMKP.jsp?action=sTitul&key='.$id;
+				}
 				push (@recArray,\@ebook_files,$bibinfo,undef,$product_url);
 				
 				$cnt++;
 				warn 'oai #'.$cnt if ($cnt % 50 == 0);
 			}
-last;
 		}
 		my $rToken = $records->resumptionToken();
 		if ($rToken) {
@@ -97,12 +99,9 @@ last;
 		} else {
 			$finished = 1;
 		}
-		
-last;
 	
 	}
 	warn 'oai #'.$cnt;
-	
 	return @recArray;
 }
 1

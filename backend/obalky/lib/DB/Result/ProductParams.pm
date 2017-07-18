@@ -1,5 +1,5 @@
 use utf8;
-package DB::Result::ProductParam;
+package DB::Result::ProductParams;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
