@@ -42,7 +42,7 @@ param dbname Nazev DB resultsetu
 =cut
 
 sub pagination {
-	my ($c, $dbname, $where) = @_;
+	my ($c, $dbname, $where, $group_by) = @_;
 	my ($page,$order,$order_dir,$per_page,$filter_val,$filter_key) = (undef,undef,undef,undef,undef,undef,undef);
 	
 	# Naloaduj ulozenou strankovaci pozici
@@ -60,11 +60,10 @@ sub pagination {
     $filter_val = $c->req->param('fv') if ($c->req->param('fv'));
     $filter_key = $c->req->param('fk') if ($c->req->param('fk'));
     $where->{$filter_key} = { "-like"=>"%$filter_val%"} if ($filter_key);
-    my $total_count = __PACKAGE__->resultset($dbname)->search($where)->count;
+    my $total_count = __PACKAGE__->resultset($dbname)->search($where, $group_by)->count;
     my $max_page = int($total_count/$per_page)+1;
     $page = $max_page if ($page > $max_page);
 	$c->response->cookies->{$dbname.'_paging'} = {value=>[$page,$order,$order_dir,$per_page]};
-	
 	# Vsechno co viewer potrebuje
 	return($page, $max_page, $per_page, $order, $order_dir, $filter_val, $filter_key);
 }

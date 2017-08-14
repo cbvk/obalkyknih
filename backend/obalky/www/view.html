@@ -335,7 +335,6 @@ Tuto knihu ještě nemáme v databázi!
 	<script src='https://www.google.com/recaptcha/api.js?hl=cs'></script>
 	[% END %]
 
-
   <td valign="top" width=180 align=right>
 
   [% UNLESS detail %]
@@ -397,17 +396,114 @@ Tuto knihu ještě nemáme v databázi!
 	</form>
 	[% END %]
 	
-	<br/><br/>
+	
+
 
 </td></tr>
-
 <!-- TODO: pokud je jeste dalsi book za nama, udelej <HR> -->
 
 [% END %] <!-- FOREACH books -->
 </table>
 
-<p style="height: 4em"></p>
+	[% IF books.size == 1  and admin %]
+	<div>
+	<p>
+  	<h2>Vazby</h2>
+	<form method="post">
+		<table>
+		<tr>
+			<td><h3>Vyhledávání</h3></td>
+			<td><input type=text value="" name="search_value" id="find_books" > </td>
+			<td><input type=submit value="Vyhledat" ></td>
+		</tr>
+		</table>
+	</form>
 
-</div> <!-- id="main" -->
+	[% IF searched_books %]
+	 	<br>
+	 	<form method="post">
+	  	<table class = "bindingsh">
+	  	<thead>
+			<tr>
+	  			<th>Název</th>
+			  	<th>Autoři</th>
+			  	<th>EAN</th>
+			  	<th>NBN</th>
+	  		</tr>
+	  	<//thead>
+	  	</table>
+	  	<table class ="bindings bindingsb">
+	  	<tbody>
+		[% FOREACH sbook IN searched_books %]
+			<tr>
+				
+				<td><input type="checkbox" name="relation_book_id" value="[% sbook.id %]"></input>   <a href="http://obalkyknih.cz/view?book_id=[% sbook.id %]">[% sbook.title %]</a></td>
+				<td>[% sbook.authors %]</td>
+				<td>[% sbook.ean13 %]</td>
+				<td>[% sbook.nbn %]</td>
+			</tr>
+		[% END %]
+		</tbody>
+		</table>
+	    </p>
+	    <table>
+	    <tr>
+	    	<td>
+		    <select required name="relation_type">
+		    	<option style="display:none" selected disabled value="">Typ vazby</option>
+		    	[% FOREACH type IN relations %]
+		    		<option value="[% type.id_book_relation_type %]">[% type.relation_code %]</option>
+		    	[% END %]
+		    <select>
+		    </td> 
+		    <td> 
+		    <button type="submit">Vytvořit vazbu</button>
+		    </td>
+		</tr>
+		</table><br/
+		</form>
+	[% END %]		
+	<p>
+	[% IF bindings %]
+	<h3>Existující vazby</h3>
+	 	<br>
+	  	<table class= "bindingsh">
+	  	<thead>
+			<tr>
+	  			<th>Název</th>
+			  	<th>Autoři</th>
+			  	<th>EAN</th>
+			  	<th>NBN</th>
+	  		</tr>
+	  	</thead>
+	  	</table><br/
+	  	<form method="post">
+	  	<table class ="bindings bindingsh">
+	  	<tbody>
+	  	[% i = 0 %]
+		[% FOREACH binding IN bindings %]
+			<tr>  
+				<td><a href="http://obalkyknih.cz/view?book_id=[% binding.id %]">[% binding.title %]</td>
+				<td>[% binding.authors %]</td>
+				<td>[% binding.ean13 %]</td>
+				<td>[% binding.nbn %]</td>
+				<td><button type="submit" name="deleted_relation_idx" value="[% i %]" onclick="return confirm('Chcete odstranit danou vazbu?')">Smazat([% binding.type_name %])</button></td>
+			</tr>
+		[% i = i + 1 %]
+		[% END %]
+		</tbody>
+		</table>
+		</form>
+	    </p>
+	[% END %]	
+	</div>
+    [% END %]
+
+<p style="height: 4em"></p>
+</div> 
+
+
+
+<!-- id="main" -->
 
 [%PROCESS _footer %]

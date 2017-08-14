@@ -1,0 +1,122 @@
+[% PROCESS _header_tovarna %]
+[% PROCESS _header_blue %]
+[% PROCESS _header_main %]
+
+[% PROCESS _errors %]
+
+[% IF signed %]
+
+<h1>Seznam knih a jejich návrhů</h1>
+
+<p />
+[% IF book_list.size %]
+
+	[% IF filter_key %]
+		<a href="/admin_suggestions?[%IF order%]&o=[%order%][%END%][%IF order_dir%]&od=[%order_dir%][%END%][%IF per_page%]&pp=[%per_page%][%END%]">Zrušit filtrování podle fráze: "[%filter_val%]"</a>
+	[% END %]
+
+	[% PROCESS _pagination %]
+
+	<table class="qe-table">
+	<tr>
+		<th>&nbsp;</th>
+		<th>
+			<a href="/admin_suggestions?o=title&amp;od=[% IF order=='title' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%]">Titul</a>
+			<a href="#" class="f-icon" title="Vyhledat"> <img src="/img/magnifier.png" alt="Vyhledat" /></a>
+			<form action="/admin_suggestions" method="get" class="f-form">
+				<fieldset>
+					<input type="text" name="fv" value="[% IF filter_key=='title' %][%filter_val%][% END %]" />
+					<input type="hidden" name="fk" value="title" />
+					[%IF order%]<input type="hidden" name="o" value="[%order%]" />[%END%]
+					[%IF order_dir%]<input type="hidden" name="od" value="[%order_dir%]" />[%END%]
+					[%IF per_page%]<input type="hidden" name="pp" value="[%per_page%]" />[%END%]
+					<input type="submit" name="fs" value="   OK   " />
+					<input type="button" name="fc" value=" Zrušit " class="f-cancel" />
+				</fieldset>
+			</form>			
+		</th>
+		<th>
+			<a href="/admin_suggestions?o=authors&amp;od=[% IF order=='authors' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%]">Autoři</a>
+			<a href="#" class="f-icon" title="Vyhledat"> <img src="/img/magnifier.png" alt="Vyhledat" /></a>
+			<form action="/admin_suggestions" method="get" class="f-form">
+				<fieldset>
+					<input type="text" name="fv" value="[% IF filter_key=='authors' %][%filter_val%][% END %]" />
+					<input type="hidden" name="fk" value="authors" />
+					[%IF order%]<input type="hidden" name="o" value="[%order%]" />[%END%]
+					[%IF order_dir%]<input type="hidden" name="od" value="[%order_dir%]" />[%END%]
+					[%IF per_page%]<input type="hidden" name="pp" value="[%per_page%]" />[%END%]
+					<input type="submit" name="fs" value="   OK   " />
+					<input type="button" name="fc" value=" Zrušit " class="f-cancel" />
+				</fieldset>
+			</form>
+		</th>
+		<th>
+			<a href="/admin_suggestions?o=year&amp;od=[% IF order=='year' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%]">Rok vydání</a>
+
+		</th>
+		<th>
+			<a href="/admin_suggestions?o=ean13&amp;od=[% IF order=='ean13' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%]">EAN</a>
+		</th>
+	</tr>
+	[% cnt = 0 %]
+	[% FOREACH row IN book_list %]
+	[% cnt = cnt + 1 %]
+	[% setbackground = cnt mod 2 ? ' style="background-color:initial"' : ' style="background-color:#E6F2F5"' %]
+	<tr [% setbackground %]>
+		
+		<td></td>
+		<td><strong><a href="/view?book_id=[% row.id %]" >[%row.title%]</a></strong></td>
+		<td>[%row.authors%]</td>
+		<td>[%row.year%]</td>
+		<td>[%row.ean13%]</td>
+	</tr>
+	<form method="post">
+	[% FOREACH suggestion IN row.suggestions %]
+	<tr[% setbackground %]>
+	<td><input type="checkbox" name ="suggestion_id" value="[% suggestion.suggestion_id %]"/></td>
+	<td><a href="[% suggestion.source_url %]">[% suggestion.title %]</a></td>
+	<td>[% suggestion.authors %]</td>
+	<td>[% suggestion.year %]</td>
+	<td>[% suggestion.ean13 %]</td>
+	<tr>
+	[% END %]
+	<tr [% setbackground %]>
+		<td></td>
+		<td>
+			<button type="submit" name = "flag" value="2" onclick="return confirm('Chcete zakazat tyto vazby?')">Zakázat</button>&nbsp;&nbsp;&nbsp;
+			<button type="submit" name = "flag" value="1" onclick="return confirm('Chcete vytvorit tyto vazby?')" >Povolit</button>
+			<input type="hidden" name="parent_id" value="[% row.id %]"/>
+		</td>
+		<td></td>
+		<td></td>
+		<td></td>
+	<tr>
+	</form>
+	[% END %]
+	</table>
+	
+	<br/>
+	[% PROCESS _pagination %]
+	<br/>
+	
+
+
+[% ELSE  %]
+[% IF  filter_key %]
+<p>Nebyli nalezeny žádné návrhy vazeb.</p>
+[% ELSE %]
+<p>Momentálně nejsou dostupny žádné návrhy vazeb.</p>
+[% END %]
+[% END %]
+
+<p style="padding: 20px" />
+
+
+[% ELSE %]
+
+[% PROCESS _form_signin %]
+
+[% END %]
+
+[% PROCESS _footer_tovarna %]
+

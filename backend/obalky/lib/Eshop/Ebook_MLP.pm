@@ -34,40 +34,39 @@ sub crawl{
 			if (defined $metadata->{marc} && $metadata->{marc}->field('001')) {
 				my %rec;
 				$rec = {};
-				my ($isbn,$issn,$bibinfo_authors);
+				my ($isbn, $issn, $bibinfo, $title, $title_sub);
 				$rec->{'identifier_cnb'} = $metadata->{marc}->subfield('015', 'a');
 				$rec->{'identifier_oclc'} = $metadata->{marc}->subfield('035', 'a');
 				$rec->{'identifier_oclc'} =~ s/\(OCoLC\)//g if $rec->{'identifier_oclc'};
-				$isbn = Obalky::BibInfo->parse_code($metadata->{marc}->subfield('020', 'a'));
-				$issn = Obalky::BibInfo->parse_code($metadata->{marc}->subfield('022', 'a'));
+				$isbn = $metadata->{marc}->subfield('020', 'a');
+				$issn = $metadata->{marc}->subfield('022', 'a');
 				$rec->{'author'} = $metadata->{marc}->subfield('100', 'a');
-				chop($rec->{'author'}) if ($rec->{'author'} && $rec->{'author'} =~ /,\z/  );
-				$rec->{'title'} = $metadata->{marc}->subfield('245', 'a') || '';
-				$rec->{'title_sub'} = $metadata->{marc}->subfield('245', 'b') || '';
+				$rec->{'author'} =~ s/,$// if ($rec->{'author'});
+				$title = $metadata->{marc}->subfield('245', 'a') || '';
+				chomp($title) if ($title);
+				$title_sub = $metadata->{marc}->subfield('245', 'b') || '';
+				$rec->{'title'} = $title.$title_sub;
+				$rec->{'title'} =~ s/\s*\/\s*$// if ($rec->{'title'});
+				$rec->{'date'} = $metadata->{marc}->subfield('264','c');
 				$rec->{'identifier'} = $isbn || $issn;
-				$bibinfo_authors = $rec->{'author'} || '';
-				if ($rec->{'subauthors'}){
-					$bibinfo_authors = $bibinfo_authors . ", " . $rec->{'subauthors'} if ($bibinfo_authors ne '');
-					$bibinfo_authors = $rec->{'subauthors'} if ($bibinfo_authors eq '');
+				if ($rec->{'identifier'}){
+					$rec->{'identifier'} =~ tr/-//d;
+					chomp($rec->{'identifier'});
+					$rec->{'identifier'} = Obalky::BibInfo->parse_code($rec->{'identifier'});					
 				}
-				else{
-					undef $bibinfo_authors if (!$rec->{'author'});
-				}
-				
 				if (!$isbn && !$issn && !$rec->{'identifier_oclc'} && !$rec->{'identifier_cnb'}) {
 					$rec->{'identifier_cnb'} = 'abg001-'.$metadata->{marc}->field('001')->data();
 				}
-				
 				#nadrazeny script (crawler_ebook.pl) prohleda podle bibinfa DB
 				$bibinfo = Obalky::BibInfo->new_from_params({
 					ean => $rec->{'identifier'},
-					title => $rec->{'title'}.$rec->{'title_sub'},
+					title => $rec->{'title'},
 					year => $rec->{'date'},
-					authors => $bibinfo_authors,
+					authors => $rec->{'author'},
 					nbn => $rec->{'identifier_cnb'},
 					oclc => $rec->{'identifier_oclc'}
 				});
-				
+				foreach (values %{$bibinfo}){chomp($_) if ($_)}; 
 				my $product_url;
 				my @ebook_files;
 				my @t856 = $metadata->{marc}->field('856');
@@ -87,7 +86,6 @@ sub crawl{
 				push (@recArray,\@ebook_files,$bibinfo,undef,$product_url);
 				
 				$cnt++;
-				warn 'oai #'.$cnt if ($cnt % 50 == 0);
 			}
 		}
 		my $rToken = $records->resumptionToken();
@@ -101,7 +99,7 @@ sub crawl{
 		}
 	
 	}
-	warn 'oai #'.$cnt;
+	warn 'found #'.$cnt;
 	return @recArray;
 }
 1
