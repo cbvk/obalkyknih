@@ -140,7 +140,13 @@ sub create_from_file {
 		my $source = $product;
 		
 		my $cover_source = DB->resultset('Cover')->search({ auth_source => $source->id }, { key => 'cover_auth_source' })->next;
-		$cover_source->delete if ($cover_source);
+		if ($cover_source) {
+			my $resAuthCover = DB->resultset('Auth')->search({ cover => $cover_source->id });
+			foreach ($resAuthCover->all) { $_->update({ cover => undef }); }
+			my $resAuthSource = DB->resultset('AuthSource')->search({ cover => $cover_source->id });
+			foreach ($resAuthSource->all) { $_->update({ cover => undef }); }
+			$cover_source->delete;
+		}
 		
 		$cover = eval { DB->resultset('Cover')->update_or_create({
 			auth => $auth, auth_source => $source, checksum => $checksum,

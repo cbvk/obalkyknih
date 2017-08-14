@@ -108,6 +108,7 @@ foreach my $eshop (@eshops) {
 					$year+1900,$mon+1,$mday,$hour,$min);
 	print LOG "$now\t$name\t$from\t$to\t".$found{$name}."\n";
 	close(LOG);
+die; #debug
 }
 
 sub check_eshops{

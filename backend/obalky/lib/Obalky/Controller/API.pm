@@ -497,7 +497,6 @@ sub _do_log {
 
 sub _do_import {
 	my($self,$c) = @_;
-	#warn Dumper($c->req); #debug
 
     $self->_do_log("import begin");
 
@@ -512,15 +511,17 @@ sub _do_import {
 		}
 	}
 	my $user = $c->user->login;
-
+	
+	# vicero isbn
+	my @other_eans = $c->req->param('other_isbn');
+	@other_eans = map {Obalky::BibInfo->parse_code($_)} @other_eans;
+	
 	# z parametru zkonstruuj identifikator knizky (TODO jen BibInfo->fields?)
-	warn Dumper($c->req->params) if($ENV{DEBUG});
 	my $bibinfo_params = {};
 	$bibinfo_params->{$_} = decode_utf8($c->req->param($_))
 		foreach(Obalky::BibInfo->param_keys);
 	# jen docasny fix
 	$bibinfo_params->{authors} ||= decode_utf8($c->req->param('author'));
-	
 	my $bibinfo_aggr;
 	my $part_type = $c->req->param('part_type');
 	$part_type = "" unless ($part_type);
@@ -566,11 +567,10 @@ sub _do_import {
 		warn 'BIBINFO po normalizaci' if($ENV{DEBUG});
 		warn Dumper($bibinfo_params) if($ENV{DEBUG});
 	}
-	#warn Dumper($c->req); warn Dumper($bibinfo_params); die; #DEBUG
 
 	# bibinfo skenovaneho zaznamu
 	my $bibinfo = Obalky::BibInfo->new_from_params($bibinfo_params);
-
+	
     $self->_do_log("user $user book ".($bibinfo ? $bibinfo->to_string
                         : 'NENI bibinfo?? '.Dumper($bibinfo_params)));
 
@@ -670,7 +670,7 @@ sub _do_import {
 	# ok, ke knizce $bibinfo zaloz novy produkt ($media)
     $self->_do_log("calling ->add_product(".Dumper($bibinfo).",",
                             Dumper($media).",$product_url)");
-	my $product = $eshop->add_product($bibinfo,$media,$product_url);
+	my $product = $eshop->add_product($bibinfo,$media,$product_url, undef, \@other_eans);
 
     $self->_do_log("ok, product ".$product->id." ready");
 
@@ -692,7 +692,7 @@ sub _do_import {
 		}
 	}
 	
-	# main AUTHOR cover
+	# AUTH - klienti s moznosti skenovat pouze jednoho autora (do v0.35)
 	my $authId;
 	$authId = $c->req->param("auth_id");
 	if ($authId) {
@@ -717,12 +717,48 @@ sub _do_import {
 		}
 		$self->_do_log("auth import done ".$auth->id) if (defined $auth->id);
 	}
+	
+	# AUTH - klienti s moznosti skenovat vicere autory (od v0.36)
+	my $authCnt;
+	$authCnt = $c->req->param("auth_cnt");
+	if ($authCnt) {
+		 for(my $i=1; $i<=$authCnt; $i++) {
+			$self->_do_log("uploading auth $i of $authCnt");
+			last unless($c->req->param("auth_$i"));
+		    $self->_do_log("uploading auth $i");
+			$self->_upload_file($c,"auth_$i", "$dir/auth_$i");
+		    $self->_do_log("auth upload done");
+		    
+		    my $authId = $c->req->param("auth_".$i."_id");
+		    my $auth = DB->resultset('Auth')->find($authId);
+		    
+		    if(-s "$dir/auth_$i" and $auth) {
+				my $authMedia = Obalky::Media->new_from_info({
+									cover_url => "$product_url/auth_$i", 
+									cover_tmpfile => "$dir/auth_$i"
+								});
+				my $auth_source_url = "http://obalkyknih.cz/import/$today/$seq";
+				my $authinfo = $auth->authinfo;
+				my $auth_source = $eshop->add_auth_source($authinfo,$authMedia,$auth_source_url);
+			}
+			$self->_do_log("auth $i of $authCnt import done ".$auth->id) if (defined $auth->id);
+		}
+	}
 
     $self->_do_log("import done");
 
 	# vrat nejake OK nebo tak neco
 	$c->response->content_type("text/plain");
-	$c->response->body('OK');
+	
+	# client version
+	my $version = "";
+	$version = $c->req->param("version") if ($c->req->param("version"));
+	
+	if ($product->book and $version ne "") {
+		$c->response->body($product->book->id);
+	} else {
+		$c->response->body('OK');
+	}
 }
  
 # jen pomocna funkce pro ulozeni uploadovaneho souboru do FS

@@ -5,6 +5,7 @@
 use ZOOM;
 use MARC::Record;
 use MARC::Charset 'utf8_to_marc8';
+use Encode qw(decode encode);
    
        # prepare STDOUT for utf8
 	   #     binmode(STDOUT, 'utf8');
@@ -17,10 +18,9 @@ MARC::Charset->assume_encoding('UTF-8');
 #binmode(STDOUT,"utf8");
 
 my $conn = new ZOOM::Connection(
-	'katalog.cbvk.cz', 8888, databaseName => 'cbvk_us_cat');
-#$conn->option(preferredRecordSyntax => "unimarc");
+	'aleph.nkp.cz', 9991, databaseName => 'SKC');
 
-$rs = $conn->search_pqf('@attr 1=1063 2681339338');
+$rs = $conn->search_pqf('@and @attr 1=4 "Atlas" @attr 1=1003 "Streng, Jan"');
 print "found ", $rs->size(), " records:\n";
 
 my $rec = $rs->record(0);

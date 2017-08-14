@@ -27,7 +27,9 @@ __PACKAGE__->register(crawl => 1, license => 'licensed', czech => 0 );
 sub crawl{
 	my($self,$eshop,$from,$to,$tmp_dir,$feedURL) = @_;
 	$baseURL = $feedURL . '/search/';
-	my @type = ("soundrecording","archive","graphic","sheetmusic","manuscript","monograph","periodicalitem");
+	#my @type = ("soundrecording","archive","graphic","sheetmusic","manuscript","monograph","periodicalitem");
+#debug
+my @type = ("monograph");
 	my @list;
 	foreach (@type){
 		$start = 0;
@@ -51,6 +53,12 @@ sub crawl_type{
 			foreach my $xml_item (@{$res->{'doc'}}) {
 				my ($PIDxml,$PID,$PIDurl,$PIDua,$PIDreq,$PIDresp,$content);
 				$PID = $xml_item->{'str'}->{'content'};
+#debug
+$method = 'periodicalitem';
+$baseURL = 'http://kramerius.mzk.cz/search/';
+# objekt s TOC
+$PID = 'uuid:64ef19d0-d0b8-11e6-8032-005056827e52';
+
 				$PIDurl = $baseURL . 'api/v5.0/item/' . $PID .'/streams/BIBLIO_MODS';
 				$PIDua = LWP::UserAgent->new;
 				$PIDua->timeout(60);
@@ -96,10 +104,23 @@ sub crawl_type{
 							$root_book_url = $baseURL . 'api/v5.0/item/' . $root_pid .'/children';
 							$root_product_url = $baseURL . 'i.jsp?pid=' . $root_pid;
 							$OBJIdentifiers = $ROOTxml->{'mods'}->{'identifier'};
-							$authorslist = $ROOTxml->{'mods'}->{'name'};	
-							$title = $PIDxml->{'mods'}->{'titleInfo'}->[0]->{'title'} || $jsondata ->{'title'} ;
-							$part_year = $PIDxml->{'mods'}->{'originInfo'}->[0]->{'dateIssued'}->[0] || $jsondata ->{'details'}>{'date'};
-							$part_no = $PIDxml->{'mods'}->{'titleInfo'}->[0]->{'partNumber'} || $jsondata->{'details'}>{'partNumber'};
+							$authorslist = $ROOTxml->{'mods'}->{'name'};
+							if ($PIDxml->{'mods'}->{'part'}) {
+								$title = $root_title || $jsondata ->{'title'} ;
+								$part_no = $PIDxml->{'mods'}->{'part'}->{'detail'}->{'number'} || $jsondata->{'details'}>{'partNumber'};
+								if ($PIDxml->{'mods'}->{'part'}->{'date'} ne '') {
+									$part_year = $PIDxml->{'mods'}->{'part'}->{'date'};
+								}
+							} else {
+								$title = $PIDxml->{'mods'}->{'titleInfo'}->[0]->{'title'} || $jsondata ->{'title'} ;
+								$part_year = $PIDxml->{'mods'}->{'originInfo'}->[0]->{'dateIssued'}->[0] || $jsondata ->{'details'}>{'date'};
+								$part_no = $PIDxml->{'mods'}->{'titleInfo'}->[0]->{'partNumber'} || $jsondata->{'details'}>{'partNumber'};
+							}
+							if (defined $part_year and $part_year ne '' and (substr $part_year, 5, 1) eq '.') {
+								$part_year = substr $part_year, -4;
+							}
+warn Dumper($PIDxml->{'mods'});
+warn Dumper($jsondata);
 						} 			
 					}
 					
@@ -162,7 +183,12 @@ sub crawl_type{
 					}
 					
 					# zaznamy bez parametrov pouzitelnych i v inych knizniciach nebereme
-					#next if (!$ean && !$oclc && !$nbn);
+#debug
+warn Dumper($ean);
+warn Dumper($nbn);
+warn Dumper($oclc);
+warn '---';
+					next if (!$ean && !$oclc && !$nbn);
 					
 					#kdyz urnnbn je jediny identifikator
 					$nbn = $sysno || $urnnbn if (!$oclc && !$nbn && !$ean);
@@ -189,9 +215,8 @@ sub crawl_type{
 							authors => $authors,
 							uuid => $root_pid
 						});
-						$rootinfo->{cover_url} = $baseURL . 'api/v5.0/item/' . $PID .'/thumb';
+						$rootinfo->{cover_url} = downloadcover_helper($baseURL, $PID);
 						$rootmedia = Obalky::Media->new_from_info($rootinfo);
-						$book_url = $baseURL . 'api/v5.0/item/' . $PID .'/children';
 						$product_url = $baseURL . 'i.jsp?pid=' . $PID;
 
 						$eshop->add_product($rootbibinfo,$rootmedia,$root_product_url,undef,@params);
@@ -206,6 +231,8 @@ sub crawl_type{
 						authors => $authors,
 						part_year => $part_year,
 						part_no => $part_no,
+						part_year_orig => $part_year,
+						part_no_orig => $part_no,
 						uuid => $PID
 					});
 					next if (!$bibinfo);
@@ -213,17 +240,20 @@ sub crawl_type{
 					$bibinfo->{part_type} = '2' if ($book_id);
 					my $custom_ean = $ean || $nbn;
 					my $jdata;
-					($jdata, $info->{tocpdf_tmpfile}) = downloadtoc($PID,$PIDua,$tmp_dir,$custom_ean) if ($method eq 'periodicalitem' || $method eq 'monograph');
-					$info->{cover_url} = downloadcover($book_url, $jdata);
+					($jdata, $info->{tocpdf_tmpfile}, $info->{toc_firstpage}) = downloadtoc($PID,$PIDua,$tmp_dir,$custom_ean) if ($method eq 'periodicalitem' || $method eq 'monograph');
+					$info->{cover_url} = downloadcover($baseURL, $PID, $jdata);
+warn '^^^^^^^^^^^^^^^^';
+warn Dumper($info);
+warn '^^^^^^^^^^^^^^^^';
 					$media = Obalky::Media->new_from_info($info);
-					warn Dumper($bibinfo) if ($ENV{DEBUG} == 2);
-					warn Dumper($bibinfo);
+					warn Dumper($bibinfo) if ($ENV{DEBUG});
 					push(@books, [$bibinfo, $media, $product_url, undef, \@params ]);
 				}
 				
 				else {
 					print STDERR $resp->status_line, " - chyba pri dotaze na knihu\n";
 				}
+last; #debug
 		    }
 		    last if ($i == $numberOfQueries);
 	        $start += 10;
@@ -235,7 +265,7 @@ sub crawl_type{
 			else {
 				print STDERR $resp->status_line, " - chyba pri dalsom dotaze na zaznam knih";
 			}
-		
+last; #debug
 		}
 		return @books; 
 	}
@@ -247,7 +277,7 @@ sub crawl_type{
 sub get_response {
 	my($from,$to,$method) = @_;
 	$method = "map" if ($method eq 'maprecord');
-    $query_url = $baseURL . "api/v5.0/search?q=fedora.model:$method%20AND%20modified_date:[".$from."Z%20TO%20".$to."Z]&fl=PID&wt=xml&start=$start";
+    $query_url = $baseURL . "api/v5.0/search?q=fedora.model:$method%20AND%20modified_date:[".$from."T00:00:00Z%20TO%20".$to."T23:59:59Z]&fl=PID&wt=xml&start=$start";
 	warn "URL: $query_url" if ($ENV{DEBUG} == 2);
 	$ua = LWP::UserAgent->new;
 	$ua->timeout(60);
@@ -264,7 +294,9 @@ sub getEAN{
 }
 
 sub downloadtoc {
-	my ($PID,$PIDua,$tmp_dir,$ean) = @_; 
+	my ($PID,$PIDua,$tmp_dir,$ean) = @_;
+	my $parent_uuid = $PID;
+	$parent_uuid =~ s/uuid\://g;
 	my $toc_dir = "$tmp_dir/$PID";
 	my $PIDjsonurl = $baseURL . 'api/v5.0/item/'. $PID .'/children';
 	my $PIDreq = HTTP::Request->new(GET => $PIDjsonurl);
@@ -273,53 +305,94 @@ sub downloadtoc {
     my $jsondata= decode_json($PIDresp->content);
     return if (!$jsondata);
     my $index = 0;
-    my $toc_page;
-    my $toc_file;
+    my ($toc_page, $toc_file, $first_page) = (undef, undef, undef);
 	foreach my $pagemodel (@{$jsondata}) {
 		if (($pagemodel->{'details'}->{'type'}) && ($pagemodel->{'details'}->{'type'} eq 'TableOfContents')) {
 			if ($index == 0) {
 				system("rm -rf $toc_dir");
-				mkdir ($toc_dir	);
+				mkdir ($toc_dir);
 			}
-			$index++;
 			$toc_page = $pagemodel->{'pid'};
-			my $tocurl = $baseURL . "api/v5.0/item/$toc_page/thumb";
+			my $tocurl = $baseURL . "api/v5.0/item/$toc_page/full";
 			if(system("wget -q $tocurl -O $toc_dir/$index >/dev/null")) {
 				warn "$tocurl: failed to wget!\n";
 				return ($jsondata, undef);
 			}
+			# first page
+			if ($index == 0) {
+				system("wget -q $tocurl -O $tmp_dir/$parent_uuid >/dev/null")
+			}
+			$index++;
 		}
 	}
 	if ($index != 0) {
-		$toc_file = "$tmp_dir/$PID.pdf";
+		$toc_file = "$tmp_dir/$parent_uuid.pdf";
+		$first_page = "$tmp_dir/$parent_uuid";
 		system("convert $toc_dir/* $toc_file");
 		system("rm -rf $toc_dir");
 	}
-	return ($jsondata, $toc_file);	
+	return ($jsondata, $toc_file, $first_page);	
 }
 
 sub downloadcover{
-	my ($url, $jsondata) = @_;
+	my ($url, $childrenUUID, $jsondata) = @_;
+	my $childrenURL . 'api/v5.0/item/' . $childrenUUID .'/children';
+	
 	if (!$jsondata){
 		$ua = LWP::UserAgent->new;
 		$ua->timeout(60);
-		my $PIDreq = HTTP::Request->new(GET => $url);
+		my $PIDreq = HTTP::Request->new(GET => $childrenURL);
 		$PIDreq->header('content-type' => 'application/json');
     	my $PIDresp = $ua->request($PIDreq);
     	$jsondata = decode_json($PIDresp->content);
 	}
 	return if (!$jsondata);
-	my ($coverpage, $coverurl);
+	my ($uuid, $coverurl);
+warn '------------------------';
 	foreach my $pagemodel (@{$jsondata}){
 		my $page = $pagemodel->{'details'}->{'type'};
 		next if (!$page || (grep /^$page$/i, ("spine","hrbet")));
-		$coverpage = $pagemodel->{'pid'} if (!$coverpage || $page eq 'FrontCover');
-		last if ($page eq 'FrontCover');
+		$uuid = $pagemodel->{'pid'} if (!$uuid || $page eq 'FrontCover' || $page eq 'FrontJacket' || $page eq 'TitlePage');
+warn $page;
+		if ($uuid ne '') {
+			$coverurl = downloadcover_helper($url, $uuid);
+			last;
+		}
 	}
-    #$coverurl = $baseURL . "api/v5.0/item/$coverpage/full" if ($coverpage); - chybaju autorske prava
-    $coverurl = $baseURL . "api/v5.0/item/$coverpage/thumb" if ($coverpage);
+warn '------------------------';
 	return $coverurl;
 	
+}
+
+sub downloadcover_helper {
+	my ($url, $uuid) = @_;
+	my $urlReq;
+	
+	$urlReq = $url . "iiif/$uuid/full/,510/0/default.jpg";
+	my $uaIiif = LWP::UserAgent->new;
+	$uaIiif->timeout(10);
+	my $response = $uaIiif->get($urlReq);
+	if ($response->is_success) {
+		return $urlReq;
+	}
+
+	$urlReq = $url . "api/v5.0/item/$uuid/full";
+	my $uaFull = LWP::UserAgent->new;
+	$uaFull->timeout(10);
+	$response = $uaFull->get($urlReq);
+	if ($response->is_success) {
+		return $urlReq;
+	}
+
+	$urlReq = $url . "api/v5.0/item/$uuid/thumb";
+	my $uaThumb = LWP::UserAgent->new;
+	$uaThumb->timeout(10);
+	$response = $uaThumb->get($urlReq);
+	if ($response->is_success) {
+		return $urlReq;
+	}
+
+	return '';
 }
 
 sub cut_content{

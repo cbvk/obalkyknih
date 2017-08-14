@@ -1226,6 +1226,7 @@ sub enrich {
 	}
 	# pokud ma zaznam rodice, pripojime extra identifikatory
 	my $idf_backlink;
+	my @book_range_ids;
 	if ($book->get_column('id_parent')) {
 		$info->{book_id_parent} = $book->get_column('id_parent');
 		my $book_parent = DB->resultset('Book')->find($book->get_column('id_parent'));
@@ -1244,6 +1245,7 @@ sub enrich {
 			# byl vyhledan rozsah; vytvorime odkaz, ktery zobrazi pouze vyhledane zaznamy
 			if ($book->{_column_data}{book_range_ids} && ($info->{part_year} || $info->{part_volume} || $info->{part_no})) {
 				$idf_backlink = 'http://www.obalkyknih.cz/view?book_id='.$book_parent->id.'&sort_by=date&idf=' . join(',', @{$book->get_column('book_range_ids')});
+				@book_range_ids = @{$book->get_column('book_range_ids')};
 			}
 		}
 	}
@@ -1359,7 +1361,24 @@ sub enrich {
 	
 	# 12. spolupracujeme s
 	$info->{cooperating_with} = 'http://www.cbdb.cz|CBDB.cz' if ($book->is_library_rating(51214));
-
+	
+	# 13. pocet podrizenych zaznamu s obalkou a toc
+	my $succ_books_statement;
+	if (@book_range_ids) {
+		$succ_books_statement = { id => \@book_range_ids };
+	} else {
+		$succ_books_statement = { id_parent => $book->id };
+	}
+	my $resSucc = DB->resultset('Book')->search($succ_books_statement, {
+		'+select' => [ \'COUNT(DISTINCT cover)', \'COUNT(DISTINCT toc)'],
+		'+as' => [ 'cover', 'toc' ]
+	})->next;
+	my ($cnt_succ_cover, $cnt_succ_toc) = (0, 0);
+	$cnt_succ_cover = $resSucc->get_column('cover') if ($resSucc);
+	$cnt_succ_toc = $resSucc->get_column('toc') if ($resSucc);
+	$info->{succ_cover_count} = $cnt_succ_cover;
+	$info->{succ_toc_count} = $cnt_succ_toc;
+	
 	return $info;
 }
 
