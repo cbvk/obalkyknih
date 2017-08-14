@@ -81,11 +81,13 @@ __PACKAGE__->add_columns(
 
 =item * L</book_relation>
 
+=item * L</relation_type>
+
 =back
 
 =cut
 
-__PACKAGE__->set_primary_key("book_parent", "book_relation");
+__PACKAGE__->set_primary_key("book_parent", "book_relation", "relation_type");
 
 =head1 RELATIONS
 
@@ -135,8 +137,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-12-09 19:11:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Q0m0SjcCGOxTGOv3uK0jUw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-07-21 15:27:50
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:lD+E3Z/f12jr9ZeP+HX9yQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

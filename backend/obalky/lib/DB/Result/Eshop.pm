@@ -404,6 +404,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 book_relation_suggestions
+
+Type: has_many
+
+Related object: L<DB::Result::BookRelationSuggestion>
+
+=cut
+
+__PACKAGE__->has_many(
+  "book_relation_suggestions",
+  "DB::Result::BookRelationSuggestion",
+  { "foreign.eshop" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 books
 
 Type: has_many
@@ -470,8 +485,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-07-13 11:18:19
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:USnUjOErihh7aR0ws4+dgw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-08-08 11:51:52
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:KrPnJeYZK+fYskx1sUIhpA
 
 
 use Data::Dumper;
@@ -504,7 +519,20 @@ sub add_product {
 
 	# najdi nebo vytvor odpovidajici book
 	warn "Looking for ".Dumper($bibinfo)."\n" if($ENV{DEBUG});
+	my @params = @{$params} if ($params);
 	my $book = DB->resultset('Book')->find_by_bibinfo($bibinfo,1);
+	# bylo zadanych vice isbn
+	if (!$book and @params) {
+		foreach (@params){
+			($_, $bibinfo->{ean13}) = ($bibinfo->{ean13}, $_);
+			$book = DB->resultset('Book')->find_by_bibinfo($bibinfo,1);
+			last if ($book);
+		}
+	
+		($params[0], $bibinfo->{ean13}) = ($bibinfo->{ean13}, $params[0])if (!$book); #vrati puvodni EAN do bibinfa
+
+	}
+
 	warn "BOOK EXISTUJE ... ".$book->id  if ($book and $ENV{DEBUG});
 	
 	# zaznam book neexistuje, vytvarime
@@ -514,7 +542,7 @@ sub add_product {
 		warn "Creating book... EAN ".$hash->{ean13}."\n" if($ENV{DEBUG});
 		$book = DB->resultset('Book')->create($hash);
 	};
-	
+
 	$bibinfo->save_to($book); # aktualizuj dle produktu -- jen docasne pro opravu TOC!
 
 	# dle #book a #eshop najdi nebo vytvor product (s permalk)
@@ -530,6 +558,12 @@ sub add_product {
 	warn "add_product($product_url): updated ".($product?$product->id:'-')."\n"
 				if($ENV{DEBUG});
 
+	# vicero ISBN se ulozi do product params
+	if (@params){
+		foreach my $param (@params){
+			DB->resultset('ProductParams')->find_or_create({book => $book->id, product => $product->id, ean13 =>$param, nbn => $bibinfo->{nbn}, oclc => $bibinfo->{oclc}});
+		}
+	}
    	# uloz bibinfo do productu
 	$bibinfo->save_to($product);
 	# podle bibinfo zakutalizovat book?
@@ -541,20 +575,6 @@ sub add_product {
 	# podle media zaktualizovat book!!! book->prepocitej_media..
 	$book->actualize_by_product($product,1);
 	
-	# vice identifikatoru
-	if (defined $params) {
-		map {
-			my $foundBook = DB->resultset('Book')->search({ ean13=>$_->{ean13} });
-			my $foundParam = DB->resultset('ProductParam')->search({ ean13=>$_->{ean13} });
-			if (not $foundBook->count and not $foundParam->count) {
-				my $rec = $_;
-				$rec->{product} = $product->id;
-				$rec->{book} = $book->id;
-				DB->resultset('ProductParam')->create($rec);
-			}
-		} @$params;
-	}
-
 	# nepotvrzene obrazky
 	if (defined $covers_uncommited) {
 		map {

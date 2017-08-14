@@ -234,7 +234,6 @@ form.qe-form, form.f-form {display:none; position:absolute; margin:-37px 0 0 -23
 	form.qe-form fieldset, form.f-form fieldset {padding:15px !important; margin:0 !important; background-color:#f6f5ce !important; border:#bbb 2px solid !important; border-radius:6px;}
 	form.qe-form input[type="image"] {position:absolute; margin:-2px 0 0 -50px; display:none;}
 table.qe-table a.f-icon img {background:none !important; border:0 !important; padding: 0 !important;}
-	
 
 /* Pagination */
 .pagination.page-list {width:70%; position:relative; text-align:center;}
@@ -256,4 +255,21 @@ table.qe-table a.f-icon img {background:none !important; border:0 !important; pa
 	#book-part-table td {vertical-align:middle; padding:0px; height:36px;}
 	#book-part-table td.hide {display:none;}
 
+/* Book bindings*/
+.bindings {width:100%; overflow:auto; table-layout:fixed;}
+.bindings tbody {display: block; overflow:auto;  min-height:128px;height: 200px;}
+.bindingsh thead{padding-bottom:10px;}
+.bindingsb td:nth-child(1){ width: 232px; }
+.bindingsb td:nth-child(2){ width: 150px; }
+.bindingsb td:nth-child(3){ width: 140px; }
+.bindingsb td:nth-child(4){ width: 145px; }
+.bindingsh th { text-decoration: underline; color:#0077bd}
+.bindingsh th:nth-child(1) {  padding-left:32px; width: 215px; }
+.bindingsh th:nth-child(2) { width: 164px; }
+.bindingsh th:nth-child(3) { width: 150px; }
+.bindingsh th:nth-child(4) { width: 145px; }
+.bindingsh td:nth-child(1) { padding-left:32px; width: 205px; }
+.bindingsh td:nth-child(2) { width: 155px; }
+.bindingsh td:nth-child(3) { width: 137px; }
+.bindingsh td:nth-child(4) { width: 145px; }
 /* end */

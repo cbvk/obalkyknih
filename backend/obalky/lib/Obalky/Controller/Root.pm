@@ -564,7 +564,6 @@ sub admin_library : Local {
 	}
     
     my($page, $max_page, $per_page, $order, $order_dir, $filter_val, $filter_key) = DB::pagination($c, 'Library');
-    
     $c->stash->{cur_page} = $page;
     $c->stash->{max_page} = $max_page;
     $c->stash->{per_page} = $per_page;
@@ -585,6 +584,73 @@ sub admin_library : Local {
     $c->stash->{admin_page} = 'admin_library';
     $c->stash->{signed} = $c->user ? 1 : 0;
 }
+
+=head2 admin_suggestions
+
+Stranka se seznamem potencialnich zaznamu na provazani. Spravce muze vazby potvrdit nebo zavrhnout.
+
+=cut
+
+sub admin_suggestions : Local {
+	my($self,$c) = @_;
+	
+	unless ($c->user) {
+		$c->res->redirect("index");
+    	return;
+    }
+	if ($c->user->get_column('login') ne $Obalky::ADMIN_EMAIL) {
+    	#pouze spravce ma k dispozici spravu vsech knihoven
+    	$c->res->redirect("account");
+    	return;
+    }
+    
+    if ($c->req->param('flag')){
+    	foreach my $id ($c->req->param('suggestion_id')){
+    		my $suggestion = DB->resultset('BookRelationSuggestion')->find({id => $c->req->param('parent_id'), suggestion_id => $id});
+    		#povolit navrh
+    		if ($c->req->param('flag') eq '1'){
+    			$suggestion->approve_suggestion();
+    		}
+    		#zakazat navrh
+    		else {
+    			$suggestion->update({flag => 2});
+    		}
+       	}
+       	$c->res->redirect("admin_suggestions");
+    }
+    
+    my $group_by = { group_by => 'id'};
+    my $where = { flag => 0};
+    my($page, $max_page, $per_page, $order, $order_dir, $filter_val, $filter_key) = DB::pagination($c, 'BookRelationSuggestion', $where, $group_by);
+    my $search_params = undef;
+    $search_params->{'flag'} = 0;
+    $search_params->{$filter_key} = { '-like'=>"%$filter_val%" } if ($filter_key);
+    
+    my @parent_book_list = DB->resultset('BookRelationSuggestion')->search($search_params, {
+    	offset => ($page-1)*$per_page,
+    	rows => $per_page,
+    	group_by => 'id',
+    	order_by => { $order_dir==1 ? '-asc' : '-desc' => $order },
+    })->all;
+    
+    foreach (@parent_book_list){
+    	$_ = $_->id;
+    	$_->{'suggestions'} = [ DB->resultset('BookRelationSuggestion')->search({id => $_->id, flag => 0}) ];
+    }
+    
+    $c->stash->{cur_page} = $page;
+    $c->stash->{max_page} = $max_page;
+    $c->stash->{per_page} = $per_page;
+    $c->stash->{order} = $order;
+    $c->stash->{order_dir} = $order_dir;
+    $c->stash->{filter_val} = $filter_val;
+    $c->stash->{filter_key} = $filter_key;
+    $c->stash->{book_list} = [ @parent_book_list ];
+    
+    $c->stash->{admin_page} = 'admin_suggestions';
+    $c->stash->{signed} = $c->user ? 1 : 0;
+}
+
 
 =head2 end
 
@@ -849,17 +915,86 @@ sub view : Local {
 		}
 	}
 
+
+	my (@bindings, @book_list, @searched_books, @relations, @found_ids, @bound_ids);	
+	# vytvoreni vazby
+	my @relation_books = $c->req->param('relation_book_id');
+	if (@relation_books){
+		foreach my $relation (@relation_books){
+			DB->resultset('BookRelation')->find_or_create({relation_type => $c->req->param('relation_type'), book_relation => $relation, book_parent => $book->id}, {key => 'primary'});
+		}
+		$c->response->redirect( '/view?book_id='.$book->id, 303);			
+	}
+		
+	# existujici vazby
+	@book_list = DB->resultset('BookRelation')->search({book_parent => $book->id}) if ($book);
+	foreach (@book_list){
+		$_->book_relation->{'type'} = $_->relation_type->id_book_relation_type;
+		$_->book_relation->{'type_name'} = $_->relation_type->relation_code;
+		push (@bindings, $_->book_relation);
+		push (@found_ids, $_->book_relation->id);
+	}
+	
+	my $relation_type_count = DB->resultset('BookRelationType')->count();
+	my %count;
+	foreach (@found_ids) {$count{$_}++;}
+	foreach (keys %count) {push (@bound_ids, $_) if ($count{$_} eq $relation_type_count);}
+	
+	# vyhledani knih, ktere mohou byt svazany
+	my $search_value = $c->req->param('search_value');
+	if ($search_value){
+		foreach my $key (qw(id ean13 nbn oclc title )){
+			push (@bound_ids, $book->id);
+			if ($key eq 'id'){
+				@searched_books = DB->resultset('Book')->search({ id => [-and => {-not_in => [@bound_ids]}, { '=' => $search_value} ] });
+			}
+			elsif($key eq 'title') {
+				if (length($search_value) >= 3){
+					@searched_books = DB->resultset('Book')->search({-and => [{title => { -like => $search_value.'%'}, id => { -not_in => [@bound_ids]}}]});
+			
+				}
+			}
+			else {
+				@searched_books = DB->resultset('Book')->search({-and => [{$key => $search_value, id => { -not_in => [@bound_ids]}}]});
+			}
+			last if (@searched_books);
+		}
+		if (@searched_books){
+			@relations = DB->resultset('BookRelationType')->all();
+		}
+	}
+	
+	# zruseni vazby
+	my $relations_to_delete = $c->req->param('deleted_relation_idx');
+	if ($relations_to_delete){
+		my @newBindings;
+		for my $idx (0 .. $#book_list){
+			if ($idx == $relations_to_delete){
+				$book_list[$idx]->delete();				
+			}
+			else{
+				push (@newBindings, $bindings[$idx]);
+			}
+		}
+		@bindings = @newBindings;
+		$c->response->redirect( '/view?book_id='.$book->id, 303);
+	}
+	
+
 	$c->stash->{books}   = [ @books ];
 	$c->stash->{parts}   = [ @parts ] if (@parts);
+	$c->stash->{bindings} = [ @bindings ] if (@bindings);
+	$c->stash->{searched_books} = [ @searched_books ] if (@searched_books);
+	$c->stash->{relations} = [ @relations ] if (@searched_books);
 	$c->stash->{idf}     = $idf if ($idf);
 	$c->stash->{referer} = $referer;
+	$c->stash->{admin} = $c->user->get('login') if ($c->user and $c->user->get('login') eq $Obalky::ADMIN_EMAIL);
 	$c->stash->{detail}  = $c->user ? 1 : 0; # prihlasenym i detaily
 	$c->stash->{seznam_main_image} = ($books[0] and $books[0]->cover) ? 
 		$books[0]->cover->get_cover_url : undef;
 
 	my $ip = $c->req->address; $ip =~ s/\.\d+$/.../;
 	$c->stash->{visitor_blurred_ip} = $ip;
-	
 	# same as in index()
 	$c->stash->{menu} = "index";
 }

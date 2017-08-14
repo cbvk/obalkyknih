@@ -497,7 +497,6 @@ sub _do_log {
 
 sub _do_import {
 	my($self,$c) = @_;
-	#warn Dumper($c->req); #debug
 
     $self->_do_log("import begin");
 
@@ -512,15 +511,17 @@ sub _do_import {
 		}
 	}
 	my $user = $c->user->login;
-
+	
+	# vicero isbn
+	my @other_eans = $c->req->param('other_isbn');
+	@other_eans = map {Obalky::BibInfo->parse_code($_)} @other_eans;
+	
 	# z parametru zkonstruuj identifikator knizky (TODO jen BibInfo->fields?)
-	warn Dumper($c->req->params) if($ENV{DEBUG});
 	my $bibinfo_params = {};
 	$bibinfo_params->{$_} = decode_utf8($c->req->param($_))
 		foreach(Obalky::BibInfo->param_keys);
 	# jen docasny fix
 	$bibinfo_params->{authors} ||= decode_utf8($c->req->param('author'));
-	
 	my $bibinfo_aggr;
 	my $part_type = $c->req->param('part_type');
 	$part_type = "" unless ($part_type);
@@ -566,11 +567,10 @@ sub _do_import {
 		warn 'BIBINFO po normalizaci' if($ENV{DEBUG});
 		warn Dumper($bibinfo_params) if($ENV{DEBUG});
 	}
-	#warn Dumper($c->req); warn Dumper($bibinfo_params); die; #DEBUG
 
 	# bibinfo skenovaneho zaznamu
 	my $bibinfo = Obalky::BibInfo->new_from_params($bibinfo_params);
-
+	
     $self->_do_log("user $user book ".($bibinfo ? $bibinfo->to_string
                         : 'NENI bibinfo?? '.Dumper($bibinfo_params)));
 
@@ -670,7 +670,7 @@ sub _do_import {
 	# ok, ke knizce $bibinfo zaloz novy produkt ($media)
     $self->_do_log("calling ->add_product(".Dumper($bibinfo).",",
                             Dumper($media).",$product_url)");
-	my $product = $eshop->add_product($bibinfo,$media,$product_url);
+	my $product = $eshop->add_product($bibinfo,$media,$product_url, undef, \@other_eans);
 
     $self->_do_log("ok, product ".$product->id." ready");
 
