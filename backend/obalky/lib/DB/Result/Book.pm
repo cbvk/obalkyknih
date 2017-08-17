@@ -413,6 +413,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 book_relation_suggestions
+
+Type: has_many
+
+Related object: L<DB::Result::BookRelationSuggestion>
+
+=cut
+
+__PACKAGE__->has_many(
+  "book_relation_suggestions",
+  "DB::Result::BookRelationSuggestion",
+  { "foreign.id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 books
 
 Type: has_many
@@ -764,8 +779,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-06-23 12:41:58
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AxAG5iOFJRH+eOSXVVS6Vw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-08-17 16:57:43
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UTDusz2ecw1rtiIUKrnZEg
 
 use Obalky::Media;
 use Data::Dumper;

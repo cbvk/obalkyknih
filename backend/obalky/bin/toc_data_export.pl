@@ -31,7 +31,7 @@ warn 'Selecting ... ';
 my $blob = DB->resultset('Toc')->search(
     { pdf_file => { '!=', undef },
       id => { -between => [$lastId, $lastId+1000] } },
-    { rows => 3 });
+    { rows => 1000 });
 warn 'Selected '.$blob->count.' rows ...';
 my $dirGroupName = 0;
 

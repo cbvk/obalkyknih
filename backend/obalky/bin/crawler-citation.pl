@@ -69,10 +69,10 @@ foreach my $eshop (@eshops) {
 #				my @previous_citation_eshop =  DB->resultset('Eshop')->search({ id => $book->citation_source});
 #				my $priority = $previous_citation_eshop[0]->priority;
 #				#prepise citaci jestli ma crawlujici eshop vyssi prioritu
-#				$citation = get_citation($rec) if ($eshop->priority > $priority);
+#				$citation = get_citation($rec, $cnt) if ($eshop->priority > $priority);
 #			}		
 #			elsif (!$book->citation){
-				$citation = get_citation($rec);
+				$citation = get_citation($rec, $cnt);
 #			}
 		}
 		
@@ -82,7 +82,7 @@ foreach my $eshop (@eshops) {
 			warn "Creating book  " if($ENV{DEBUG});
 			$book = DB->resultset('Book')->create($hash);
 			$bibinfo->save_to($book);
-			$citation = get_citation($rec);
+			$citation = get_citation($rec, $cnt);
 		}
 		if ($citation){
 			$found{$name}++;
@@ -107,12 +107,17 @@ foreach my $eshop (@eshops) {
 
 
 sub get_citation{
-	my ($rec) = @_;	
+	my ($rec, $cnt) = @_;	
 	my $ua = LWP::UserAgent->new();
 
 	#komunikacia s FE - treba upravit adresu
 	#my $resp = $ua->post('http://192.168.122.1:1339/citace',$rec,'Content-type' => 'application/json;charset=utf-8',Content => encode_json($rec));
-	my $resp = $ua->post('http://cache2.obalkyknih.cz:8080/citace',$rec,'Content-type' => 'application/json;charset=utf-8',Content => encode_json($rec));
+	my $resp;
+	if ($cnt % 2 == 0) {
+		$resp = $ua->post('http://172.30.144.14:8080/citace',$rec,'Content-type' => 'application/json;charset=utf-8',Content => encode_json($rec));
+	} else {
+		$resp = $ua->post('http://cache2.obalkyknih.cz:8080/citace',$rec,'Content-type' => 'application/json;charset=utf-8',Content => encode_json($rec));
+	}
 	return $resp->content;
 	
 }

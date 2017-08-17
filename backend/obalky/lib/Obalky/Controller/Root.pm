@@ -627,21 +627,23 @@ sub admin_suggestions : Local {
     my $where = { flag => 0};
     my($page, $max_page, $per_page, $order, $order_dir, $filter_val, $filter_key) = DB::pagination($c, 'BookRelationSuggestion', $where, $group_by);
     my $search_params = undef;
-    $search_params->{'flag'} = 0;
-    $search_params->{$filter_key} = { '-like'=>"%$filter_val%" } if ($filter_key);
-    
-    my @parent_book_list = DB->resultset('BookRelationSuggestion')->search($search_params, {
+    my @parent_book_list = DB->resultset('BookRelationSuggestion')->search({ flag => 0}, {
     	offset => ($page-1)*$per_page,
     	rows => $per_page,
     	group_by => 'id',
     	order_by => { $order_dir==1 ? '-asc' : '-desc' => $order },
     })->all;
+    my @parent_book_id_list;
     
     foreach (@parent_book_list){
     	$_ = $_->id;
-    	$_->{'suggestions'} = [ DB->resultset('BookRelationSuggestion')->search({id => $_->id, flag => 0}) ];
+    	push (@parent_book_id_list, $_->id);
     }
     
+    $search_params->{$filter_key} = { '-like'=>"%$filter_val%" } if ($filter_key);
+    $search_params->{'id'} = { -in => [@parent_book_id_list]};
+    @parent_book_list = DB->resultset('Book')->search($search_params, {order_by => { $order_dir==1 ? '-asc' : '-desc' => $order }});
+    map {$_->{'suggestions'} = [ DB->resultset('BookRelationSuggestion')->search({id => $_->id, flag => 0}) ]}@parent_book_list;	
     $c->stash->{cur_page} = $page;
     $c->stash->{max_page} = $max_page;
     $c->stash->{per_page} = $per_page;
@@ -970,7 +972,7 @@ sub view : Local {
 	
 	# zruseni vazby
 	my $relations_to_delete = $c->req->param('deleted_relation_idx');
-	if ($relations_to_delete){
+	if (defined $relations_to_delete){
 		my @newBindings;
 		for my $idx (0 .. $#book_list){
 			if ($idx == $relations_to_delete){

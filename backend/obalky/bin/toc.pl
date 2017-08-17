@@ -14,8 +14,9 @@ DB->resultset('Work')->delete;
 
 binmode(STDOUT,"utf8");
 
-#print '<?xml version="1.0" encoding="utf-8" ?>'."\n";
+print '<?xml version="1.0" encoding="utf-8" ?>'."\n";
 print "<obalkyknih>\n";
+#my $tocs = DB->resultset('Toc')->search({id=>70446},{columns => 
 my $tocs = DB->resultset('Toc')->search(undef,{columns => 
 		[qw/id book product full_text/]});
 while(my $toc = $tocs->next) {

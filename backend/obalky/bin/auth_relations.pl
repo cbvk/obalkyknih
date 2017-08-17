@@ -25,7 +25,7 @@ foreach my $auth ( DB->resultset('Auth')->search({ 'cover' => {'!=' => undef} })
 		foreach my $authRel ( DB->resultset('Auth')->search({ id => [ @authIds1 ] }) ) {
 			next if ($authRel->cover);
 			$authRel->update({ cover => $auth->cover->id });
-			warn "$auth->id  =>  $authRel->id";
+			warn $auth->id.'  =>  '.$authRel->id;
 		}
 	}
 	

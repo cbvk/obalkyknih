@@ -9,15 +9,13 @@ use HTTP::Request::Common qw(POST);
 use LWP::UserAgent;
 use JSON;
 use Encode qw(encode_utf8); 
-#use Fcntl qw(:flock);
+use Fcntl qw(:flock);
 
 #Vylucny beh harvestu
-#open(SELF,"<",$0) or die "Cannot open $0 - $!";
-#while (!flock(SELF, LOCK_EX|LOCK_NB)){
-#	warn "Waiting";
-#  	sleep 3600;
-#	last;
-#}
+open(SELF,"<",$0) or die "Cannot open $0 - $!";
+while (!flock(SELF, LOCK_EX|LOCK_NB)){
+	exit;
+}
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
@@ -27,8 +25,8 @@ use Eshop;
 use DB;
 
 my($mode) = @ARGV;
-die "\nusage: $0 [debug|news|all]\n\n" unless($mode);
-my $DEBUG = 1 if($mode eq 'debug');
+#die "\nusage: $0 [debug|news|all]\n\n" unless($mode);
+my $DEBUG = 1 if($mode and $mode eq 'debug');
 
 my @harvester_eshops = Eshop->get_harvested();
 my @eshops;
@@ -60,7 +58,7 @@ my $books_list = DB->resultset('Book')->search({
 #				]
 		}, {
 			rows => 20000,
-			offset => (($mode-1) * 20000)
+#			offset => (($mode-1) * 20000)
 		});
 #		: DB->resultset('Book');
 
@@ -105,7 +103,9 @@ while(my $book = $books_list->next) {
 	my $time_elapsed = tv_interval ( $time_start, [gettimeofday]);
 	$cnt++;
 	warn 'citace #'.$cnt.' ' if ($cnt % 50 == 0);
-	sleep 1 if($time_elapsed < 1);
+#	sleep 1 if($time_elapsed < 1);
+	sleep 3;
+	die if ($cnt % 1000 == 0);
 }
 open(LOG,">>utf8","/opt/obalky/data/harvest.csv") or die;
 my($sec,$min,$hour,$mday,$mon,$year) = localtime(time);

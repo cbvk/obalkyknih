@@ -35,6 +35,7 @@ my @eshops = Eshop->get_harvested();
 
 my $last_month = DateTime->today()->subtract(days => 30);
 my $max_eshop_id = DB->resultset('Eshop')->max_id;
+$max_eshop_id = 6337;
 
 my $books_count = DB->resultset('Book')->count;
 my $books;
@@ -71,10 +72,10 @@ while(my $book = $books->next) {
 	my $found = 0;
 	foreach my $factory (@eshops) {
 		my $bibinfo = $book->bibinfo;
-		
-		warn Dumper($bibinfo->ean13) if ($factory->name eq 'LibraryThing');
-		
-		my $name = $factory->name;
+
+warn Dumper($bibinfo->ean13) if ($factory->name eq 'LibraryThing');
+
+		my $name = $factory->name;s
 		my $eshop = DB->resultset('Eshop')->find_by_name($name);
 		next unless($ENV{DEBUG} or $factory->can_harvest);
 		next unless($ENV{DEBUG} or $factory->might_cover_bibinfo($bibinfo));
@@ -129,7 +130,7 @@ warn Dumper("\n\n\n*******************".$product_url."*******************\n\n\n"
 	}
 
 	my $time_elapsed = tv_interval ( $time_start, [gettimeofday]);
-	sleep 1 if($time_elapsed < 1);
+	usleep 200 if($time_elapsed < 1);
 
 	if($found) {} # ..
 }

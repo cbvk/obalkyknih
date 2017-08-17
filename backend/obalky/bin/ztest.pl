@@ -5,7 +5,6 @@
 use ZOOM;
 use MARC::Record;
 use MARC::Charset 'utf8_to_marc8';
-use Encode qw(decode encode);
    
        # prepare STDOUT for utf8
 	   #     binmode(STDOUT, 'utf8');
@@ -18,13 +17,15 @@ MARC::Charset->assume_encoding('UTF-8');
 #binmode(STDOUT,"utf8");
 
 my $conn = new ZOOM::Connection(
-	'aleph.nkp.cz', 9991, databaseName => 'SKC');
+	'sigma.nkp.cz', 9909, databaseName => 'NKC');
+#$conn->option(preferredRecordSyntax => "unimarc");
+#$rs = $conn->search_pqf('@attr 1=4 biologie');
+#$rs = $conn->search_pqf('@attr 1=7 9788072039418');
 
-$rs = $conn->search_pqf('@and @attr 1=4 "Atlas" @attr 1=1003 "Streng, Jan"');
+$rs = $conn->search_pqf('@attr 1=12 nkc20081824099');
 print "found ", $rs->size(), " records:\n";
-
 my $rec = $rs->record(0);
-print $rec->render();
+#print $rec->render();
 
 # my($f001,$f035a,$f022a,$f020a) = ('','','','');
 # foreach(split(/\n/,$rec->render())) {
@@ -42,9 +43,9 @@ print $rec->render();
 # 
 # print "f001=$f001 f020a=$f020a f022a=$f022a f035a=$f035a\n";
 
-#my $marc = new_from_usmarc MARC::Record(utf8_to_marc8($rec->raw));
-$marc->encoding( 'UTF-8' );
-#print $marc->subfield('245',"a");
-print $marc->as_formatted()."\n";
-print "\n";
+my $marc = new_from_usmarc MARC::Record(utf8_to_marc8($rec->raw));
+# $marc->encoding( 'UTF-8' );
+print $marc->subfield('245',"a");
+#print $marc->as_formatted()."\n";
+#print "\n";
 
