@@ -41,8 +41,8 @@ if($mode eq 'period') {
 	$to   =~ s/00:00:00/23:59:59/g;
 }
 
-$from = '2017-03-22T10:52:53';   #debug
-$to = '2017-04-20T10:53:53';     #debug
+#$from = '2017-03-22T10:52:53';   #debug
+#$to = '2017-04-20T10:53:53';     #debug
 
 #moznost upravit existujici citace starsi nez tyden
 my $crawlable =  DateTime->today()->subtract(days => 90);
