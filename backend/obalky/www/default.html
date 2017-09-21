@@ -51,7 +51,8 @@
 <p class="loga fr nob">
 [% FOREACH eshop IN eshops %]
 	[% IF eshop.logo_url %] <!-- logo by (nove) melo mit na vysku 40 bodu -->
-<a href="[% eshop.web_url %]" target="_blank"><img border=0 src="[% eshop.logo_url %]" alt="[% eshop.fullname %]"></a>
+<a href="[% eshop.web_url %]" target="_blank"><img border=0 src="[% eshop.logo_url.replace('http://','//') %]"
+	style="max-width: 100px; max-height: 60px;" alt="[% eshop.fullname %]"></a>
 	[% END %]
 [% END %]
 </p>

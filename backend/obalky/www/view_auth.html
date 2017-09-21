@@ -49,7 +49,11 @@ Tuto knihu, nebo autora ještě nemáme v databázi!
 		<input name=report class="button" type="submit" 
 			value=" Ohlásit chybnou foto ">
 	</form>
+	[% ELSE %] 
+	<a href="//obalkyknih.cz/obalkyknih-autority?nameos=[% nameos %]&dborndie=[% dborndie %]&source=OKCZ" target="_blank" title="Pošlete nám podobiznu"><img style="border: 1px solid black;"
+	src="http://servis.obalkyknih.cz//img/noname-posli.png" title="podobizna"></a>
 	[% END %]
+
   </td>
 
 

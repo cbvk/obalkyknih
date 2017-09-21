@@ -314,13 +314,13 @@ sub downloadtoc {
 			}
 			$toc_page = $pagemodel->{'pid'};
 			my $tocurl = $baseURL . "api/v5.0/item/$toc_page/full";
-			if(system("wget -q $tocurl -O $toc_dir/$index >/dev/null")) {
+			if(system("wget --no-check-certificate -q $tocurl -O $toc_dir/$index >/dev/null")) {
 				warn "$tocurl: failed to wget!\n";
 				return ($jsondata, undef);
 			}
 			# first page
 			if ($index == 0) {
-				system("wget -q $tocurl -O $tmp_dir/$parent_uuid >/dev/null")
+				system("wget --no-check-certificate -q $tocurl -O $tmp_dir/$parent_uuid >/dev/null")
 			}
 			$index++;
 		}

@@ -36,7 +36,7 @@ sub download_toc {
 			next unless($page);
 			$firsttocfile = $page unless($firsttocfile);
 #			warn "wget: $page\n";
-			if(system("wget -q $page -O $toc_dir/$i4 >/dev/null")) {
+			if(system("wget --no-check-certificate -q $page -O $toc_dir/$i4 >/dev/null")) {				
 				warn "$page: failed to wget!\n";
 				return;
 			}
@@ -120,7 +120,8 @@ sub process_shopitem {
 		foreach my $ean_tmp (@xml_eans) {
 			
 			$ean_tmp = Obalky::BibInfo->parse_code($ean_tmp);
-			next if ($ean_tmp ~~ @eans or (defined $ean and $ean eq $ean_tmp));
+			next unless($ean_tmp);
+			next if (ref $ean_tmp eq 'ARRAY' or (defined $ean and defined $ean_tmp and $ean eq $ean_tmp));
 			if (not defined $ean) {
 				$ean = $ean_tmp;
 			} else {
@@ -129,8 +130,9 @@ sub process_shopitem {
 			}
 		}
 	}
-	push @params, { 'ean13'=>$item->{eans}->{ean}, 'nbn'=>undef, 'oclc'=>undef } if ($item->{eans} and $item->{eans}->{ean} ne '');
-	push @params, { 'ean13'=>$item->{EANS}->{EAN}, 'nbn'=>undef, 'oclc'=>undef } if ($item->{EANS} and $item->{EANS}->{EAN} ne '');
+	#toto sposobuje, ze sa na koniec pola parametrov pripojila polozka obsahujuca opet cele pole parametrov
+	#push @params, { 'ean13'=>$item->{eans}->{ean}, 'nbn'=>undef, 'oclc'=>undef } if ($item->{eans} and $item->{eans}->{ean} ne '');
+	#push @params, { 'ean13'=>$item->{EANS}->{EAN}, 'nbn'=>undef, 'oclc'=>undef } if ($item->{EANS} and $item->{EANS}->{EAN} ne '');
 	
 	# Flexibooks: ebook ISBN
 	$ean = $item->{isbn_ebook} if ($eshop->get_column('id')==7027 and !$ean);
@@ -228,7 +230,7 @@ sub process_shopitem {
 		}
 		my $temp_file = $ean || $nbn;
 		my $temp = "$tmp_dir/$temp_file.$ext";
-		system ("wget -q $cover_url -O $temp >/dev/null") and return;
+		system ("wget --no-check-certificate -q $cover_url -O $temp >/dev/null") and return;
 		
 		$info->{cover_url} = $cover_url;
 		$info->{cover_tmpfile} = $temp;
@@ -322,7 +324,7 @@ sub crawl {
 	my $el_shopitem = 'SHOPITEM';
 	$el_shopitem = $eshop->get_column('xml_el_shopitem') if ($eshop->get_column('xml_el_shopitem'));
 
-	system("wget -q $feed_url -O $tmp_dir/feed.xml") and die "$tmp_dir: $!";
+	system("wget -q $feed_url -O $tmp_dir/feed.xml --no-check-certificate") and die "$tmp_dir: $!";
 	warn "Got xml feed\n" if($ENV{DEBUG});
 	
 	#system("sed -i $feed_url -O $tmp_dir/feed.xml") and die "$tmp_dir: $!";

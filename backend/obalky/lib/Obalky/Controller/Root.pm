@@ -13,6 +13,7 @@ use LWP::UserAgent;
 use utf8;
 use Business::ISBN;
 use Business::ISSN;
+use Captcha::reCAPTCHA::V2;
 
 
 #use encoding 'latin-2';
@@ -53,8 +54,8 @@ sub blue_stash {
 		$blue_info{recent} = DB->resultset('Cover')->recent(16,1)
 						unless($ENV{SKIP_RECENT});
 		$blue_info{eshops} = [ grep { 
-# !!! uprava zobrazeni logo JN 2015-09-10
-            not $_->is_internal and $_->logo_url and $_->id <= 1000000} 
+# !!! uprava zobrazeni logo JN 2015-09-10 
+            not $_->is_internal and $_->logo_url and $_->id <= 1000000 and $_->type eq 'cover'} 
 ###            not $_->is_internal and $_->logo_url and $_->checkin > 0} 
             			DB->resultset('Eshop')->all ];
 		my $libs = DB->resultset('Library')->count;
@@ -798,12 +799,10 @@ sub view : Local {
 		if($name and $book and ($text ne '' or $rating)) {
 			
 			#reCaptcha verify
-			my $ua = LWP::UserAgent->new;
-			my $reCaptchaResult = $ua->request(POST => 'https://www.google.com/recaptcha/api/siteverify',
-				[ secret => $Obalky::Config::RECAPTCHA_SECRET, response => $c->req->param('g-recaptcha-response') ]);
-			warn Dumper($reCaptchaResult->content);
-			
-			if (index($reCaptchaResult->content, '"success": true') == -1) {
+			my $rc = Captcha::reCAPTCHA::V2->new;
+			my $rc_html = $rc->html($Obalky::Config::RECAPTCHA_SITEKEY);
+			my $result = $rc->verify($Obalky::Config::RECAPTCHA_SECRET, $c->req->param('g-recaptcha-response'));
+			unless ($result->{success}) {
 				$c->stash->{error} = 'Potvrďte, že nejste robot.';
 			} else {
 				$text = undef if ($text eq '');
@@ -893,13 +892,15 @@ sub view : Local {
 	# nalezeni casti monografii/periodik
 	my $sort_by = 'date'; # default razeni od nejnovejsiho skenovaneho
 	$sort_by = $c->req->param('sort_by') if ($c->req->param('sort_by'));
-	$c->stash->{sort_by} = $sort_by;
 	
 	my @idf; # seznam book_id, ktere maji byt zobrazeny; pouziva se pri backlinku rozsahu periodik
 	my $idf = $c->req->param('idf');
 	@idf = split(',', $idf) if ($idf);
 	
-	my @parts = DB->resultset('Book')->get_parts($book, $sort_by, \@idf);
+	my $parts_page = $c->req->param('page') || 1;
+	my ($parts, $no_more_pages) = DB->resultset('Book')->get_parts($book, $sort_by, \@idf, $parts_page);
+	
+	my @parts = @{$parts} if ($parts);
 	if (@parts) {
 		my $book_recent;
 		my @parts_tmp = @parts;
@@ -909,6 +910,9 @@ sub view : Local {
 		$c->stash->{recent_cover} = $book_recent->cover if ($book_recent and $book_recent->cover);
 		$c->stash->{recent_toc} = $book_recent->toc if ($book_recent and $book_recent->toc);
 	}
+	$c->stash->{parts_page} = $parts_page;
+	$c->stash->{no_more_pages} = $no_more_pages;
+	$c->stash->{sort_by} = $sort_by;
 	
 	my @books = $book ? ( $book->work ? $book->work->books : $book ) : ();
 	

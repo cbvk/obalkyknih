@@ -101,7 +101,7 @@ sub process_shopitem {
 		}
 		my $temp_file = $ean || $nbn;
 		my $temp = "$tmp_dir/$temp_file.$ext";
-		system ("wget -q $cover_url -O $temp >/dev/null") and return;
+		system ("wget --no-check-certificate -q $cover_url -O $temp >/dev/null") and return;
 		
 		$info->{cover_url} = $cover_url;
 		$info->{cover_tmpfile} = $temp;
@@ -229,8 +229,8 @@ sub crawl {
 	
 	my $feed_mrc = $feed_url;
 	$feed_mrc =~ s/\.xml/\.mrc/;
-	warn "wget -q $feed_mrc -O $tmp_dir/feed.mrc";
-	system("wget -q $feed_mrc -O $tmp_dir/feed.mrc") and die "$tmp_dir: $!";
+	warn "wget --no-check-certificate -q $feed_mrc -O $tmp_dir/feed.mrc";
+	system("wget --no-check-certificate -q $feed_mrc -O $tmp_dir/feed.mrc") and die "$tmp_dir: $!";
 	warn "Got MARC feed\n" if($ENV{DEBUG});
 	
 	open(my $fh, '<:encoding(UTF-8)', "$tmp_dir/feed.mrc") or die "Could not open file '$tmp_dir/feed.mrc' $!";
@@ -279,8 +279,8 @@ sub crawl {
 		}
 	}
 	
-	warn "wget -q $feed_url -O $tmp_dir/feed.xml";
-	system("wget -q $feed_url -O $tmp_dir/feed.xml") and die "$tmp_dir: $!";
+	warn "wget --no-check-certificate -q $feed_url -O $tmp_dir/feed.xml";
+	system("wget --no-check-certificate -q $feed_url -O $tmp_dir/feed.xml") and die "$tmp_dir: $!";
 	warn "Got xml feed\n" if($ENV{DEBUG});
 	
 	my $tm = localtime;

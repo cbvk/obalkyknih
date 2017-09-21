@@ -14,7 +14,8 @@ sub baseURL { 'http://sckn.cz/ceskeknihy/html/stazeni_novinek.php?'.
 				'vystup=csv&oddelovac=strednik&odeslano=true&datum_od=' }
 
 sub crawl {
-	my($self,$storable,$from,$to) = @_;	
+	my($self,$storable,$from,$to) = @_;
+return []; #debug
 
 	my $id = $storable->{last_id} || 4;
 	#$id = 80371; # debug (toto je posledne ID k 29.12.2015)
@@ -27,7 +28,7 @@ sub crawl {
 			',0&vystup=csv&oddelovac=strednik&rozsah=vse&odeslano=true';
 		my $csv = Text::CSV::Encoded->new({ sep_char => ';', 
 											encoding_in => "cp1250" });
-		open(CSV,"wget -q -O - '$listurl' |") or die;
+		open(CSV,"wget --no-check-certificate -q -O - '$listurl' |") or die;
 		my $colref = $csv->getline(*CSV);
 		next unless(ref $colref and @$colref);
 
@@ -52,10 +53,10 @@ sub crawl {
 			if ($ean ne '') {
 				$cover_file = "/tmp/.sckn-$$-$ean";
 				my $cover_url = 'http://www.sckn.cz/ceskeknihy/images/covers_Orig/'.$ean.'.jpg';
-				system("wget -q -O '$cover_file' '$cover_url'");
+				system("wget --no-check-certificate -q -O '$cover_file' '$cover_url'");
 				unless (-s $cover_file) {
 					$cover_url = 'http://www.sckn.cz/ceskeknihy/images/covers/'.$ean.'.jpg';
-					system("wget -q -O '$cover_file' '$cover_url'");
+					system("wget --no-check-certificate -q -O '$cover_file' '$cover_url'");
 				}
 				
 				$media_info = {};

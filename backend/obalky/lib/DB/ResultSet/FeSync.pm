@@ -252,7 +252,7 @@ sub book_sync_remove {
 		my $metadata = $book->enrich;
 		my $metadata_json = encode('UTF-8', to_json($metadata));
 		my $metadata_checksum = md5_hex($metadata_json);
-		$checksum_differs = 0 if ($metadata_checksum eq $book->get_column('metadata_checksum'));
+		$checksum_differs = 0 if ($metadata_checksum and $book->get_column('metadata_checksum') and $metadata_checksum eq $book->get_column('metadata_checksum'));
 		if ($checksum_differs) {
 			my $dt = DateTime->now(time_zone=>'local');
 			$book->update({ metadata_checksum => $metadata_checksum, metadata_change => $dt->datetime });

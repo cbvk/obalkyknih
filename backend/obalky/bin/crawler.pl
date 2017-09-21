@@ -74,7 +74,8 @@ foreach my $eshop (DB->resultset('Eshop')->all) {
 	my @list;
 
 	# priprav tmp dir jenom pro tento eshop, at si navzajem neprepisuji jpg
-	system("rm -rf $TMP_DIR-$name"); mkdir "$TMP_DIR-$name" or die;
+	system("rm -rf $TMP_DIR-$name");
+	system("mkdir $TMP_DIR-$name");
 
 	eval { @list = $factory->crawl($storable,$from,$to,"$TMP_DIR-$name",
 		   $eshop->xmlfeed_url,$eshop) };

@@ -6,6 +6,7 @@ use Obalky::Tools;
 use utf8;
 
 use DB::Result::Library;
+use Captcha::reCAPTCHA::V2;
 
 #use strict;
 use HTTP::Request::Common;
@@ -83,15 +84,14 @@ sub signup {
 	$libcode =~ s/[ \-]//g;
 	my $libpurpose = $hash->{purpose_description};
 	
-	#reCaptcha verify
-	my $ua = LWP::UserAgent->new;
-	my $reCaptchaResult = $ua->request(POST => 'https://www.google.com/recaptcha/api/siteverify',
-		[ secret => $Obalky::Config::RECAPTCHA_SECRET, response => $hash->{'g-recaptcha-response'} ]);
-
 	my @errors;
 	
+	#reCaptcha verify
+	my $rc = Captcha::reCAPTCHA::V2->new;
+	my $rc_html = $rc->html($Obalky::Config::RECAPTCHA_SITEKEY);
+	my $result = $rc->verify($Obalky::Config::RECAPTCHA_SECRET, $hash->{'g-recaptcha-response'});
 	push @errors, "Potvrďte, že nejste robot."
-		unless (index($reCaptchaResult->content, '"success": true') != -1);
+		unless ($result->{success});
 
 	push @errors, "Není vyplněno plné jméno uživatele."
 		if(not $hash->{fullname} or $hash->{fullname} !~ /\s/);

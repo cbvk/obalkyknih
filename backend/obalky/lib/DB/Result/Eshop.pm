@@ -522,16 +522,16 @@ sub add_product {
 	my @params = @{$params} if ($params);
 	my $book = DB->resultset('Book')->find_by_bibinfo($bibinfo,1);
 	# bylo zadanych vice isbn
-	if (!$book and @params) {
-		foreach (@params){
-			($_, $bibinfo->{ean13}) = ($bibinfo->{ean13}, $_);
-			$book = DB->resultset('Book')->find_by_bibinfo($bibinfo,1);
-			last if ($book);
-		}
+#	if (!$book and @params) {
+#warn Dumper(@params);
+#		foreach (@params){
+#			($_->{ean13}, $bibinfo->{ean13}) = ($bibinfo->{ean13}, $_->{ean13});
+#			$book = DB->resultset('Book')->find_by_bibinfo($bibinfo,1);
+#			last if ($book);
+#		}
 	
-		($params[0], $bibinfo->{ean13}) = ($bibinfo->{ean13}, $params[0])if (!$book); #vrati puvodni EAN do bibinfa
-
-	}
+#		($params[0], $bibinfo->{ean13}) = ($bibinfo->{ean13}, $params[0])if (!$book); #vrati puvodni EAN do bibinfa
+#	}
 
 	warn "BOOK EXISTUJE ... ".$book->id  if ($book and $ENV{DEBUG});
 	
@@ -561,7 +561,10 @@ sub add_product {
 	# vicero ISBN se ulozi do product params
 	if (@params){
 		foreach my $param (@params){
-			DB->resultset('ProductParams')->find_or_create({book => $book->id, product => $product->id, ean13 =>$param, nbn => $bibinfo->{nbn}, oclc => $bibinfo->{oclc}});
+			my $ppToSearch = { book => $book->id, product => $product->id };
+			$ppToSearch->{nbn} = $bibinfo->{nbn} if (defined $bibinfo);
+			$ppToSearch->{oclc} = $bibinfo->{oclc} if (defined $bibinfo);
+			DB->resultset('ProductParams')->find_or_create($ppToSearch);
 		}
 	}
    	# uloz bibinfo do productu

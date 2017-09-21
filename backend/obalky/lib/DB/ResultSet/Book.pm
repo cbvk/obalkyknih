@@ -45,6 +45,7 @@ sub find_by_ean13 {
 sub find_by_bibinfo {
 	my($pkg,$id,$creating) = @_;
 	my @books;
+	
 	$creating = 0 unless($creating);
 	$id->{part_year} = undef unless(defined $id->{part_year});
 	$id->{part_volume} = undef unless(defined $id->{part_volume});
@@ -553,7 +554,7 @@ sub search_book_part_helper {
 }
 
 sub get_parts {
-	my ($pkg,$book,$sort,$idf) = @_;
+	my ($pkg,$book,$sort,$idf,$page) = @_;
 	return unless($book);
 	my @books;
 	my $id_parent = $book->id;
@@ -568,7 +569,23 @@ sub get_parts {
 		# serazeni od posledne pridaneho
 		push @books, $pkg->search($srchQuery, { order_by => \'id DESC' } );
 	}
-	return @books;
+		
+	my ($page_start, $page_end, $no_more_pages);
+	
+	$page_start = ($page == 1) ? 0 : ((($page - 1) * 30));
+	
+	if (($page * 30) >= scalar @books){
+		$no_more_pages = 1;
+		$page_end = (scalar @books) - 1;
+	}
+	else {
+		$no_more_pages = 0;
+		$page_end = ($page * 30) - 1;
+	}
+	
+	my @books_filtered = @books[$page_start .. $page_end];
+	
+	return (\@books_filtered, $no_more_pages);
 }
 
 sub search_book_by_range {

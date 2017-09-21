@@ -980,6 +980,44 @@ sub get_obalkyknih_url {
 	return $bibinfo ? $bibinfo->get_obalkyknih_url($secure,$idPart) : undef;
 }
 
+sub get_ebook_list {
+	my ($book) = @_;
+	my @ebook;
+	
+	# vlastni eknihy
+	my $resEbook = $book->get_ebook_list_helper($book->id);
+	# pokud se nenajdou vlastni, tak pohledame svazane eknihy
+	unless ($resEbook->count()) {
+		my $resEbookRelation = DB->resultset('BookRelation')->search({ relation_type=>2, -or=>[{ book_parent=>$book->id }, { book_relation=>$book->id }] });
+		my @list_ebook;
+		foreach ($resEbookRelation->all) {
+			push @list_ebook, $_->get_column('book_parent') if ($book->id != $_->get_column('book_parent'));
+			push @list_ebook, $_->get_column('book_relation') if ($book->id != $_->get_column('book_relation'));
+		}
+		$resEbook = $book->get_ebook_list_helper(@list_ebook);
+	}
+	if ($resEbook->count()) {
+		foreach ($resEbook->all) {
+			push @ebook, { type => $_->get_column('param_type'), url => $_->get_column('other_param_value')};
+		}
+	}
+	return \@ebook if (scalar @ebook);
+	return undef;
+}
+
+sub get_ebook_list_helper {
+	my ($book,$id) = @_;
+	my $resEbook = DB->resultset('ProductParams')->search({
+		book => $id,
+		'other_param_type.flag_ebook' => 1
+	}, {
+		join => ['other_param_type'],
+		+select => ['other_param_type.type','me.other_param_value'],
+		+as => ['param_type','other_param_value']
+	});
+	return $resEbook;
+}
+
 sub actualize_by_product {
 	my($book,$product,$forced) = @_;
 	my $invalidate = 0;
@@ -1375,7 +1413,7 @@ sub enrich {
 	}
 	
 	# 12. spolupracujeme s
-	$info->{cooperating_with} = 'http://www.cbdb.cz|CBDB.cz' if ($book->is_library_rating(51214));
+	$info->{cooperating_with} = 'https://www.cbdb.cz|CBDB.cz' if ($book->is_library_rating(51214));
 	
 	# 13. pocet podrizenych zaznamu s obalkou a toc
 	my $succ_books_statement;
@@ -1393,6 +1431,10 @@ sub enrich {
 	$cnt_succ_toc = $resSucc->get_column('toc') if ($resSucc);
 	$info->{succ_cover_count} = $cnt_succ_cover;
 	$info->{succ_toc_count} = $cnt_succ_toc;
+	
+	# 14. vazby e-book
+	my $ebook = $book->get_ebook_list;
+	$info->{ebook} = $ebook if (defined $ebook);
 	
 	return $info;
 }

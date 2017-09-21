@@ -24,6 +24,7 @@ acronym {cursor:help;}
 textarea {font-size:1em;}
 blockquote, cite {margin:20px 3em 10px 0;color:#666 !important;font-style:italic;padding-left:62px;}
 .che input,.radio input {width:12px;height:12px}
+.hide {display:none;}
 
 html,body {height:auto;}
 body {background:#1c1c1c;}
@@ -119,7 +120,7 @@ p {margin:0 0 1.5em 0;}
 		   	#text #sidebar h2,#text #sidebar h3,#text #sidebar h4 {color:#7a92a0}
 		   	#text #sidebar li {background-image:url(img/li_side.png);} 
 		
-		.loga {width:450px;margin-left:20px;}
+		.loga {width:100%;margin-left:20px;}
 		
 		
 		table td {vertical-align:top;}
@@ -251,9 +252,8 @@ table.qe-table a.f-icon img {background:none !important; border:0 !important; pa
 	#admin-submenu ul li.active a {color:#444;}
 
 /* Book parts */
-#book-part-table {width:100%;}
-	#book-part-table td {vertical-align:middle; padding:0px; height:36px;}
-	#book-part-table td.hide {display:none;}
+.partsw-table {width:100%;}
+	.partss-table td {vertical-align:middle; padding:0px; height:36px;}
 
 /* Book bindings*/
 .bindings {width:100%; overflow:auto; table-layout:fixed;}

@@ -203,7 +203,7 @@ $(function () {
 		self.find('input[type="submit"]').css('visibility', 'hidden');
 		self.find('input[type="image"]').show();
 		ajaxLoader = $.ajax({
-	        url: 'http://'+window.location.hostname+$(this).attr('action'),
+	        url: '//'+window.location.hostname+$(this).attr('action'),
 			data: 'val='+self.find('input[type="text"]').val(),
 	        type: 'POST',
 	        success: function(data, textStatus, XMLHttpRequest) {
@@ -233,10 +233,37 @@ $(function () {
 		return false;
 	});
 	
-	// View show more
-	$('#book-part-table .show-more').on('click', function(){
-		$('#book-part-table td.hide').show();
-		$(this).parent().parent().hide();
+		// View show more
+	$('#show-more-block > a').on('click', function(){
+		var id = $(this).data('id');
+		var page, partsElement, newParts, responseData, newTable, noMore;
+		if ($(this).data('page')){
+			page = $(this).data('page');
+		}
+		else{
+			page = 2;
+		}
+		
+		
+		$('#show-more-loader').removeClass('hide');
+		
+		$.ajax({
+	        url: '//'+window.location.hostname+'/view'+window.location.search,
+			data: {book_id : id, page : page},
+			dataType: "html",
+	        type: 'POST',
+	        success: function(data, textStatus, resp){
+		    	var responseData = $(data);
+		    	$('#show-more-block > a').data('page',parseInt(page)+1);
+		 		var newTable = '<table class="parts-table">' + responseData.find('.parts-table').html() + '</table>';
+		    	$(newTable).insertBefore('#show-more-loader');
+		    	noMore = responseData.find('input[name=no_more_pages]').val();
+		    	if (noMore == 1){
+		    		$('#show-more-block > a').parent().remove();
+		    	}
+			$('#show-more-loader').addClass('hide');
+	        }	
+		});
 		return false;
 	});
 	
@@ -248,7 +275,7 @@ $(function () {
 		img.attr('src', '/img/loading_small.gif');
 		
 		$.ajax({
-	        url: 'http://'+window.location.hostname+'/admin_auth_cover',
+	        url: '//'+window.location.hostname+'/admin_auth_cover',
 			data: 'del='+id,
 	        type: 'POST',
 	        success: function(data, textStatus, XMLHttpRequest) {
@@ -260,5 +287,6 @@ $(function () {
 		});
 		return false;
 	});
+
 
 });

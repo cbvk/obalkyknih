@@ -462,7 +462,6 @@ sub save_to {
 		};
 		my $bibinfoRelParent = Obalky::BibInfo->new_from_params($bibinfoParams);
 		my $bookRelParent = DB->resultset('Book')->find_by_bibinfo($bibinfoRelParent);
-		warn Dumper($bibinfoRelParent);
 		#relace jeste neni, pridej
 		if (defined $bookRelParent) {
 			my $resRelation = DB->resultset('BookRelation')->search({ -or => [{ book_parent=>$bookRelParent->id, book_relation=>$book->id }, { book_parent=>$book->id, book_relation=>$bookRelParent->id }] });

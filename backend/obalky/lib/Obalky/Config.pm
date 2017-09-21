@@ -37,7 +37,7 @@ our $MEDIUM_HEIGHT = 240;
 
 sub url {
     my($pkg,$secure) = @_;
-    return $secure ? "https://".$WWW_DOMAIN : "http://".$WWW_DOMAIN;
+    return "https://".$WWW_DOMAIN;
 }
 
 our %replace_punctation = (
