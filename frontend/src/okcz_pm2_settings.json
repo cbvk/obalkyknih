@@ -1,0 +1,17 @@
+[{
+  "name"      : "okcz",
+  "script"    : "./okcz19.js",
+  "instances" : "1",
+  "error_file" : "/home/users/okcz/okcz/log/okcz-err.log",
+  "out_file"   : "/home/users/okcz/okcz/log/okcz-out.log",
+  "pid_file"   : "/home/users/okcz/okcz/run/okcz.pid",
+  "port"       : 1337
+}, {
+  "name"      : "okcz_citace",
+  "script"    : "./okcz_citace.js",
+  "instances" : "1",
+  "error_file" : "/home/users/okcz/okcz/log/okcz-citace-err.log",
+  "out_file"   : "/home/users/okcz/okcz/log/okcz-citace-out.log",
+  "pid_file"   : "/home/users/okcz/okcz/run/okcz-citace.pid",
+  "port"       : 8080
+}]

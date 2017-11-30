@@ -1,0 +1,8 @@
+#!/bin/bash
+
+PROJECT_HOME=/home/users/okcz/okcz
+PM2=/home/users/okcz/.nvm/versions/node/v8.7.0/bin/pm2
+
+cd $PROJECT_HOME
+$PM2 delete okcz
+$PM2 start okcz_pm2_settings.json

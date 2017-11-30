@@ -1,6 +1,5 @@
 var request = require('request');
 var http = require('http');
-var https = require('https');
 var fs = require('fs');
 
   http.createServer(function (req, response) {
@@ -9,6 +8,8 @@ var fs = require('fs');
             body += data;
         });
         req.on('end', function () {
+            console.dir(req.headers);
+            console.log("\n\n");
             console.log("Body: " + body);
         });
         response.writeHead(500, {'Content-Type': 'text/html'});

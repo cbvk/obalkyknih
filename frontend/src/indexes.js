@@ -24,8 +24,12 @@ client.connect(urlmongo, function (err, db) {
           db.collection('review').ensureIndex({ref:1}, {w:1}, function(err, result) {
             if (err) {  return console.dir(err); }
 
-            console.log('ok');
-            db.close();
+            db.collection(metaCollection).ensureIndex({ean_other:1}, {w:1}, function(err, result) {
+              if (err) {  return console.dir(err); }
+
+              console.log('ok');
+              db.close();
+            });
           });
         });
       });

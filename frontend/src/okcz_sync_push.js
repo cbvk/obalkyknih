@@ -22,7 +22,7 @@ var smtp =  {
   },
   credentials: {
     user: 'obalkyknih@gmail.com',
-    password: '',
+    password: 'visk2016',
     host: 'smtp.gmail.com'
   }
 };
@@ -133,7 +133,7 @@ function sendMail(sigla, db, req) {
         from: smtp.from.address,
         to: settings.email,
         subject: "obalkyknih.cz - Synchronizace pomoci PUSH API selhala"
-      }, function(err, message) {        
+      }, function(err, message) {
         if (err) console.log(err);
         console.log('    [ EMAIL ' + sigla + ' sent ]');
         // poznacit casove razitko zaslani emailu, aby sa najblizsich 24hod opakovane nezaslalo

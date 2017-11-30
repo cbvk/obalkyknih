@@ -1,13 +1,9 @@
-/// version 19
+/// version 1
 
 /// mongodb://url:port/database  - spojeni na mongodb
 var urlmongo = "mongodb://localhost:27017/okcz_db"
-
-//var urlPerms = "http://www.obalkyknih.cz/api/get_perms"
-var urlPerms = "http://10.89.56.102/api/get_perms"
-
-//var urlCitaceSettings = "http://www.obalkyknih.cz/api/get_settings_citace";
-var urlCitaceSettings = "http://10.89.56.102/api/get_settings_citace";
+var urlPerms = "http://www.obalkyknih.cz/api/get_perms"
+var urlCitaceSettings = "http://www.obalkyknih.cz/api/get_settings_citace";
 
 /// timeout dotazu na backend (ms)
 var timeout = 15 * 1000;
@@ -30,11 +26,11 @@ var https = require('https');
 var fs = require('fs');
 
 /// soukromy klic, certifikat a intermediate certifikat; vse pro HTTPS
-/*var httpsOptions = {
-  key: fs.readFileSync('cert/serverkey.pem'),
-  cert: fs.readFileSync('cert/cache.obalkyknih.cz-1404285806.pem'),
-  ca: [ fs.readFileSync('cert/tcs-ca-bundle.pem') ]
-};*/
+var httpsOptions = {
+  key: fs.readFileSync('certs/cache.obalkyknih.cz.key'),
+  cert: fs.readFileSync('certs/cache.obalkyknih.cz.crt'),
+  ca: [ fs.readFileSync('certs/chain.crt') ]
+};
 
 // **********************************************
 //   Serverova cast Front-End API obalkyknih.cz
@@ -56,28 +52,6 @@ client.connect(urlmongo, function (err, db) {
   okcz.getCitaceSettings(false, null, db);
 
   if (!test) {
-    //getPerms
-    /*request({url:urlPerms,timeout:timeout}, function(error, res, body) {
-      if (!error) {
-        var perms = JSON.parse(body);
-        var perms_count = parseInt(perms.count);
-        if (perms_count>0 && perms.perms.length==perms_count) {
-          db.collection('perms').remove({},function(err,numberRemoved) {
-            db.collection('perms').insert(perms.perms, {continueOnError: true}, function(err, result) {
-              console.log('PERMS LOADED AT FRONTEND STARTUP (count:'+perms_count+')');
-              okcz.getPerms(true, perms, null);
-            });
-          });
-        } else {
-          console.log('ERROR: FAILED TO LOAD PERMS AT FRONTEND STARTUP - PERMS COUNT MICHMACH');
-          db.close();
-          return;
-        }
-      } else {
-        console.log('ERROR: FAILED TO LOAD PERMS AT FRONTEND STARTUP - TIMEOUT');
-      }
-    });*/
-
     //getCitaceSettings
     request({url:urlCitaceSettings,timeout:timeout}, function(error, res, body) {
       if (!error) {
@@ -105,10 +79,10 @@ client.connect(urlmongo, function (err, db) {
   http.createServer(function (req, response) {
     okcz.server(req, response, db);
   }).listen(frontPortHttp);
-  
+
   // HTTPS
-  /*https.createServer(httpsOptions, function (req, response) {
+  https.createServer(httpsOptions, function (req, response) {
     okcz.server(req, response, db);
-  }).listen(frontPortHttps);*/
-  
+  }).listen(frontPortHttps);
+
 });
