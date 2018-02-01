@@ -22,18 +22,22 @@ sub harvest{
 	return if (substr($ean13,0,5) eq 'ARRAY');
 	
 	#zpracovani identifikatoru - tvorba dotazu
+#$ean13 = '978-80-249-3417-4';
 	if ($ean13 || $nbn){
 #		if ($ean13 && $nbn){
 #			$query_or = "\@or ";
 #		}
 		if ($ean13){
 			($ean,$index_id) = modify_identifier($ean13);
-			$query_ean = '@attr '. "1=$index_id "."'$ean' ";
+			if (length($ean) == 8) {
+			    $ean = substr($ean,0,4)."-".substr($ean,4,4);
+			}
+			$query_ean = '@attr '. "1=$index_id "."'$ean'";
 			
 		}
-#		if ($nbn){
-#			$query_nbn = '@attr '. "1=2544 "."'$nbn'";
-#		}
+		if ($nbn){
+			$query_nbn = '@attr '. "1=48 "."'$nbn'";
+		}
 	}	
 	else {
 		warn 'no-identifier';
@@ -42,7 +46,7 @@ sub harvest{
 	
 #warn '*1';
 	my $conn = new ZOOM::Connection(
-		'aleph.nkp.cz', 9991, databaseName => 'NKC-UTF', preferredRecordSyntax => 'USMARC');
+		'aleph.nkp.cz', 9991, databaseName => 'SKC-UTF', preferredRecordSyntax => 'USMARC');
 	
 #warn '*2';
 	if ($conn->errcode() != 0){
@@ -52,11 +56,22 @@ sub harvest{
 	
 #warn "$query_or"."$query_ean"."$query_nbn";
 #die;
+	warn "$query_or"."$query_ean"."$query_nbn";
 	$rs = $conn->search_pqf("$query_or"."$query_ean"."$query_nbn");
+	warn $rs->size();
 	return if ($rs->size() == 0);
-	my $record = $rs->record(0);
+	my ($record,$marc) = (undef,undef);
 	my $size = $rs->size();
-	my $marc = new_from_usmarc MARC::Record($record->raw());
+	my $found = 0;
+	for (my $i=0; $i<$size; $i++) {
+		$record = $rs->record($i);
+		$marc = new_from_usmarc MARC::Record($record->raw());
+		print "\nTITUL OKCZ ZAZNAMU >>> " . $bibinfo->{title};
+		print "\nTITUL Z39 ZAZNAMU  >>> " . $marc->title() . "\n\n";
+		$found = 1 if (index($marc->title(), $bibinfo->{title}) gt -1 and index($marc->title(), $bibinfo->{title}) lt 20);
+	}
+	$found = 1 if ($rs->size() eq 1);
+	return unless($found);
 	
 	my %bib;
 	$bib = { 'Fields'=>{}, 'Type'=>substr($marc->leader(),6,2), 'Sysno'=>$marc->field('001')->data(), 'Sigla'=>'ABA001' };

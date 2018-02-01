@@ -100,6 +100,13 @@ __PACKAGE__->table("user");
   data_type: 'integer'
   is_nullable: 1
 
+=head2 is_admin
+
+  data_type: 'tinyint'
+  default_value: 0
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -138,6 +145,13 @@ __PACKAGE__->add_columns(
   },
   "last_auth_cover",
   { data_type => "integer", is_nullable => 1 },
+  "is_admin",
+  {
+    data_type => "tinyint",
+    default_value => 0,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -224,8 +238,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-08-31 13:28:09
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uN1qHKP6usnLaKqN616NKA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-10-30 08:48:09
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:g4ZiQJiy9tFqicLGd7bASA
 
 
 use Data::Dumper;

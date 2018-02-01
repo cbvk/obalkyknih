@@ -17,12 +17,12 @@ MARC::Charset->assume_encoding('UTF-8');
 #binmode(STDOUT,"utf8");
 
 my $conn = new ZOOM::Connection(
-	'sigma.nkp.cz', 9909, databaseName => 'NKC');
+	'aleph.nkp.cz', 9991, databaseName => 'SKC-UTF');
 #$conn->option(preferredRecordSyntax => "unimarc");
 #$rs = $conn->search_pqf('@attr 1=4 biologie');
 #$rs = $conn->search_pqf('@attr 1=7 9788072039418');
 
-$rs = $conn->search_pqf('@attr 1=12 nkc20081824099');
+$rs = $conn->search_pqf('@attr 1=1032 006728616');
 print "found ", $rs->size(), " records:\n";
 my $rec = $rs->record(0);
 #print $rec->render();

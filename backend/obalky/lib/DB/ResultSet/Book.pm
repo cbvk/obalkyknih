@@ -7,6 +7,11 @@ use String::Util qw(trim);
 use Data::Dumper;
 use Obalky::Config;
 
+use MARC::Record;
+use MARC::Charset 'utf8_to_marc8';
+MARC::Charset->ignore_errors(1);
+MARC::Charset->assume_encoding('UTF-8');
+
 #__PACKAGE__->utf8_columns(qw/title authors/);
 
 sub upload {
@@ -46,6 +51,7 @@ sub find_by_bibinfo {
 	my($pkg,$id,$creating) = @_;
 	my @books;
 	
+#warn '---------------------';
 	$creating = 0 unless($creating);
 	$id->{part_year} = undef unless(defined $id->{part_year});
 	$id->{part_volume} = undef unless(defined $id->{part_volume});
@@ -63,6 +69,7 @@ sub find_by_bibinfo {
 	
 	# dotaz na cislo periodika, nebo cast monografie
 	if ($id->{part_no} or $id->{part_name} or $id->{part_year} or $id->{part_volume}) {
+#warn "# dotaz na cislo periodika, nebo cast monografie";
 		@books = $pkg->search_book_part($id);
 		if (${@books}) {
 			map { # pro kazdy nalezeny zaznam (normalne cekame ze je jeden) zkontrolujeme, jestli ma vyplnenou kombinaci rok/rocnik
@@ -107,6 +114,7 @@ sub find_by_bibinfo {
 	
 	# dotazy na zaznam book (souborny zaznam)
 	unless (defined $books[0]) {
+#warn "# dotazy na zaznam book (souborny zaznam)";
 		return undef if ($creating and ($id->{part_no} or $id->{part_name} or $id->{part_year} or $id->{part_volume}));
 		
 		#$id->{part_year} = $id->{part_volume} = undef;
@@ -115,8 +123,10 @@ sub find_by_bibinfo {
 		foreach (@books) {
 			next unless (defined $_);
 			$part_type = $_->get_column('part_type');
-			$first_row = $_ unless ($i);			
+			next if ($part_type);
+			$first_row = $_ unless ($i);
 			$i++;
+			last;
 		}
 		$acceptable = 0 if ($part_type); # hledame pouze monografie (i kdyz do dotazu zadame parametry periodika)
    		return $first_row if(@books and not wantarray and $acceptable);
@@ -126,8 +136,10 @@ sub find_by_bibinfo {
 		foreach (@books) {
 			next unless (defined $_);
 			$part_type = $_->get_column('part_type');
+			next if ($part_type);
 			$first_row = $_ unless ($i);			
 			$i++;
+			last;
 		}
 		$acceptable = 0 if ($part_type);
    		return $first_row if(@books and not wantarray and $acceptable);
@@ -137,8 +149,10 @@ sub find_by_bibinfo {
 		foreach (@books) {
 			next unless (defined $_);
 			$part_type = $_->get_column('part_type');
+			next if ($part_type);
 			$first_row = $_ unless ($i);			
 			$i++;
+			last;
 		}
 		$acceptable = 0 if ($part_type);
    		return $first_row if(@books and not wantarray and $acceptable);
@@ -153,6 +167,25 @@ sub find_by_bibinfo {
 		}
 		$acceptable = 0 if ($part_type);
   		return $first_row if(@books and not wantarray and $acceptable);
+  		
+  		### VYHLEDAVANI V DALSICH PARAMETRECH ###
+  		
+  		if (defined $id->{ean13}) {
+	  		my $bookRes = DB->resultset('ProductParams')->search({ ean13 => $id->{ean13}});
+			$acceptable=1; $i=0; $part_type=undef; $first_row=undef;
+			if ($bookRes) {
+				while (my $params = $bookRes->next) {
+					my $book = DB->resultset('Book')->find($params->get_column('book'));
+					next unless (defined $_);
+					push @books, $book;
+					$part_type = $book->get_column('part_type');
+					$first_row = $book unless ($i);
+					$i++;
+				}
+				$acceptable = 0 if ($part_type);
+		   		return $first_row if(@books and not wantarray and $acceptable);
+			}
+  		}
 	}
 	
 	return wantarray ? @books : $books[0];
@@ -366,6 +399,7 @@ sub search_book_part {
 #warn $id->{part_year};   #debug
 #warn $id->{part_volume}; #debug
 #warn $id->{part_no};     #debug
+#warn $id->{part_name};     #debug
 	if ($id->{part_year} or $id->{part_volume}) {
 #warn 'PERIODIKUM';       #debug
 		my (@partYear,@partVolume,@partNo) = (undef,undef,undef);
@@ -504,7 +538,7 @@ sub search_book_part_helper {
 					# pokud hledame periodika v rozsahu 1-6 = 1,2,3,4,5,6 a zaznam ulozeny v db. je napr. dvoucislo 3,4
 					if ($partYear and $partNo and $partYearDb and $partNoDb and 
 					    $partYearDb eq $partYear and 
-					    ($partVolume eq $partVolumeDb or not $partVolume) and
+					    (not $partVolume or $partVolume eq $partVolumeDb) and
 					    $partNo=~/\,/ and $partNoDb=~/\,/ and 
 					    ($partNo=~$partNoDb or $partNoDb=~$partNo))
 					{
@@ -569,7 +603,7 @@ sub get_parts {
 		# serazeni od posledne pridaneho
 		push @books, $pkg->search($srchQuery, { order_by => \'id DESC' } );
 	}
-		
+	
 	my ($page_start, $page_end, $no_more_pages);
 	
 	$page_start = ($page == 1) ? 0 : ((($page - 1) * 30));
@@ -743,4 +777,129 @@ sub get_range {
 	return @book_part_no;
 }
 
+#vyhladavanie vazieb pomocou z39.50
+sub search_z39{
+	my ($pkg, $search_value, $limit_amount) = @_;
+	my $dbname = "SKC-UTF";
+	my $conn = new ZOOM::Connection('aleph.nkp.cz', '9991', databaseName => $dbname);
+	return if ($conn->errcode());	
+	#tvorba pqf dotazu
+	my ($title, $identifiers) = ("","");
+	
+	#odstranenie whitespace od konca retazca - niekedy sposobovalo chybove hlasenia
+	$search_value =~ s/\s+$//;
+	
+	my $search_identifier = Obalky::BibInfo->parse_code($search_value);	
+	$title ='@attr 1=4 "'.$search_value.'"';
+	$identifiers = '@or @or @attr 1=7 "'.$search_identifier.'" @attr 1=8 "'.$search_identifier.'"' if ($search_identifier && (!$search_identifier =~ /^\d+/));
+	my $query = $identifiers.$title;
+
+	my $rs = z39_search_by_query($conn, $query);
+	return if (!$rs);	
+	my $size = $rs->size();
+	warn $size." results." if ($ENV{DEBUG});
+	return if ($size eq 0);
+	
+	# MAX_AMOUNT = maximane mnozstvo knih, ktore sa z
+	my $MAX_AMOUNT = ($size > $limit_amount) ? $limit_amount : $size;
+	my @books;
+	for (my $i = 0; $i < $MAX_AMOUNT; ++$i){	
+		last if ($i >= $size);
+		my $record = $rs->record($i);
+		my ($bibinfo, $sysno, $local_id) = z39_convert_record_to_bibinfo($record);
+		
+		#preskoci v hladani zaznamu chybaju identifikatory
+		#ak zaznam existuje v DB, uz bol ulozeny v predchadzajucom vyhladavani -- preskocit
+		if ((!$bibinfo->{'ean13'} and !$bibinfo->{'nbn'} and !$bibinfo->{'oclc'}) || DB->resultset('Book')->find_by_bibinfo($bibinfo)){
+			$MAX_AMOUNT++;
+			next;
+		}		
+		$bibinfo->{'id'} = '[Z39]'.$sysno;
+		$bibinfo->{'url'} = 'http://aleph.nkp.cz/F/?func=direct&doc_number='.$sysno.'&local_base='.$dbname;
+		push (@books, $bibinfo);
+						
+	}
+	return @books;
+}
+
+
+sub z39_search_by_query{
+	my ($conn, $query) = @_;
+	my $rs;
+	eval {
+		$rs = $conn->search_pqf($query);
+	};
+	# zachytenie chyby pri zlom formate dotazu
+	if ($@){
+		warn $@ if ($ENV{DEBUG});
+		return undef;
+	}
+	else {
+		return $rs;
+	}
+}
+
+sub z39_find_record_by_id_and_create_bibinfo{
+	my ($conn, $id) = @_;
+	my $query = '@attr 1=1032 "'.$id.'"';
+	my $rs = z39_search_by_query($conn, $query);
+	return undef if ($rs->size() eq 0);
+	my ($bibinfo, $sysno)= z39_convert_record_to_bibinfo($rs->record(0));
+	return ($bibinfo, $sysno);
+}
+
+#spracuje raw zaznam a vytvori bibinfo
+sub z39_convert_record_to_bibinfo{
+	my ($record) = @_;
+	my ($title_proper, $title_sub);
+	my $marc = new_from_usmarc MARC::Record($record->raw());
+	my $sysno = $marc->subfield('998','a');
+	my $local_id = $marc->field('001')->data();
+	my $bib = {};
+	$bib->{'nbn'} = $marc->subfield('015', "a");
+	$bib->{'oclc'} = $marc->subfield('035', "a");
+	$bib->{'oclc'} =~ s/\(.*\)//g if ($bib->{'oclc'});
+	$title_proper = $marc->title_proper();
+	$title_proper =~ s/\s*\/\s*$// if ($title_proper);
+	$title_sub = $marc->subfield('245', 'b') || '';
+	$bib->{'title'} = $title_proper;
+	$bib->{'authors'} = $marc->subfield('100', 'a');
+	$bib->{'authors'} =~ s/,$// if $bib->{'authors'};
+	$bib->{'year'} = $marc->subfield('264','c');
+	my (@eanfield, $bibinfo, $has_eans, $cnt);
+	my ($suggestion_id, $source_db, $source_url, $found);
+	push @eanfield, ($marc->field('020'),$marc->field('022'),$marc->field('024'),$marc->field('902'));
+	
+	$has_eans =  0;
+	foreach my $field (@eanfield){
+		my $ean = $field->subfield("a");
+		next if (!$ean);
+		#mozu existovat prazdne polia, kde chyba subfield 'a'
+		$has_eans = 1 if (!$has_eans);
+		$ean =~ tr/-//d;
+		$ean = Obalky::BibInfo->parse_code($ean);
+		$bib->{'ean'} = $ean;
+		$bibinfo = Obalky::BibInfo->new_from_params($bib);
+		last if ($found);
+		
+	}
+
+	if (!@eanfield or !$has_eans){
+		$bibinfo = Obalky::BibInfo->new_from_params($bib);
+	}
+	$bibinfo->{title} = $title_proper.$title_sub;
+	$bibinfo->{title} =~ s/\s*\/\s*$// if ($title_sub);
+	return ($bibinfo, $sysno, $local_id);
+}
+
+# najde knihu podla local number, prida ju do DB, vrati book ID
+sub add_book_from_z39{
+	my ($pkg, $conn, $id) = @_;
+	my ($bibinfo, $sysno) = z39_find_record_by_id_and_create_bibinfo($conn, $id);
+	return if (!$bibinfo); # osetrenie pre istotu, nemalo by nastat, jedine v pripade, ze sa zmeni system vyhladavania
+	my $product_url = 'http://aleph.nkp.cz/F/?func=direct&doc_number='.$sysno.'&local_base=SKC-UTF';
+	my $eshop = DB->resultset('Eshop')->find(7136);
+	my $product = $eshop->add_product($bibinfo, undef, $product_url);
+	return $product->book->id;
+}
 1;

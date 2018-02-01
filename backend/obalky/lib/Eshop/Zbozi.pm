@@ -215,6 +215,8 @@ sub process_shopitem {
 	
 	# COVER
 	my $cover_url = $item->{IMGURL} || $item->{URL_IMG} || $custom_imgurl;
+	my $strpos = index($cover_url, '?');
+	$cover_url = substr($cover_url, 0, $strpos);
 	my $process_cover = 1;
 	$process_cover = 0 if ($eshop->get_column('process_cover') == 0);
 	if($cover_url and $process_cover) {

@@ -244,6 +244,7 @@ sub do_books_request {
 	#									$library,$visitor,$this);
 	#		DB->resultset('Cache')->store($key,$bookid,$full);
 	#	}
+		$this = pop @{$this} if (ref $this eq 'ARRAY');
 		my($bookid,$full) = $self->do_book_request($c,$session,
 									$library,$visitor,$this);
 		push @book, $full if(defined $full);
@@ -499,8 +500,9 @@ sub _do_import {
 	my($self,$c) = @_;
 
     $self->_do_log("import begin");
-
+	warn Dumper($c->req->params) if ($ENV{DEBUG});
 	# autentizuj uzivatelem, misto cookies staci user/password parametry
+=asf
 	unless($c->user) {
 		# login, password a over.. $c->authenticate
 		unless($c->authenticate({ login => $c->req->param('login'), 
@@ -511,11 +513,11 @@ sub _do_import {
 		}
 	}
 	my $user = $c->user->login;
-	
-	# vicero isbn
-	my @other_eans = $c->req->param('other_isbn');
-	@other_eans = map {Obalky::BibInfo->parse_code($_)} @other_eans;
-	
+=cut
+	my $user;
+
+
+
 	# z parametru zkonstruuj identifikator knizky (TODO jen BibInfo->fields?)
 	my $bibinfo_params = {};
 	$bibinfo_params->{$_} = decode_utf8($c->req->param($_))
@@ -535,12 +537,30 @@ sub _do_import {
 			return;
 		}
 		
-		my $hash = {};
+ 
 		my $bibinfo_aggr = Obalky::BibInfo->new_from_params($bibinfo_params);
-		$bibinfo_aggr->save_to_hash($hash);
-		
+
+ 		my @other_part_eans;
+		if ($c->req->param('part_other_isbn') && $bibinfo_aggr->{ean13}){
+			@other_part_eans = split(',', $c->req->param('part_other_isbn'));
+			@other_part_eans = map {Obalky::BibInfo->parse_code($_)} @other_part_eans;	
+		}
 		my $book_aggr = DB->resultset('Book')->find_by_bibinfo($bibinfo_aggr);
+		
+		# spracovani vicero ISBN
+		if (!$book_aggr and @other_part_eans) {
+			foreach (@other_part_eans){
+				($_, $bibinfo_aggr->{ean13}) = ($bibinfo_aggr->{ean13}, $_);
+				$book_aggr = DB->resultset('Book')->find_by_bibinfo($bibinfo_aggr,1);
+				last if ($book_aggr);
+			}
+		
+			($other_part_eans[0], $bibinfo_aggr->{ean13}) = ($bibinfo_aggr->{ean13}, $other_part_eans[0])if (!$book_aggr); #vrati puvodni EAN do bibinfa
+		}
+ 		my $hash = {};
+		$bibinfo_aggr->save_to_hash($hash);
 		$book_aggr = undef if ($book_aggr and $book_aggr->get_column('id_parent')); # souborny zaznam nesmi byt cast mono./cislo per.
+
 		if ($book_aggr) {
 			# book zaznam existuje, aktualizovat
 			warn 'BIBINFO_AGGR - EXISTUJE ... '.$book_aggr->id if($ENV{DEBUG});
@@ -550,7 +570,14 @@ sub _do_import {
 			warn 'BIBINFO_AGGR - VYTVARIM' if($ENV{DEBUG});
 			$book_aggr = DB->resultset('Book')->create($hash);
 		}
-		
+
+		# ulozeni dalsich ISBN
+		if (@other_part_eans){
+			foreach my $param (@other_part_eans){
+				DB->resultset('ProductParams')->find_or_create({book => $book_aggr->id, ean13 =>$param, nbn => $book_aggr->{nbn}, oclc => $book_aggr->{oclc}});
+			}
+		}
+
 		# pokud se jedna o cast monografie musime nacist identifikatory casti
 		if ($part_type eq "mono") {
 			$bibinfo_params = {};
@@ -570,6 +597,13 @@ sub _do_import {
 
 	# bibinfo skenovaneho zaznamu
 	my $bibinfo = Obalky::BibInfo->new_from_params($bibinfo_params);
+	 
+	# vicero isbn
+	my @other_eans;
+	if ($bibinfo->{ean13}){
+		@other_eans = split(',', $c->req->param('other_isbn'));
+		@other_eans = map {Obalky::BibInfo->parse_code($_)} @other_eans;	
+	}
 	
     $self->_do_log("user $user book ".($bibinfo ? $bibinfo->to_string
                         : 'NENI bibinfo?? '.Dumper($bibinfo_params)));

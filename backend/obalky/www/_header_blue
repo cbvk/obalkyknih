@@ -1,15 +1,17 @@
 
 		<div id="blue"><div class="in">
 			<div class="left">
-				<form action="/view"><label for="search">Zadejte ISBN…</label><input type="text" id="search" name="isbn" value="" /><input type="submit" class="button big" value="Vyhledat" /></form>
-			   <p><font style="font-size:80%;">Vyhledávat v databázi titulů je možné dle ISBN, ISSN, EAN, č. ČNB, OCLC či vlastního identifikátoru. Vyhledávat lze i v databázi autorů dle <a href="http://autority.nkp.cz/" alt="Portál Národní autority ČR">id autority</a> či jména.</font></p>			   
+				<form action="/view">
+					<label for="search">Zadejte ISBN…</label><input type="text" id="search" name="isbn" value="" /><input type="submit" class="button big" value="Vyhledat" />
+				</form>
+			   <p><font style="font-size:77%;">Vyhledávat v databázi titulů je možné dle ISBN, ISSN, EAN, č. ČNB, OCLC či vlastního identifikátoru. Vyhledávat lze i v databázi autorů dle <a href="http://autority.nkp.cz/" alt="Portál Národní autority ČR">id autority</a> či jména.</font></p>			   
 			</div>
 			<div class="center">
 				<p>Projekt ObalkyKnih.cz sdružuje různé zdroje informací
 				o knížkách do jedné, snadno použitelné webové služby. Naše databáze v tuto chvíli obsahuje <strong>[% covers %] obálek</strong>
 				a <strong>[% tocs %] obsahů</strong> českých a zahraničních publikací. Naše API využívá většina knihoven v ČR. <!-- <strong>přes [% libraries_at_least %] knihoven</strong>-->.</p>
 			</div>
-			<div class="right">
+			<div id="head-loginpart" class="right">
 				[% IF user %]
 				<h4>Přihlášený uživatel</h4>
 				<p>
@@ -17,19 +19,31 @@
 				</p><br>
 				<p class="small">
 					<!-- <a href="/">Nastavení»</a> 
-					&nbsp;&nbsp; --> 
+					&nbsp;&nbsp; -->
 					[% IF user_is_admin %]
-					<a href="/account">Seznam knihoven »</a> &nbsp; <a href="/admin_stats">Statistiky »</a><br/>
+					<div class="dropdown">
+					  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Administrační menu
+					  <span class="caret"></span></button>
+					  <ul class="dropdown-menu">
+					    <li><a href="/account">Seznam knihoven</a></li>
+						<li><a href="/admin_stats">Statistiky</a></li>
+						<li><a href="/admin_suggestions">Návrhy relací</a></li>
+						<li><a href="/abuse">Zneužívání</a></li>
+						<li class="divider"></li>
+						<li><a href="/logout">Odhlásit</a></li>
+					  </ul>
+					</div>
 					[% ELSE %]
 					<a href="/account">Nastavení »</a> <br/>
-					[% END %]
 					<a href="/logout">Odhlásit</a> </p>
+					[% END %]
+				</p>
 			
 				[% ELSE %]
 				<form action="/login" method="post">
 					<p><label for="login_mail">E-mailová adresa</label><input type="text" value="" id="login_mail" name="email"/></p>
 					<p><label for="login_pass">Heslo</label><input type="password" value="" id="login_pass" name="password"/>
-					<input type="submit" class="button" value="Přihlásit »" /></p>
+					<input type="submit" class="button" value="Přihlásit" /></p>
 				</form>
 				<p class="small"><a href="/signup">Registrovat »</a> &nbsp;&nbsp; <a href="/lostpassword">Zapomenuté heslo?</a> </p>
 				[% END %]

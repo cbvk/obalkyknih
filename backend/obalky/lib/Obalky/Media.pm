@@ -66,6 +66,7 @@ sub save_to_source{
 			
 			unless (-e $filename) {
 				my $browser = LWP::UserAgent->new;
+				$browser->ssl_opts(verify_hostname => 0, SSL_verify_mode => 0x00);
 				my @headers = (
 					'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 					'Accept-Encoding' => 'gzip, deflate',
@@ -209,6 +210,7 @@ sub save_to {
 			
 			unless (-e $filename) {
 				my $browser = LWP::UserAgent->new;
+				$browser->ssl_opts(verify_hostname => 0, SSL_verify_mode => 0x00);
 				my @headers = (
 					'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 					'Accept-Encoding' => 'gzip, deflate',

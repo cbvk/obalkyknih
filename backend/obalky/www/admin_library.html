@@ -64,11 +64,11 @@
 	<tr>
 		<td[%td_class%]>
 			[% IF !row.flag_active %]
-				<a href="/admin_library?a=[% row.id %]" class="confirm-common">AKTIVOVAT</a>&nbsp;|&nbsp;
-				<a href="/admin_library?d=[% row.id %]" class="confirm-common">SMAZAT</a>&nbsp;|&nbsp;
+				<a href="/admin_library?a=[% row.id %]" class="confirm-common" alt="AKTIVOVAT"><span class="glyphicon glyphicon-ok-sign"></span></a> &nbsp;
+				<a href="/admin_library?d=[% row.id %]" class="confirm-common" alt="SMAZAT"><span class="glyphicon glyphicon-trash"></span></a> &nbsp;
 			[% END %]
-			<a href="/account?i=[% row.id %]" title="Přejít na konto knihovny"><img src="/img/arrow.png" alt="Přejít na konto knihovny" /></a> &nbsp; 
-			<a href="/account_review?i=[% row.id %]" title="Přejít na kometáře knihovny" style="padding-left:22px;"><img src="/img/comment.gif" alt="Přejít na kometáře knihovny" style="height:12px; width:13px;" /></a>
+			<a href="/account?i=[% row.id %]" title="Přejít na konto knihovny"><span class="glyphicon glyphicon-triangle-right"></span></a> &nbsp; 
+			<a href="/account_review?i=[% row.id %]" title="Přejít na kometáře knihovny"><span class="glyphicon glyphicon-bullhorn" alt="Přejít na kometáře knihovny" /></a>
 		</td>
 		<td[%td_class%]>[%row.id%]</td>
 		<td[%td_class%]><strong>[%row.code%]</strong></td>

@@ -420,35 +420,38 @@ Tuto knihu ještě nemáme v databázi!
 	<div>
 	<p>
   	<h2>Vazby</h2>
-	<form method="post">
-		<table>
-		<tr>
-			<td><h3>Vyhledávání</h3></td>
-			<td><input type=text value="" name="search_value" id="find_books" > </td>
-			<td><input type=submit value="Vyhledat" ></td>
-		</tr>
-		</table>
+	<form encoding="application/json" method="post">
+	<div class="row form-group">
+		<div class="col-xs-4">
+			<input type=text value="[% search_value %]" name="search_value" id="find_books" class="form-control" placeholder="Vyhledat" />
+		</div>
+		<div class="col-xs-8">
+			<input type=submit value="Vyhledat" class="btn btn-primary" />
+			<input type="hidden" name="book_rel" value="1" />
+		</div>
+	</div>
 	</form>
 
 	[% IF searched_books %]
 	 	<br>
 	 	<form method="post">
-	  	<table class = "bindingsh">
+	  	<table class="table okcz-datatable">
 	  	<thead>
 			<tr>
+				<th></th>
+				<th></th>
 	  			<th>Název</th>
 			  	<th>Autoři</th>
-			  	<th>EAN</th>
+			  	<th>ISBN/EAN</th>
 			  	<th>NBN</th>
 	  		</tr>
-	  	<//thead>
-	  	</table>
-	  	<table class ="bindings bindingsb">
+	  	</thead>
 	  	<tbody>
 		[% FOREACH sbook IN searched_books %]
 			<tr>
-				
-				<td><input type="checkbox" name="relation_book_id" value="[% sbook.id %]"></input>   <a href="//obalkyknih.cz/view?book_id=[% sbook.id %]">[% sbook.title %]</a></td>
+				<td><input type="checkbox" name="relation_book_id" value="[% sbook.id %]"></td>
+				<td>[% IF sbook.created %]<img src="/img/logo.png" width="24" />[% ELSE %]<img src="/img/loga/logo_nkp.png" width="24" />[% END %]</td>
+				<td><a href="[% sbook.url %]">[% sbook.title %]</a></td>
 				<td>[% sbook.authors %]</td>
 				<td>[% sbook.ean13 %]</td>
 				<td>[% sbook.nbn %]</td>
@@ -456,55 +459,47 @@ Tuto knihu ještě nemáme v databázi!
 		[% END %]
 		</tbody>
 		</table>
-	    </p>
-	    <table>
-	    <tr>
-	    	<td>
-		    <select name ="relation_type" value="1">
-		    	[% FOREACH type IN relations %]
-		    		<option value="[% type.id_book_relation_type %]">[% type.relation_code %]</option>
-		    	[% END %]
-		    <select>
-		    </td> 
-		    <td> 
-		    <button type="submit">Vytvořit vazbu</button>
-		    </td>
-		</tr>
-		</table><br/
+	    <div class="row form-group">
+	    	<div class="col-xs-4">
+	    		<select name="relation_type" value="1" class="form-control select">
+		    		[% FOREACH type IN relations %]
+		    			<option value="[% type.id_book_relation_type %]"[% IF type.id_book_relation_type == 2 %] selected="selected"[% END %]>[% type.relation_code %]</option>
+		    		[% END %]
+		    	</select>
+		    </div>
+		    <div class="col-xs-8">
+		    	<input type="submit" value="Vytvořit vazbu" class="btn btn-primary" />
+		    </div>
+		</div>
 		</form>
-	[% END %]		
-	<p>
+	[% END %]
+	<p><br/>
 	[% IF bindings %]
 	<h3>Existující vazby</h3>
-	 	<br>
-	  	<table class= "bindingsh">
+	  	<table class="table okcz-datatable">
 	  	<thead>
 			<tr>
 	  			<th>Název</th>
 			  	<th>Autoři</th>
 			  	<th>EAN</th>
 			  	<th>NBN</th>
+			  	<th></th>
 	  		</tr>
 	  	</thead>
-	  	</table><br/>
-	  	<form method="post">
-	  	<table class ="bindings bindingsh">
 	  	<tbody>
 	  	[% i = 0 %]
 		[% FOREACH binding IN bindings %]
 			<tr>  
-				<td><a href="//obalkyknih.cz/view?book_id=[% binding.id %]">[% binding.title %]</td>
+				<td><a href="/view?book_id=[% binding.id %]">[% binding.title %]</td>
 				<td>[% binding.authors %]</td>
 				<td>[% binding.ean13 %]</td>
 				<td>[% binding.nbn %]</td>
-				<td><button type="submit" name="deleted_relation_idx" value="[% i %]" onclick="return confirm('Chcete odstranit danou vazbu?')">Smazat([% binding.type_name %])</button></td>
+				<td><a href="/view?book_id=[% book.id %]&deleted_relation_idx=[% i %]" onclick="return confirm('Chcete odstranit danou vazbu?')" class="btn btn-danger" style="color:white">Smazat([% binding.type_name %])</a></td>
 			</tr>
 		[% i = i + 1 %]
 		[% END %]
 		</tbody>
 		</table>
-		</form>
-	    </p>
 	[% END %]	
 	</div>
     [% END %]

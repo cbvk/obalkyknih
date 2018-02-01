@@ -75,12 +75,14 @@ foreach my $eshop (@eshops) {
 	next unless($factory->can('crawl'));
 	$found{$name} = 0;
 	warn "Crawling $name from $from to $to\n" if($DEBUG);
-
+	
 	my @list;
 	my $cnt = 0;
-
-	eval { @list = $factory->crawl($from,$to)
-		    };
+	
+	############################################
+	eval { @list = $factory->crawl($from,$to) };
+	############################################
+	
 	warn $factory."->crawl(): $@" if($@);
 
 	while(my ($digitalRecords,$bibinfo,$media,$product_url) = splice(@list, 0, 4)) {
@@ -90,12 +92,12 @@ foreach my $eshop (@eshops) {
 		foreach my $rec (@{$digitalRecords}){
 			my ($ext) = $rec =~ /.*\.(.*)/;
 			push (@productExts, $ext);
-		}		
+		}
 		my $product = DB->resultset('Product')->search({ product_url => $product_url })->next;
 		# v DB uz existuje
 		if ($product) {
 			warn "Existing product ".$product->book->id if  ($DEBUG == 2);
-		}		
+		}
 		# zalozit zaznam produktu a knihy
 		else {
 			$product = $eshop->add_product($bibinfo,$media,$product_url);
@@ -108,7 +110,7 @@ foreach my $eshop (@eshops) {
 		suggest_ebooks($bibinfo, $product->book->id, $eshop->id, $conn) if ($conn and $bibinfo->{title});
 		add_params_types(\@productExts);
 		add_params($product, $digitalRecords, \@productExts);
-		$cnt++;			
+		$cnt++;
 	}			
 	warn 'ebooks: #'.$cnt if ($DEBUG);
 	warn $sizetotal;
@@ -145,7 +147,7 @@ sub add_params{
 	foreach my $i (0 .. ((@{$urls}) -1)){
 		my $url = @{$urls}[$i];
 		my $ext = @{$exts}[$i];
-		my $param_id = DB->resultset('ProductParamsType')->find({type => $ext, flag_ebook => 1})->id;
+		my $param_id = DB->resultset('ProductParamsType')->find_or_create({type => $ext, flag_ebook => 1})->id;
 		
 		my $productParam = DB->resultset('ProductParams')->find({book => $product->book->id, product => $product->id, ean13 => $product->ean13, oclc => $product->oclc, 
 			nbn => $product->nbn, other_param_type => $param_id});
@@ -164,16 +166,25 @@ sub add_params{
 #navrh vazieb
 sub suggest_ebooks{
 	my ($p_bibinfo, $parent_id, $eshop_id, $conn) = @_;
-	my $SUGGESTION_LIMIT_SIZE = 10;
+	my $SUGGESTION_LIMIT_SIZE = 100;
 	
 	#tvorba pqf dotazu
-	my ($and, $title, $authors) = ("","","");	
+	my ($and, $title, $authors) = ("","","");
 	my $title_cut = $p_bibinfo->{title};
 	$title_cut =~ s/\s?\:[^\:]*$//p;
 	# vyhladavanie podla titulu alebo titulu bez podtitulu
-	$title ='@or @attr 1=4 "'.$p_bibinfo->{title}.'" '.'@attr 1=4 "'.$title_cut.'" ';
-	$authors = '@attr 1=1003 "'.$p_bibinfo->{authors}.'"' if ($p_bibinfo->{authors});
-	$and = '@and ' if ($p_bibinfo->{authors});	
+	my $bib_title = $p_bibinfo->{title};
+	my $bib_authors;
+	$bib_authors = $p_bibinfo->{authors} if ($p_bibinfo->{authors});
+	$bib_title =~ s/[.,\/#!$%\^&\*;:{}=\-_`~()\?"']//g;
+	$title_cut =~ s/[.,\/#!$%\^&\*;:{}=\-_`~()\?"']//g;
+	$bib_authors =~ s/[.,\/#!$%\^&\*;:{}=\-_`~()\?"']//g;
+	$bib_title = substr($bib_title, 0, 150);
+	$title_cut = substr($title_cut, 0, 80);
+	$bib_authors = substr($bib_authors, 0, 80);
+	$title ='@or @attr 1=4 "'.$bib_title.'" '.'@attr 1=4 "'.$title_cut.'" ';
+	$authors = '@attr 1=1003 "'.$bib_authors.'"' if ($bib_authors);
+	$and = '@and ' if ($authors);
 	my $query = $and.$title.$authors;
 	
 	my $rs = $conn->search_pqf($query);
@@ -197,29 +208,31 @@ sub suggest_ebooks{
 		$bib->{'title'} = $title_proper;
 		$bib->{'authors'} = $marc->subfield('100', 'a');
 		$bib->{'authors'} =~ s/,$// if $bib->{'authors'};
-		$bib->{'year'} = $marc->subfield('264','c');
+		$bib->{'year'} = '';
+		$bib->{'year'} = $marc->subfield('264','c') if ($marc->subfield('264','c'));
+		$bib->{'year'} = $marc->subfield('260','c') if ($bib->{'year'} eq '');
 		my (@eanfield, $bibinfo, $has_eans, $cnt);
 		my ($suggestion_id, $source_db, $source_url, $found);
+		$found = 0;
 		push @eanfield, ($marc->field('020'),$marc->field('022'),$marc->field('024'),$marc->field('902'));
 		
 		$has_eans =  0;
-		foreach my $field (@eanfield){
-			my $ean = $field->subfield("a");
-			next if (!$ean);
-			#mozu existovat prazdne polia, kde chyba subfield 'a'
-			$has_eans = 1 if (!$has_eans);
-			$ean =~ tr/-//d;
-			$ean = Obalky::BibInfo->parse_code($ean);
-			$bib->{'ean'} = $ean;
-			$bibinfo = Obalky::BibInfo->new_from_params($bib);
-			($suggestion_id, $source_db, $source_url, $found) = search_book($bibinfo, $parent_id);
-			last if ($found);
-			
-		}
+		#foreach my $field (@eanfield){
+		#	my $ean = $field->subfield("a");
+		#	next if (!$ean);
+		#	#mozu existovat prazdne polia, kde chyba subfield 'a'
+		#	$has_eans = 1 if (!$has_eans);
+		#	$ean =~ tr/-//d;
+		#	$ean = Obalky::BibInfo->parse_code($ean);
+		#	$bib->{'ean'} = $ean;
+		#	$bibinfo = Obalky::BibInfo->new_from_params($bib);
+		#	($suggestion_id, $source_db, $source_url, $found) = search_book($bibinfo, $parent_id);
+		#	last if ($found);
+		#}
 
 		if (!@eanfield or !$has_eans){
 			$bibinfo = Obalky::BibInfo->new_from_params($bib);
-			($suggestion_id, $source_db, $source_url, $found) = search_book($bibinfo, $parent_id);	
+		#	($suggestion_id, $source_db, $source_url, $found) = search_book($bibinfo, $parent_id);	
 		}
 		
 		# kniha neni v internej DB
@@ -236,7 +249,7 @@ sub suggest_ebooks{
 		$bibinfo->{title} =~ s/\s*\/\s*$// if ($title_sub);
 		#vytvorenie navrhu
 		next if (!$source_url);
-		DB->resultset('BookRelationSuggestion')->find_or_create({id => $parent_id, suggestion_id => $suggestion_id, ean13 => $bibinfo->{ean13}, oclc => $bibinfo->{oclc}, nbn => $bibinfo->{nbn}, authors => $bibinfo->{authors}, title => $bibinfo->{title}, year => $bibinfo->{year}, source => $source_db, source_url => $source_url, eshop => $eshop_id, flag => 0});				
+		DB->resultset('BookRelationSuggestion')->find_or_create({id => $parent_id, suggestion_id => $suggestion_id, ean13 => $bibinfo->{ean13}, oclc => $bibinfo->{oclc}, nbn => $bibinfo->{nbn}, authors => $bibinfo->{authors}, title => $bibinfo->{title}, year => $bibinfo->{year}, source => $source_db, source_url => $source_url, eshop => 7136, flag => 0});				
 	}
 	
 }

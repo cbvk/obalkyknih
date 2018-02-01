@@ -1400,6 +1400,7 @@ sub enrich {
 			my $libsigla = $rowUUID->eshop->library->get_column('code');
 			$uuidLib->{$libsigla}->{uuid} = $uuid;
 			$uuidLib->{$libsigla}->{url} = $rowUUID->get_column('product_url');
+			$uuidLib->{$libsigla}->{public} = $rowUUID->get_column('ispublic') || 0;
 		}
 	}
 	$info->{uuid} = \@uuid if (@uuid);
@@ -1435,6 +1436,13 @@ sub enrich {
 	# 14. vazby e-book
 	my $ebook = $book->get_ebook_list;
 	$info->{ebook} = $ebook if (defined $ebook);
+	
+	# 15. ostatni parametry EAN
+	my $retParams = DB->resultset('ProductParams')->search({ book => $book->id });
+	$info->{ean_other} = [];
+	while (my $otherParams = $retParams->next) {
+		push @{$info->{ean_other}}, $otherParams->get_column('ean13') if ($otherParams->get_column('ean13'));
+	}
 	
 	return $info;
 }

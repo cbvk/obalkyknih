@@ -55,7 +55,10 @@
 
 		</th>
 		<th>
-			<a href="/admin_suggestions?o=ean13&amp;od=[% IF order=='ean13' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%]">EAN</a>
+			<a href="/admin_suggestions?o=ean13&amp;od=[% IF order=='ean13' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%]">ISBN / EAN</a>
+		</th>
+		<th>
+			<a href="/admin_suggestions?o=nbn&amp;od=[% IF order=='nbn' && order_dir=='1' %]-1[% ELSE %]1[% END %][%IF per_page%]&pp=[%per_page%][%END%][%IF filter_key%]&fk=[%filter_key%]&fv=[%filter_val%][%END%]">NBN</a>
 		</th>
 	</tr>
 	[% cnt = 0 %]
@@ -63,30 +66,36 @@
 	[% cnt = cnt + 1 %]
 	[% setbackground = cnt mod 2 ? ' style="background-color:initial"' : ' style="background-color:#E6F2F5"' %]
 	<tr [% setbackground %]>
-		
-		<td></td>
-		<td><strong><a href="/view?book_id=[% row.id %]" >[%row.title%]</a></strong></td>
+		<td class="tight">
+			<a href="#" class="suggestions-check-all" data-id="[%row.id%]"><span class="glyphicon glyphicon-ok-sign"></span></a>
+			<a href="#" class="suggestions-uncheck-all" data-id="[%row.id%]"><span class="glyphicon glyphicon-minus-sign"></span></a>
+		</td>
+		<td><strong><a href="/view?book_id=[% row.id %]" target="_blank">[%row.title%]</a></strong></td>
 		<td>[%row.authors%]</td>
 		<td>[%row.year%]</td>
 		<td>[%row.ean13%]</td>
+		<td>[%row.nbn%]</td>
 	</tr>
 	<form method="post">
 	[% FOREACH suggestion IN row.suggestions %]
-	<tr[% setbackground %]>
+	<tr[% setbackground %] class="for-[% suggestion.id.id %]">
 	<td><input type="checkbox" name ="suggestion_id" value="[% suggestion.suggestion_id %]"/></td>
-	<td><a href="[% suggestion.source_url %]">[% suggestion.title %]</a></td>
+	<td><a href="[% suggestion.source_url %]" target="_blank">[% suggestion.title %]</a></td>
 	<td>[% suggestion.authors %]</td>
 	<td>[% suggestion.year %]</td>
 	<td>[% suggestion.ean13 %]</td>
+	<td>[% suggestion.nbn %]</td>
 	<tr>
 	[% END %]
 	<tr [% setbackground %]>
 		<td></td>
 		<td>
-			<button type="submit" name = "flag" value="2" onclick="return confirm('Chcete zakazat tyto vazby?')">Zakázat</button>&nbsp;&nbsp;&nbsp;
-			<button type="submit" name = "flag" value="1" onclick="return confirm('Chcete vytvorit tyto vazby?')" >Povolit</button>
+			<button type="submit" name="flag" value="1" class="btn btn-success" onclick="return confirm('Chcete vytvorit tyto vazby?')" >Povolit</button>
+			<button type="submit" name="flag" value="2" class="btn btn-danger" onclick="return confirm('Chcete zakazat tyto vazby?')">Zakázat</button>&nbsp;&nbsp;&nbsp;
 			<input type="hidden" name="parent_id" value="[% row.id %]"/>
+			<p>&nbsp;</p>
 		</td>
+		<td></td>
 		<td></td>
 		<td></td>
 		<td></td>

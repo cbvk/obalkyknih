@@ -1,13 +1,13 @@
 package Eshop::Kramerius;
 use base 'Eshop::Mechanize';
-use DateTime::Format::ISO8601;
 use DateTime;
+use DateTime::Format::ISO8601;
+use DateTime::Format::Strptime;
 use LWP::UserAgent;
 use XML::Simple XMLin;
 use Time::localtime;
 use Data::Dumper;
 use Obalky::BibInfo;
-use DB;
 use warnings;
 use strict;
 use POSIX qw/ceil/;
@@ -30,6 +30,7 @@ sub crawl{
 	#my @type = ("soundrecording","archive","graphic","sheetmusic","manuscript","monograph","periodicalitem");
 #debug
 my @type = ("monograph");
+#debug
 	my @list;
 	foreach (@type){
 		$start = 0;
@@ -42,6 +43,8 @@ my @type = ("monograph");
 sub crawl_type{
 	my($self,$eshop,$from,$to,$tmp_dir,$method) = @_;
 	my (@books,$root_pid);
+	my $key='';
+	
 	get_response($from,$to,$method);
 	if ($resp->is_success) {
 		$xml = eval { XMLin($resp->content,SuppressEmpty => 1, ForceArray =>['doc']) };
@@ -51,17 +54,29 @@ sub crawl_type{
 		warn "Zaznam: $method 		Pocet:  $numFound" if ($ENV{DEBUG});
 		for (my $i=1;$i <= $numberOfQueries ;$i++){
 			foreach my $xml_item (@{$res->{'doc'}}) {
+print "\n______________________________________________________________________";
+print "\n$i / $numberOfQueries";
 				my ($PIDxml,$PID,$PIDurl,$PIDua,$PIDreq,$PIDresp,$content);
 				$PID = $xml_item->{'str'}->{'content'};
-#debug
-$method = 'periodicalitem';
-$baseURL = 'http://kramerius.mzk.cz/search/';
-# objekt s TOC
-$PID = 'uuid:64ef19d0-d0b8-11e6-8032-005056827e52';
-
-				$PIDurl = $baseURL . 'api/v5.0/item/' . $PID .'/streams/BIBLIO_MODS';
 				$PIDua = LWP::UserAgent->new;
 				$PIDua->timeout(60);
+				$PIDua->ssl_opts( verify_hostname => 0 ,SSL_verify_mode => 0x00);
+#debug
+#$baseURL = 'http://kramerius.mzk.cz/search/';
+
+#$method = 'monograph';
+#$PID = 'uuid:0e3f44d7-890a-4976-aeb9-783228b4a2f0';
+
+				# zaznam dig. objektu
+				my ($OBJjsonurl,$OBJreq,$OBJresp,$jsondata);
+				$OBJjsonurl = $baseURL . 'api/v5.0/item/'. $PID;
+				$OBJreq = HTTP::Request->new(GET => $OBJjsonurl);
+				$OBJreq->header('content-type' => 'application/json');
+				$OBJresp = $PIDua->request($OBJreq);
+				$jsondata= decode_json($OBJresp->content);
+
+				# bibliograficky zaznam
+				$PIDurl = $baseURL . 'api/v5.0/item/' . $PID .'/streams/BIBLIO_MODS';
 				$PIDreq = HTTP::Request->new(GET => $PIDurl);
 				$PIDreq->header('content-type' => 'application/xml');
 				$PIDresp = $PIDua->request($PIDreq);
@@ -71,11 +86,12 @@ $PID = 'uuid:64ef19d0-d0b8-11e6-8032-005056827e52';
 					$PIDxml = eval { XMLin($content,SuppressEmpty => 1, ForceArray => ['identifier','name','titleInfo','namePart','originInfo','dateIssued'])};
 					my($root_pid,$rootbibinfo,$root_year,$root_title,$root_book_url,$root_product_url,$rootinfo,$rootmedia,$book_id);
 					my ($bibinfo,$info,$media);
-					my ($title,$year,$product_url,$book_url,$authors,$authorslist,$jsondata,$part_no,$part_year);
+					my ($title,$year,$product_url,$book_url,$authors,$authorslist,$part_no,$part_year);
 					switch ($method)
 					{
 						case /^(monograph|manuscript|sheetmusic|archive|maprecord|graphic|soundrecording)$/ {
 							$title = $PIDxml->{'mods'}->{'titleInfo'}->[0]->{'title'};
+							$title = $title.': '.$PIDxml->{'mods'}->{'titleInfo'}->[0]->{'subTitle'} if $PIDxml->{'mods'}->{'titleInfo'}->[0]->{'subTitle'};
 							$year = $PIDxml->{'mods'}->{'originInfo'}->[0]->{'dateIssued'}->[0];
 							$book_url = $baseURL . 'api/v5.0/item/' . $PID .'/children';
 							$product_url = $baseURL . 'i.jsp?pid=' . $PID;
@@ -84,14 +100,9 @@ $PID = 'uuid:64ef19d0-d0b8-11e6-8032-005056827e52';
 							}
 							
 						case 'periodicalitem' {
-							my ($PERjsonurl,$PERreq,$PERresp,$ROOTurl,$ROOTreq,$ROOTresp,$ROOTxml,$ROOTcontent);
-												
-							$PERjsonurl = $baseURL . 'api/v5.0/item/'. $PID;
-							$PERreq = HTTP::Request->new(GET => $PERjsonurl);
-							$PERreq->header('content-type' => 'application/json');
-						    $PERresp = $PIDua->request($PERreq);
-						    $jsondata= decode_json($PERresp->content);
-						    #ziskani korenoveho periodika	
+							my ($ROOTurl,$ROOTreq,$ROOTresp,$ROOTxml,$ROOTcontent);
+							
+						    #ziskani korenoveho periodika
 						    $root_pid = $jsondata->{'root_pid'};
 					    	$ROOTurl = $baseURL . 'api/v5.0/item/' . $root_pid .'/streams/BIBLIO_MODS';
 							$ROOTreq = HTTP::Request->new(GET => $ROOTurl);
@@ -116,12 +127,34 @@ $PID = 'uuid:64ef19d0-d0b8-11e6-8032-005056827e52';
 								$part_year = $PIDxml->{'mods'}->{'originInfo'}->[0]->{'dateIssued'}->[0] || $jsondata ->{'details'}>{'date'};
 								$part_no = $PIDxml->{'mods'}->{'titleInfo'}->[0]->{'partNumber'} || $jsondata->{'details'}>{'partNumber'};
 							}
-							if (defined $part_year and $part_year ne '' and (substr $part_year, 5, 1) eq '.') {
-								$part_year = substr $part_year, -4;
+							if (defined $part_year and $part_year ne '') {
+								#datum cesky zapis
+								my $strp_cz = DateTime::Format::Strptime->new(
+									pattern   => '%d.%m.%Y',
+									locale    => 'cs_CZ'
+								);
+								my $dt_cz = $strp_cz->parse_datetime($part_year);
+								if ($dt_cz) {
+									my $parse_cz = $strp_cz->format_datetime($dt_cz);
+									$part_year = $dt_cz->{'local_c'}->{'year'};
+								}
+
+								#datum ISO zapis
+								unless ($dt_cz) {
+									my $strp_iso = DateTime::Format::Strptime->new(
+										pattern   => '%Y-%m-%d',
+										locale    => 'en_US'
+									);
+									my $dt_iso = $strp_iso->parse_datetime($part_year);
+									if ($dt_iso) {
+										my $parse_iso = $strp_iso->format_datetime($dt_iso);
+										$part_year = $dt_iso->{'local_c'}->{'year'};
+									}
+								}
 							}
 warn Dumper($PIDxml->{'mods'});
 warn Dumper($jsondata);
-						} 			
+						}
 					}
 					
 					#ziskani vsech autoru
@@ -152,6 +185,7 @@ warn Dumper($jsondata);
 					my (@eans,@params);
 					my ($ean,$oclc,$nbn,$sysno,$urnnbn);
 	     			foreach my $identifier (@{$OBJIdentifiers}){
+	     				next if (ref($identifier) ne 'HASH');
 						foreach my $identifier_type ($identifier->{'type'}) {
 							switch($identifier_type) {
 								case 'issn' {
@@ -184,10 +218,11 @@ warn Dumper($jsondata);
 					
 					# zaznamy bez parametrov pouzitelnych i v inych knizniciach nebereme
 #debug
-warn Dumper($ean);
-warn Dumper($nbn);
-warn Dumper($oclc);
-warn '---';
+print "\n";
+print "EAN: $ean  " if ($ean);
+print "NBN: $nbn  " if ($nbn);
+print "OCLC: $oclc" if ($oclc);
+print "  UUID: $PID";
 					next if (!$ean && !$oclc && !$nbn);
 					
 					#kdyz urnnbn je jediny identifikator
@@ -240,20 +275,28 @@ warn '---';
 					$bibinfo->{part_type} = '2' if ($book_id);
 					my $custom_ean = $ean || $nbn;
 					my $jdata;
-					($jdata, $info->{tocpdf_tmpfile}, $info->{toc_firstpage}) = downloadtoc($PID,$PIDua,$tmp_dir,$custom_ean) if ($method eq 'periodicalitem' || $method eq 'monograph');
+#debug
+#					($jdata, $info->{tocpdf_tmpfile}, $info->{toc_firstpage}) = downloadtoc($PID,$PIDua,$tmp_dir,$custom_ean) if ($method eq 'periodicalitem' || $method eq 'monograph');
 					$info->{cover_url} = downloadcover($baseURL, $PID, $jdata);
-warn '^^^^^^^^^^^^^^^^';
-warn Dumper($info);
-warn '^^^^^^^^^^^^^^^^';
 					$media = Obalky::Media->new_from_info($info);
-					warn Dumper($bibinfo) if ($ENV{DEBUG});
-					push(@books, [$bibinfo, $media, $product_url, undef, \@params ]);
+					
+					# PDF fulltext
+					my $pdfurl;
+					if ($jsondata->{pdf} and $jsondata->{pdf}->{url}) {
+						$pdfurl = $jsondata->{pdf}->{url};
+					}
+
+#warn Dumper([$bibinfo, $media, $product_url, undef, \@params, $pdfurl ]);
+
+					push(@books, [$bibinfo, $media, $product_url, undef, \@params, $pdfurl ]);
 				}
 				
 				else {
 					print STDERR $resp->status_line, " - chyba pri dotaze na knihu\n";
 				}
-last; #debug
+#debug
+#$key = <STDIN>;
+#last if (substr($key,0,1) eq 'q');
 		    }
 		    last if ($i == $numberOfQueries);
 	        $start += 10;
@@ -265,7 +308,8 @@ last; #debug
 			else {
 				print STDERR $resp->status_line, " - chyba pri dalsom dotaze na zaznam knih";
 			}
-last; #debug
+#debug
+#last if (substr($key,0,1) eq 'q');
 		}
 		return @books; 
 	}
@@ -277,10 +321,11 @@ last; #debug
 sub get_response {
 	my($from,$to,$method) = @_;
 	$method = "map" if ($method eq 'maprecord');
-    $query_url = $baseURL . "api/v5.0/search?q=fedora.model:$method%20AND%20modified_date:[".$from."T00:00:00Z%20TO%20".$to."T23:59:59Z]&fl=PID&wt=xml&start=$start";
+	$query_url = $baseURL . "api/v5.0/search?q=fedora.model:$method%20AND%20modified_date:[".$from."T00:00:00Z%20TO%20".$to."T23:59:59Z]&fl=PID&wt=xml&start=$start";
 	warn "URL: $query_url" if ($ENV{DEBUG} == 2);
 	$ua = LWP::UserAgent->new;
 	$ua->timeout(60);
+	$ua->ssl_opts( verify_hostname => 0, SSL_verify_mode => 0x00 );
 	$req = HTTP::Request->new(GET => $query_url);
 	$req->header('content-type' => 'application/xml');	
 	$resp = $ua->request($req);
@@ -336,32 +381,48 @@ sub downloadtoc {
 
 sub downloadcover{
 	my ($url, $childrenUUID, $jsondata) = @_;
-	my $childrenURL . 'api/v5.0/item/' . $childrenUUID .'/children';
+	my $childrenURL = $url . 'api/v5.0/item/' . $childrenUUID .'/children';
 	
 	if (!$jsondata){
 		$ua = LWP::UserAgent->new;
 		$ua->timeout(60);
+		$ua->ssl_opts( verify_hostname => 0 ,SSL_verify_mode => 0x00);
 		my $PIDreq = HTTP::Request->new(GET => $childrenURL);
 		$PIDreq->header('content-type' => 'application/json');
     	my $PIDresp = $ua->request($PIDreq);
     	$jsondata = decode_json($PIDresp->content);
 	}
 	return if (!$jsondata);
+	return unless (scalar @{$jsondata});
 	my ($uuid, $coverurl);
-warn '------------------------';
+	my $lowestTitleNumeric = 99999;
 	foreach my $pagemodel (@{$jsondata}){
-		my $page = $pagemodel->{'details'}->{'type'};
+        $uuid = $pagemodel->{'pid'} if (!$uuid and $pagemodel->{'model'} eq 'page'); # aspon nejaka obalka
+        # snaha o zistenie cisla strany
+        if ($pagemodel->{'title'} =~ /\d+/) {
+        	my $titleNumeric = $pagemodel->{'title'};
+        	$titleNumeric =~ s/\[//g; # kvoli zapisom napr. [1a] aby sa zacala parsovat cislovka 
+        	$titleNumeric = $titleNumeric + 0;
+        	if ($titleNumeric gt 0 and $titleNumeric lt $lowestTitleNumeric) {
+        		$uuid = $pagemodel->{'pid'};
+        		$lowestTitleNumeric = $titleNumeric;
+        	}
+        }
+        my $page = $pagemodel->{'details'}->{'type'};
 		next if (!$page || (grep /^$page$/i, ("spine","hrbet")));
-		$uuid = $pagemodel->{'pid'} if (!$uuid || $page eq 'FrontCover' || $page eq 'FrontJacket' || $page eq 'TitlePage');
-warn $page;
+		$uuid = $pagemodel->{'pid'} if ($page eq 'FrontCover' or $page eq 'FrontJacket' or $page eq 'TitlePage');
 		if ($uuid ne '') {
 			$coverurl = downloadcover_helper($url, $uuid);
 			last;
 		}
 	}
-warn '------------------------';
+warn $uuid;
+	$coverurl = downloadcover_helper($url, $uuid) if ($uuid ne '' and !$coverurl);
+print "\n\n---------\n";
+print Dumper("Vybrana obalka UUID: ".$uuid);
+print Dumper("Vybrana obalka URL: ".$coverurl);
+print "---------\n\n";
 	return $coverurl;
-	
 }
 
 sub downloadcover_helper {
@@ -371,6 +432,7 @@ sub downloadcover_helper {
 	$urlReq = $url . "iiif/$uuid/full/,510/0/default.jpg";
 	my $uaIiif = LWP::UserAgent->new;
 	$uaIiif->timeout(10);
+	$uaIiif->ssl_opts( verify_hostname => 0 ,SSL_verify_mode => 0x00);
 	my $response = $uaIiif->get($urlReq);
 	if ($response->is_success) {
 		return $urlReq;
@@ -379,6 +441,7 @@ sub downloadcover_helper {
 	$urlReq = $url . "api/v5.0/item/$uuid/full";
 	my $uaFull = LWP::UserAgent->new;
 	$uaFull->timeout(10);
+	$uaFull->ssl_opts( verify_hostname => 0 ,SSL_verify_mode => 0x00);
 	$response = $uaFull->get($urlReq);
 	if ($response->is_success) {
 		return $urlReq;
@@ -387,6 +450,7 @@ sub downloadcover_helper {
 	$urlReq = $url . "api/v5.0/item/$uuid/thumb";
 	my $uaThumb = LWP::UserAgent->new;
 	$uaThumb->timeout(10);
+	$uaThumb->ssl_opts( verify_hostname => 0 ,SSL_verify_mode => 0x00);
 	$response = $uaThumb->get($urlReq);
 	if ($response->is_success) {
 		return $urlReq;

@@ -24,7 +24,7 @@ use Obalky::Tools;
 use Eshop;
 use DB;
 
-my($mode) = @ARGV;
+my($mode,$ID) = @ARGV;
 #die "\nusage: $0 [debug|news|all]\n\n" unless($mode);
 my $DEBUG = 1 if($mode and $mode eq 'debug');
 
@@ -39,8 +39,9 @@ foreach (@harvester_eshops) {
 #moznost upravit existujici citace starsi nez tyden
 my $last_week = DateTime->today()->subtract(days => 7);
 #my $books_list = ($mode ne 'all')
-#		? 
-my $books_list = DB->resultset('Book')->search({
+#		?
+unless ($ID) {  
+	my $books_list = DB->resultset('Book')->search({
 				part_type => { '=', undef },
 				cover => { '!=', undef },
 				citation => { '=', undef },
@@ -61,6 +62,10 @@ my $books_list = DB->resultset('Book')->search({
 #			offset => (($mode-1) * 20000)
 		});
 #		: DB->resultset('Book');
+} else {
+	# vyhledej jedno konkrekni ID, schvalne pomoci funkce ->search, aby se dal mohlo pouzit ->next
+	my $books_list = DB->resultset('Book')->search({ id => $ID });
+}
 
 
 my %hits; my %try; my %errors; my $hits = 0; my $cnt = 1;

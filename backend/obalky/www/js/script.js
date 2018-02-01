@@ -287,6 +287,35 @@ $(function () {
 		});
 		return false;
 	});
+	
+	
+	// Datove tabulky
+	$('.okcz-datatable').DataTable({
+		"language": {
+            "lengthMenu": "Zobrazit _MENU_ záznamů na stránku",
+            "zeroRecords": "Nenalezeno",
+            "info": "Stránka _PAGE_ z _PAGES_",
+            "infoEmpty": "Nenalezeno",
+            "infoFiltered": "(z celkového počtu _MAX_ záznamů)",
+            "search": "Vyhledat",
+            "nextButton": "Další",
+            "previousButton": "Předchozí"
+        }
+    });
+    
+    // Suggestions check all
+    $('.suggestions-check-all').click(function(){
+	var id = $(this).data('id');
+	$('.for-' + id + ' input').prop('checked', true);
+		return false;
+    });
+    
+    // Suggestions uncheck all
+    $('.suggestions-uncheck-all').click(function(){
+    	var id = $(this).data('id');
+	$('.for-' + id + ' input').prop('checked', false);
+		return false;
+    });
 
 
 });

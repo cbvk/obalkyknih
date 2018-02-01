@@ -240,7 +240,13 @@ sub settings_push : Local {
 	}
     
     my $username = $c->user->get_column('login');
-    if ($username eq $Obalky::ADMIN_EMAIL && !$c->req->param('i')) {
+    my $resAdminUser = DB->resultset('User')->search({ 'login' => $username, 'is_admin' => 1 });
+    my $isAdmin = 0;
+    if ($resAdminUser->count() == 1) {
+    	my $adminUser = $resAdminUser->next;
+    	$isAdmin = 1 if ($adminUser->get_column('login') eq $username);
+    }
+    if ($isAdmin && !$c->req->param('i')) {
     	#spravce ma k dispozici spravu vsech knihoven
     	$c->res->redirect("admin_library");
     	return;
@@ -249,7 +255,7 @@ sub settings_push : Local {
     my $library_admin = $c->user->get_column('flag_library_admin');
     
     my $id = $c->user->get_column('library');
-    $id = $c->req->param('i') if ($username eq $Obalky::ADMIN_EMAIL);
+    $id = $c->req->param('i') if ($isAdmin);
     my $library = $signed ? DB->resultset('Library')->find($id) : 0;
     
     if ($library) {
@@ -295,7 +301,13 @@ sub settings_citace : Local {
 	}
     
     my $username = $c->user->get_column('login');
-    if ($username eq $Obalky::ADMIN_EMAIL && !$c->req->param('i')) {
+    my $resAdminUser = DB->resultset('User')->search({ 'login' => $username, 'is_admin' => 1 });
+    my $isAdmin = 0;
+    if ($resAdminUser->count() == 1) {
+    	my $adminUser = $resAdminUser->next;
+    	$isAdmin = 1 if ($adminUser->get_column('login') eq $username);
+    }
+    if ($isAdmin && !$c->req->param('i')) {
     	#spravce ma k dispozici spravu vsech knihoven
     	$c->res->redirect("admin_library");
     	return;
@@ -304,7 +316,7 @@ sub settings_citace : Local {
     my $library_admin = $c->user->get_column('flag_library_admin');
     
     my $id = $c->user->get_column('library');
-    $id = $c->req->param('i') if ($username eq $Obalky::ADMIN_EMAIL);
+    $id = $c->req->param('i') if ($isAdmin);
     my $library = $signed ? DB->resultset('Library')->find($id) : 0;
     
     if ($library) {
@@ -350,7 +362,13 @@ sub account : Local {
 	}
     
     my $username = $c->user->get_column('login');
-    if ($username eq $Obalky::ADMIN_EMAIL && !$c->req->param('i')) {
+    my $resAdminUser = DB->resultset('User')->search({ 'login' => $username, 'is_admin' => 1 });
+    my $isAdmin = 0;
+    if ($resAdminUser->count() == 1) {
+    	my $adminUser = $resAdminUser->next;
+    	$isAdmin = 1 if ($adminUser->get_column('login') eq $username);
+    }
+    if ($isAdmin && !$c->req->param('i')) {
     	#spravce ma k dispozici spravu vsech knihoven
     	$c->res->redirect("admin_library");
     	return;
@@ -359,7 +377,7 @@ sub account : Local {
     my $library_admin = $c->user->get_column('flag_library_admin');
     
     my $id = $c->user->get_column('library');
-    $id = $c->req->param('i') if ($username eq $Obalky::ADMIN_EMAIL);
+    $id = $c->req->param('i') if ($isAdmin);
     my $library = $signed ? DB->resultset('Library')->find($id) : 0;
     
     if ($library) {
@@ -432,7 +450,13 @@ sub account_review : Local {
 	}
     
     my $username = $c->user->get_column('login');
-    if ($username eq $Obalky::ADMIN_EMAIL && !$c->req->param('i')) {
+    my $resAdminUser = DB->resultset('User')->search({ 'login' => $username, 'is_admin' => 1 });
+    my $isAdmin = 0;
+    if ($resAdminUser->count() == 1) {
+    	my $adminUser = $resAdminUser->next;
+    	$isAdmin = 1 if ($adminUser->get_column('login') eq $username);
+    }
+    if ($isAdmin && !$c->req->param('i')) {
     	#spravce ma k dispozici spravu vsech knihoven
     	$c->res->redirect("admin_library");
     	return;
@@ -441,7 +465,7 @@ sub account_review : Local {
     my $library_admin = $c->user->get_column('flag_library_admin');
     
     my $id = $c->user->get_column('library');
-    $id = $c->req->param('i') if ($username eq $Obalky::ADMIN_EMAIL);
+    $id = $c->req->param('i') if ($isAdmin);
     my $library = $signed ? DB->resultset('Library')->find($id) : 0;
     
     if ($library) {
@@ -489,7 +513,15 @@ sub account_stats : Local {
     my $username = $c->user->get_column('login');
     my $library = $signed ? $c->user->get_column('library') : 0;
     my $library_admin = $c->user->get_column('flag_library_admin');
-    $library = $c->req->param('i') if ($username eq $Obalky::ADMIN_EMAIL);
+    
+    my $resAdminUser = DB->resultset('User')->search({ 'login' => $username, 'is_admin' => 1 });
+    my $isAdmin = 0;
+    if ($resAdminUser->count() == 1) {
+    	my $adminUser = $resAdminUser->next;
+    	$isAdmin = 1 if ($adminUser->get_column('login') eq $username);
+    }
+    
+    $library = $c->req->param('i') if ($isAdmin);
     
     if ($library == 50000) {
     	$c->res->redirect("admin_stats");
@@ -513,13 +545,19 @@ sub admin_stats : Local {
     	return;
     }
     my $username = $c->user->get_column('login');
-    unless ($username eq $Obalky::ADMIN_EMAIL) {
+    my $resAdminUser = DB->resultset('User')->search({ 'login' => $username, 'is_admin' => 1 });
+    my $isAdmin = 0;
+    if ($resAdminUser->count() == 1) {
+    	my $adminUser = $resAdminUser->next;
+    	$isAdmin = 1 if ($adminUser->get_column('login') eq $username);
+    }
+    unless ($isAdmin) {
     	$c->res->redirect("account_stats");
     	return;
     }
     my $library = $signed ? $c->user->get_column('library') : 0;
     my $library_admin = $c->user->get_column('flag_library_admin');
-    $library = $c->req->param('i') if ($username eq $Obalky::ADMIN_EMAIL);
+    $library = $c->req->param('i') if ($isAdmin);
     
     $c->stash->{stat1} = [ DB->resultset('FeStat')->req_stats_daily(50000)->all ];    
     $c->stash->{stat2} = [ DB->resultset('FeStat')->req_stats_monthly(50000)->all ];
@@ -552,7 +590,15 @@ sub admin_library : Local {
 		$c->res->redirect("index");
     	return;
     }
-	if ($c->user->get_column('login') ne $Obalky::ADMIN_EMAIL) {
+    
+    my $username = $c->user->get_column('login');
+    my $resAdminUser = DB->resultset('User')->search({ 'login' => $username, 'is_admin' => 1 });
+    my $isAdmin = 0;
+    if ($resAdminUser->count() == 1) {
+    	my $adminUser = $resAdminUser->next;
+    	$isAdmin = 1 if ($adminUser->get_column('login') eq $username);
+    }
+	if (!$isAdmin) {
     	#pouze spravce ma k dispozici spravu vsech knihoven
     	$c->res->redirect("account");
     	return;
@@ -603,7 +649,14 @@ sub admin_suggestions : Local {
 		$c->res->redirect("index");
     	return;
     }
-	if ($c->user->get_column('login') ne $Obalky::ADMIN_EMAIL) {
+    my $username = $c->user->get_column('login');
+    my $resAdminUser = DB->resultset('User')->search({ 'login' => $username, 'is_admin' => 1 });
+    my $isAdmin = 0;
+    if ($resAdminUser->count() == 1) {
+    	my $adminUser = $resAdminUser->next;
+    	$isAdmin = 1 if ($adminUser->get_column('login') eq $username);
+    }
+	if (!$isAdmin) {
     	#pouze spravce ma k dispozici spravu vsech knihoven
     	$c->res->redirect("account");
     	return;
@@ -842,10 +895,15 @@ sub view : Local {
 		# pouzije parametry co prisli v dotazu
 		$bibinfo = Obalky::BibInfo->new_from_params($c->req->params, undef);
 		$book = $bibinfo ? DB->resultset('Book')->find_by_bibinfo($bibinfo) : undef;
+		if (!$book && $bibinfo->{ean13}){
+			my $product_param = DB->resultset('ProductParams')->find({ean13 => $bibinfo->{ean13}});
+			$book = $product_param->book if ($product_param); 			
+		}
 	}
-	
+
 	# z homepage se jako vyhledavani posila pouze parametr s nazvem ISBN a my se ted pokousime zjistit, jestli to nesedne na NBN, nebo OCLC
-	if (not defined($book) and defined($c->req->param('isbn')) ) {
+	# redirect se nebude provadet pokud vyhledavame relace knihy
+	if (not defined($book) and defined($c->req->param('isbn')) and not defined($c->req->param('book_rel')) ) {
 		my $code = $c->req->param('isbn');
 		unless ( $code eq '' ) {
 			# pokud se nenalezne zkus parametr ISBN pouzit jako NBN
@@ -930,19 +988,40 @@ sub view : Local {
 	# vytvoreni vazby
 	my @relation_books = $c->req->param('relation_book_id');
 	if (@relation_books){
-		foreach my $relation (@relation_books){
+		my $conn;
+		foreach (@relation_books){
+			my $relation;
+			if ($_ =~ /^\[Z39\]/){
+				$conn = new ZOOM::Connection('aleph.nkp.cz', '9991', databaseName => 'SKC-UTF') if (!$conn || !$conn->errcode());
+				next if ($conn->errcode());
+				my $sysno = $_;
+				$sysno =~ s/^\[Z39\]//;
+				# vrati book ID
+				$relation = DB->resultset('Book')->add_book_from_z39($conn, $sysno);
+				next if (!$relation);
+			}
+			else{	
+				$relation = $_;
+			}
 			DB->resultset('BookRelation')->find_or_create({relation_type => $c->req->param('relation_type'), book_relation => $relation, book_parent => $book->id}, {key => 'primary'});
 		}
 		$c->response->redirect( '/view?book_id='.$book->id, 303);			
 	}
 		
 	# existujici vazby
-	@book_list = DB->resultset('BookRelation')->search({book_parent => $book->id}) if ($book);
+	@book_list = DB->resultset('BookRelation')->search({-or => [{book_parent => $book->id}, {book_relation => $book->id}]}) if ($book);
 	foreach (@book_list){
-		$_->book_relation->{'type'} = $_->relation_type->id_book_relation_type;
-		$_->book_relation->{'type_name'} = $_->relation_type->relation_code;
-		push (@bindings, $_->book_relation);
-		push (@found_ids, $_->book_relation->id);
+		if ($_->book_parent->id == $book->id) {
+			$_->book_relation->{'type'} = $_->relation_type->id_book_relation_type;
+			$_->book_relation->{'type_name'} = $_->relation_type->relation_code;
+			push (@bindings, $_->book_relation);
+			push (@found_ids, $_->book_relation->id);
+		} else {
+			$_->book_parent->{'type'} = $_->relation_type->id_book_relation_type;
+			$_->book_parent->{'type_name'} = $_->relation_type->relation_code;
+			push (@bindings, $_->book_parent);
+			push (@found_ids, $_->book_parent->id);
+		}
 	}
 	
 	my $relation_type_count = DB->resultset('BookRelationType')->count();
@@ -952,25 +1031,38 @@ sub view : Local {
 	
 	# vyhledani knih, ktere mohou byt svazany
 	my $search_value = $c->req->param('search_value');
-	if ($search_value){
-		foreach my $key (qw(id ean13 nbn oclc title )){
-			push (@bound_ids, $book->id);
-			if ($key eq 'id'){
-				@searched_books = DB->resultset('Book')->search({ id => [-and => {-not_in => [@bound_ids]}, { '=' => $search_value} ] });
-			}
-			elsif($key eq 'title') {
-				if (length($search_value) >= 3){
-					@searched_books = DB->resultset('Book')->search({-and => [{title => { -like => $search_value.'%'}, id => { -not_in => [@bound_ids]}}]});
-			
-				}
-			}
-			else {
-				@searched_books = DB->resultset('Book')->search({-and => [{$key => $search_value, id => { -not_in => [@bound_ids]}}]});
-			}
-			last if (@searched_books);
+	if ($search_value) {
+		push (@bound_ids, $book->id);
+		#
+		# Pozadavek 20.10.2017 na vyhledavani dokumentu pouze Z39.50
+		#
+		#foreach my $key (qw(id ean13 nbn oclc title )) {
+		#	if ($key eq 'id'){
+		#		@searched_books = DB->resultset('Book')->search({ id => [-and => {-not_in => [@bound_ids]}, { '=' => $search_value} ] });
+		#	}
+		#	elsif($key eq 'title') {
+		#		if (length($search_value) >= 3) {
+		#			@searched_books = DB->resultset('Book')->search({-and => [{title => { -like => $search_value.'%'}, id => { -not_in => [@bound_ids]}}]});
+		#		}
+		#	}
+		#	else {
+		#		@searched_books = DB->resultset('Book')->search({-and => [{$key => $search_value, id => { -not_in => [@bound_ids]}}]});
+		#	}
+		#	last if (@searched_books);
+		#}
+		# doplneni knih o zaznamy z SKC
+		my $z39_search_amount = 100 - (scalar @searched_books);
+		map {$_->{'url'} = 'http://www.obalkyknih.cz/view?book_id='.$_->id}@searched_books;
+		if ($z39_search_amount > 0){
+			my @z39_books = DB->resultset('Book')->search_z39($search_value, $z39_search_amount);
+			push (@searched_books, @z39_books);
 		}
+		
 		if (@searched_books){
 			@relations = DB->resultset('BookRelationType')->all();
+		}
+		if ((scalar @searched_books) > 100){
+			@searched_books = @searched_books[0..99];
 		}
 	}
 	
@@ -990,6 +1082,15 @@ sub view : Local {
 		$c->response->redirect( '/view?book_id='.$book->id, 303);
 	}
 	
+    my $isAdmin = 0;
+    if ($c->user) {
+    	my $username = $c->user->get_column('login');
+    	my $resAdminUser = DB->resultset('User')->search({ 'login' => $username, 'is_admin' => 1 });
+    	if ($resAdminUser->count() == 1) {
+    		my $adminUser = $resAdminUser->next;
+    		$isAdmin = 1 if ($adminUser->get_column('login') eq $username);
+    	}
+    }
 
 	$c->stash->{books}   = [ @books ];
 	$c->stash->{parts}   = [ @parts ] if (@parts);
@@ -998,10 +1099,11 @@ sub view : Local {
 	$c->stash->{relations} = [ @relations ] if (@searched_books);
 	$c->stash->{idf}     = $idf if ($idf);
 	$c->stash->{referer} = $referer;
-	$c->stash->{admin} = $c->user->get('login') if ($c->user and $c->user->get('login') eq $Obalky::ADMIN_EMAIL);
+	$c->stash->{admin} = $c->user->get('login') if ($isAdmin);
 	$c->stash->{detail}  = $c->user ? 1 : 0; # prihlasenym i detaily
 	$c->stash->{seznam_main_image} = ($books[0] and $books[0]->cover) ? 
 		$books[0]->cover->get_cover_url : undef;
+	$c->stash->{search_value} = $search_value;
 
 	my $ip = $c->req->address; $ip =~ s/\.\d+$/.../;
 	$c->stash->{visitor_blurred_ip} = $ip;
@@ -1155,8 +1257,14 @@ sub admin_auth_cover : Local {
     
     my $user_data = DB->resultset('User')->find($user->id);
 	
-	my $username = $user->get_column('login');	
-	unless ($username eq $Obalky::ADMIN_EMAIL) {
+	my $username = $c->user->get_column('login');
+    my $resAdminUser = DB->resultset('User')->search({ 'login' => $username, 'is_admin' => 1 });
+    my $isAdmin = 0;
+    if ($resAdminUser->count() == 1) {
+    	my $adminUser = $resAdminUser->next;
+    	$isAdmin = 1 if ($adminUser->get_column('login') eq $username);
+    }	
+	unless ($isAdmin) {
     	$c->res->redirect("index");
     	return;
     }
@@ -1306,6 +1414,16 @@ sub end : Private {
     unless ( $c->response->content_type ) {
         $c->response->content_type('text/html; charset=utf-8');
     }
+    
+    my $isAdmin = 0;
+    if ($c->user and $c->user->get('login')) {
+    	my $username = $c->user->get('login');
+    	my $resAdminUser = DB->resultset('User')->search({ 'login' => $username, 'is_admin' => 1 });
+    	if ($resAdminUser->count() == 1) {
+    		my $adminUser = $resAdminUser->next;
+    		$isAdmin = 1 if ($adminUser->get_column('login') eq $username);
+    	}
+    }
 
     if($c->stash->{menu}) {
         my $menu = "menu_".$c->stash->{menu}; # u tovarny zbytecne...
@@ -1314,8 +1432,7 @@ sub end : Private {
 #	warn "end() user: ".($c->user ? "ok: ".$c->user->get('login'):"fail")."\n";
 	$self->blue_stash($c);
 	$c->stash->{user} = $c->user ? $c->user->get('login') : undef;
-	$c->stash->{user_is_admin} = 0;
-	$c->stash->{user_is_admin} = $c->stash->{user} eq $Obalky::ADMIN_EMAIL ? 1 : 0 if (defined $c->stash->{user});
+	$c->stash->{user_is_admin} = $isAdmin;
 	$c->forward('Obalky::View::TT');	
 }
 
@@ -1335,6 +1452,13 @@ sub testt : Local {
 	$c->response->status(200);
 }
 
+sub chunktest : Local {
+	my($self,$c) = @_;
+	warn 'chunktest';
+	$c->response->headers->content_type('text/plain');
+	$c->response->status(200);
+}
+
 #my $bibinfo = bless {}, 'Bibinfo';
 #$bibinfo->{ean13} = '9788073039219';
 #$bibinfo->{part_year} = 'rok 2014,2015';
@@ -1347,6 +1471,7 @@ sub testt : Local {
 #@my $issn = Business::ISSN->new('13352720');
 #$issn->fix_checksum;
 #warn $issn->as_string;
+
 
 =head1 AUTHOR
 

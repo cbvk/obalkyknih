@@ -59,7 +59,7 @@ foreach my $eshop (@eshops) {
 		next;
 	}
 	next unless($factory->can('crawl'));
-	$found{$name} = 0;	
+	$found{$name} = 0;
 	my $storable = eval { retrieve("$SESSION_DIR/$KRAMERIUS_LOGFILE") } || {};
 	if ($mode eq 'period') {
 		$from = $force_from;
@@ -82,12 +82,18 @@ foreach my $eshop (@eshops) {
 	
 	my $i = 0;
 	foreach(@list) {
-		my($bibinfo,$media,$product_url,$covers_uncommited,$eans) = @$_;
+		my($bibinfo,$media,$product_url,$covers_uncommited,$eans,$pdfurl) = @$_;
 		
 		next unless (defined $bibinfo);
 		warn $name." found ".$bibinfo->to_some_id."\n" if($DEBUG);
-		$found{$name}++;		
-		$eshop->add_product($bibinfo,$media,$product_url,$covers_uncommited,$eans);
+		$found{$name}++;
+		my $product;
+		$product = $eshop->add_product($bibinfo,$media,$product_url,$covers_uncommited,$eans);
+		
+		# PDF fulltext
+		if ($product and $pdfurl) {
+			my $retPdf = DB->resultset('ProductParams')->find_or_create({ product=>$product, book=>$product->book, other_param_type=>3, other_param_value=>$pdfurl });
+		}
 		
 		$i++;
 		warn 'add_product #'.$i if ($i % 50);
@@ -172,7 +178,7 @@ sub send_report{
 	
 	$emailContent = $emailContent.join("\n\n\n", @libs);
 	
-	open(MUTT,"|mutt -b '$sender' -s 'obalkyknih.cz - tydenni prehled novych komentaru' '$receiver'");
+	open(MUTT,"|mutt -b '$sender' -s 'obalkyknih.cz - nove knihovny Kramerius' '$receiver'");
 	binmode(MUTT, ":encoding(utf8)");
 	print MUTT <<EOF;
 

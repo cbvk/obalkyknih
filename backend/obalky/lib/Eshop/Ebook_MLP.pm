@@ -47,7 +47,10 @@ sub crawl{
 				$title_sub = $metadata->{marc}->subfield('245', 'b') || '';
 				$rec->{'title'} = $title.$title_sub;
 				$rec->{'title'} =~ s/\s*\/\s*$// if ($rec->{'title'});
-				$rec->{'date'} = $metadata->{marc}->subfield('264','c');
+				$rec->{'date'} = '';
+				$rec->{'date'} = $metadata->{marc}->subfield('264','c') if ($metadata->{marc}->subfield('264','c'));
+				$rec->{'date'} = $metadata->{marc}->subfield('260','c') if ($rec->{'date'} eq '');
+				$rec->{'annotation'} = $metadata->{marc}->subfield('520','a');
 				$rec->{'identifier'} = $isbn || $issn;
 				if ($rec->{'identifier'}){
 					$rec->{'identifier'} =~ tr/-//d;
@@ -72,22 +75,40 @@ sub crawl{
 				my @t856 = $metadata->{marc}->field('856');
 				foreach $subtag (@t856) {
 					my $t856u = $subtag->subfield('u');
+					$t856u =~ s/\n//;
+					$t856up = substr($t856u, -4);
+					next unless ($t856up eq 'epub' || $t856up eq '.pdf' || $t856up eq '.prc' || $t856up eq 'html');
 					if ($t856u =~ '/search.mlp.cz/') {
 						$product_url = $t856u;
 					} else {
 						push(@ebook_files, $t856u);
 					}
 				}
+
 				if (!$product_url){
 					my $id = $record->header()->identifier;
 					($id) = $id =~ /.*:(.*)/;
 					$product_url = 'http://search.mlp.cz/searchMKP.jsp?action=sTitul&key='.$id;
 				}
+				
+				my $media;
+				# jediny dvovod preco vytvorit $media je annotace (url obalky od nich nemame)
+				if ($rec->{'annotation'} ne '') {
+					$info->{review_impact} = $Obalky::Media::REVIEW_ANNOTATION;
+					$info->{review_html} = $rec->{'annotation'};
+					$info->{review_html} =~ s/"$//g if (defined $info->{review_html});
+					$info->{review_html} =~ s/^"//g if (defined $info->{review_html});
+					$info->{review_library} = 50029;
+					$media = Obalky::Media->new_from_info( $info );
+				}
+				
 				push (@recArray,\@ebook_files,$bibinfo,undef,$product_url);
 				
 				$cnt++;
+#last;
 			}
 		}
+#last;
 		my $rToken = $records->resumptionToken();
 		if ($rToken) {
 			$records = $harvester->listRecords(
