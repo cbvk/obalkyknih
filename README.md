@@ -3,6 +3,7 @@ Obálky knih.cz 3.3 (aktualizace 2017)
 
 Metadatový kontejner obohacen o odkazy na digitalizované dokumenty z digitální knihovny Kramerius včetně informace, jestli se jedná o veřejný dokument, např.:
 
+<pre>
   "dig_obj": {
    "BOA001": {
     "public": "1",
@@ -10,9 +11,11 @@ Metadatový kontejner obohacen o odkazy na digitalizované dokumenty z digitáln
     "uuid": "uuid:3a75b860-8bae-11e2-a920-005056827e51"
    }
   }
+</pre>
 
 Metadatový kontejner obohacen o odkazy na veřejně prístupné e-knihy z produkce Městské knihovny Praha, např.:
 
+<pre>
   "ebook": [
    {
     "url": "https://web2.mlp.cz/koweb/00/04/13/10/41/zongleruv-slabikar.epub",
@@ -27,7 +30,7 @@ Metadatový kontejner obohacen o odkazy na veřejně prístupné e-knihy z produ
     "type": "prc"
    }
   ]
-
+</pre>
 
 Obálky knih.cz 3.2
 ==================
