@@ -1,4 +1,35 @@
-Obálky knih.cz 3.2 (aktualizace 2016)
+Obálky knih.cz 3.3 (aktualizace 2017)
+==================
+
+Metadatový kontejner obohacen o odkazy na digitalizované dokumenty z digitální knihovny Kramerius včetně informace, jestli se jedná o veřejný dokument, např.:
+
+  "dig_obj": {
+   "BOA001": {
+    "public": "1",
+    "url": "https://kramerius.mzk.cz/search/i.jsp?pid=uuid:3a75b860-8bae-11e2-a920-005056827e51",
+    "uuid": "uuid:3a75b860-8bae-11e2-a920-005056827e51"
+   }
+  }
+
+Metadatový kontejner obohacen o odkazy na veřejně prístupné e-knihy z produkce Městské knihovny Praha, např.:
+
+  "ebook": [
+   {
+    "url": "https://web2.mlp.cz/koweb/00/04/13/10/41/zongleruv-slabikar.epub",
+    "type": "epub"
+   },
+   {
+    "url": "https://web2.mlp.cz/koweb/00/04/13/10/41/zongleruv-slabikar.pdf",
+    "type": "pdf"
+   },
+   {
+    "url": "https://web2.mlp.cz/koweb/00/04/13/10/41/zongleruv-slabikar.prc",
+    "type": "prc"
+   }
+  ]
+
+
+Obálky knih.cz 3.2
 ==================
 
 Došlo k obohacení API projektu Obálky knih.cz o "obálky" autorů.
