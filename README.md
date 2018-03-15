@@ -13,7 +13,7 @@ Metadatový kontejner obohacen o odkazy na digitalizované dokumenty z digitáln
   }
 </pre>
 
-Metadatový kontejner obohacen o odkazy na veřejně prístupné e-knihy z produkce Městské knihovny Praha, např.:
+Metadatový kontejner obohacen o odkazy na veřejně přístupné e-knihy z produkce Městské knihovny Praha, např.:
 
 <pre>
   "ebook": [
@@ -31,6 +31,7 @@ Metadatový kontejner obohacen o odkazy na veřejně prístupné e-knihy z produ
    }
   ]
 </pre>
+
 
 Obálky knih.cz 3.2
 ==================
