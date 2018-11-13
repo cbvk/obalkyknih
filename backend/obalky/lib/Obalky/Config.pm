@@ -15,7 +15,7 @@ our $HTTPS_URL = "https://$WWW_DOMAIN"; # jen tady..
 our $LEGACY_URL = $WWW_URL; # jen tady.. (bez pripadneho debug)
 
 our $SPACER_HTTPS_URL = $HTTPS_URL."/img/spacer.gif"; # jen tady
-our $SPACER_HTTP_URL  =  $WWW_URL."/img/spacer.gif"; # jen tady
+our $SPACER_HTTP_URL  =  $HTTPS_URL."/img/spacer.gif"; # jen tady
 
 our $FRAME_IMG = $WWW_DIR."/img/frame.gif";
 

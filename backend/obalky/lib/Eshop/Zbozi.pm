@@ -113,6 +113,7 @@ sub process_shopitem {
 	
 	# MULTIPLE EANS (Zbozi.cz)
 	my @eans; my @params;
+=Kvuli datum z eshopu zakomentovane
 	if (($item->{eans} and ref $item->{eans}->{ean} eq 'ARRAY') or ($item->{EANS} and ref $item->{EANS}->{EAN} eq 'ARRAY')) {
 		my @xml_eans;
 		@xml_eans = @{$item->{eans}->{ean}} if ($item->{eans}); # parametry malymi pismeny
@@ -130,6 +131,7 @@ sub process_shopitem {
 			}
 		}
 	}
+=cut
 	#toto sposobuje, ze sa na koniec pola parametrov pripojila polozka obsahujuca opet cele pole parametrov
 	#push @params, { 'ean13'=>$item->{eans}->{ean}, 'nbn'=>undef, 'oclc'=>undef } if ($item->{eans} and $item->{eans}->{ean} ne '');
 	#push @params, { 'ean13'=>$item->{EANS}->{EAN}, 'nbn'=>undef, 'oclc'=>undef } if ($item->{EANS} and $item->{EANS}->{EAN} ne '');
@@ -216,7 +218,7 @@ sub process_shopitem {
 	# COVER
 	my $cover_url = $item->{IMGURL} || $item->{URL_IMG} || $custom_imgurl;
 	my $strpos = index($cover_url, '?');
-	$cover_url = substr($cover_url, 0, $strpos);
+	$cover_url = substr($cover_url, 0, $strpos) if ($strpos != -1);
 	my $process_cover = 1;
 	$process_cover = 0 if ($eshop->get_column('process_cover') == 0);
 	if($cover_url and $process_cover) {
@@ -329,6 +331,11 @@ sub crawl {
 	system("wget -q $feed_url -O $tmp_dir/feed.xml --no-check-certificate") and die "$tmp_dir: $!";
 	warn "Got xml feed\n" if($ENV{DEBUG});
 	
+	#if($feed_url =~ /mlp.cz/) {
+	#	system("iconv -f WINDOWS-1250 -t UTF-8 $tmp_dir/feed.xml > $tmp_dir/feed.xml.new");
+	#	system("mv $tmp_dir/feed.xml.new $tmp_dir/feed.xml");
+	#}
+	
 	#system("sed -i $feed_url -O $tmp_dir/feed.xml") and die "$tmp_dir: $!";
 	#warn "Sanitized xml feed\n" if($ENV{DEBUG});
 	
@@ -341,7 +348,7 @@ sub crawl {
 	# maji blbe psane kodovani
 	#  $xml_content =~ s/windows-1250/utf-8/ if($feed_url =~ /fragment/); 
 	#  $xml_content =~ s/iso-8859-2/utf-8/ if($feed_url =~ /knihy.abz.cz/);
-	my $xml_content =~ s/windows-1250/utf-8/ if($feed_url =~ /mlp.cz/);
+	#  $xml_content =~ s/windows-1250/utf-8/ if($feed_url =~ /mlp.cz/);
 
 	my $xml = eval { XMLin("$tmp_dir/feed.xml",
 		SuppressEmpty => 1, ForceArray => [$el_shopitem,"PAGEURL"], KeyAttr => []); };

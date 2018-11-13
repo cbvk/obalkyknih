@@ -36,11 +36,8 @@ sub abuse {
 }
 
 sub abuse_auth {
-	my($pkg,$auth,$cover,$client_ip,$referer,$note) = @_;
-	if($auth and $cover and $auth->cover and 
-		($auth->cover->id eq $cover->id)) {
-		$auth->update({ cover => undef }); # odlinkuj obalku
-	}
+	my($pkg,$auth,$cover,$client_ip,$referer,$note,$isAdmin) = @_;
+	
 	my $abuse = $pkg->create({
 		client_ip => $client_ip,
 		referer => $referer,
@@ -49,9 +46,30 @@ sub abuse_auth {
 		auth => $auth,
 		note => $note
 	});
+	my $auth_id = $auth->get_column('id');
 	
-	# synchronizuj s frontend
-	DB->resultset('FeSync')->auth_sync_remove($auth->id);
+	if ($isAdmin) {
+		if($auth and $cover and $auth->cover and 
+			($auth->cover->id eq $cover->id)) {
+			$auth->update({ cover => undef }); # odlinkuj obalku
+		}
+		
+		# synchronizuj s frontend
+		DB->resultset('FeSync')->auth_sync_remove($auth->id);
+	}
+	unless ($isAdmin) {
+		my $email = 'info@obalkyknih.cz';
+		open(MUTT,"| mutt -s 'obalkyknih.cz - Zadost o opravu foto autority' '$email'");
+		print MUTT <<EOF;
+
+Zadost o opravu foto autority:
+http://www.obalkyknih.cz/view_auth?auth_id=$auth_id
+
+$note
+
+EOF
+		close(MUTT);
+	}
 	
 	return $abuse;
 }

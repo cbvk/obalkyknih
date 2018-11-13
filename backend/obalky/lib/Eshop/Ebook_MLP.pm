@@ -70,13 +70,14 @@ sub crawl{
 					oclc => $rec->{'identifier_oclc'}
 				});
 				foreach (values %{$bibinfo}){chomp($_) if ($_)}; 
-				my $product_url;
+				my ($product_url,$cover_url) = (undef,undef);
 				my @ebook_files;
 				my @t856 = $metadata->{marc}->field('856');
 				foreach $subtag (@t856) {
 					my $t856u = $subtag->subfield('u');
 					$t856u =~ s/\n//;
 					$t856up = substr($t856u, -4);
+					$cover_url = $t856u if ($t856up eq '.jpg' or $t856up eq 'jpeg' or $t856up eq '.JPG' or $t856up eq 'JPEG' or $t856up eq '.png' or $t856up eq '.PNG' or $t856up eq '.gif' or $t856up eq '.GIF');
 					next unless ($t856up eq 'epub' || $t856up eq '.pdf' || $t856up eq '.prc' || $t856up eq 'html');
 					if ($t856u =~ '/search.mlp.cz/') {
 						$product_url = $t856u;
@@ -91,18 +92,37 @@ sub crawl{
 					$product_url = 'http://search.mlp.cz/searchMKP.jsp?action=sTitul&key='.$id;
 				}
 				
-				my $media;
-				# jediny dvovod preco vytvorit $media je annotace (url obalky od nich nemame)
+				my ($media,$info) = (undef,undef);
+				# obalka
+				if (defined $cover_url) {
+					$cover_url =~ s/https\:/http\:/g;
+					my $ext = $1 if($cover_url =~ /\.(jpe?g|pdf|txt|png|tiff?|gif)$/i);
+					unless($ext) {
+						warn "Neznama pripona v $cover_url\n";
+						return;
+					}
+					my $tmp_dir = "/tmp/crawler-Ebook_MLP";
+					my $temp_file = "";
+					$temp_file = Obalky::BibInfo->isbn_to_ean13($isbn || $issn) if (defined $isbn or defined $issn);
+					$temp_file = $rec->{'identifier_cnb'} if ($temp_file eq '');
+					$temp_file =~ s/\-//g;
+					my $temp = "$tmp_dir/$temp_file.$ext";
+					unless (system ("wget --no-check-certificate -q $cover_url -O $temp >/dev/null")) {
+						$info->{cover_url} = $cover_url;
+						$info->{cover_tmpfile} = $temp;
+					}
+				}
+				# anotace
 				if ($rec->{'annotation'} ne '') {
 					$info->{review_impact} = $Obalky::Media::REVIEW_ANNOTATION;
 					$info->{review_html} = $rec->{'annotation'};
 					$info->{review_html} =~ s/"$//g if (defined $info->{review_html});
 					$info->{review_html} =~ s/^"//g if (defined $info->{review_html});
 					$info->{review_library} = 50029;
-					$media = Obalky::Media->new_from_info( $info );
 				}
+				$media = Obalky::Media->new_from_info( $info ) if (defined $info);
 				
-				push (@recArray,\@ebook_files,$bibinfo,undef,$product_url);
+				push (@recArray,\@ebook_files,$bibinfo,$media,$product_url);
 				
 				$cnt++;
 #last;

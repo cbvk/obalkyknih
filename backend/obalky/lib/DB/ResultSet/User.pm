@@ -127,7 +127,7 @@ sub signup {
 	my $eshop;
 	if($hash->{eshop_name}) {
 		push @errors, "Neplatná URL adresa XML feedu."
-			if($hash->{xmlfeed} and not $hash->{xmlfeed} =~ /^http\:\/\/.+\..+$/);
+			if($hash->{xmlfeed} and not $hash->{xmlfeed} =~ /^http[s]{0,1}\:\/\/.+\..+$/);
 		
 		my $eshopinfo = { fullname => $hash->{eshop_name},
 						  web_url => $hash->{eshop_url},

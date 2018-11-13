@@ -521,17 +521,17 @@ sub add_product {
 	warn "Looking for ".Dumper($bibinfo)."\n" if($ENV{DEBUG});
 	my @params = @{$params} if ($params);
 	my $book = DB->resultset('Book')->find_by_bibinfo($bibinfo,1);
-	# bylo zadanych vice isbn
-#	if (!$book and @params) {
-#warn Dumper(@params);
-#		foreach (@params){
-#			($_->{ean13}, $bibinfo->{ean13}) = ($bibinfo->{ean13}, $_->{ean13});
-#			$book = DB->resultset('Book')->find_by_bibinfo($bibinfo,1);
-#			last if ($book);
-#		}
-	
-#		($params[0], $bibinfo->{ean13}) = ($bibinfo->{ean13}, $params[0])if (!$book); #vrati puvodni EAN do bibinfa
-#	}
+
+	# bylo zadano vic identifikatoru isbn
+	#if (!$book and @params) {
+	#	foreach (@params){
+	#		($_->{ean13}, $bibinfo->{ean13}) = ($bibinfo->{ean13}, $_->{ean13});
+	#		$book = DB->resultset('Book')->find_by_bibinfo($bibinfo,1);
+	#		last if ($book);
+	#	}
+	#
+	#	($params[0], $bibinfo->{ean13}) = ($bibinfo->{ean13}, $params[0])if (!$book); #vrati puvodni EAN do bibinfa
+	#}
 
 	warn "BOOK EXISTUJE ... ".$book->id  if ($book and $ENV{DEBUG});
 	
@@ -539,13 +539,12 @@ sub add_product {
 	unless ($book) {
 		my $hash = {};
 		$bibinfo->save_to_hash($hash);
-		warn "Creating book... EAN ".$hash->{ean13}."\n" if($ENV{DEBUG});
+		warn "Creating book... EAN ".$hash->{ean13}."\n" if($ENV{DEBUG} and $hash->{ean13});
 		$book = DB->resultset('Book')->create($hash);
 	};
 
 	$bibinfo->save_to($book); # aktualizuj dle produktu -- jen docasne pro opravu TOC!
 
-	# dle #book a #eshop najdi nebo vytvor product (s permalk)
 	my $product = DB->resultset('Product')->find($product_url, 
 						{ key => 'product_product_url' });
 	warn "add_product($product_url): ".($product?$product->id:'-')."\n"
@@ -555,22 +554,43 @@ sub add_product {
 		{ key => 'product_eshop_book' } ) unless($product);
 	$product->update({ modified => DateTime->now() });
 	$product->update({ product_url => $product_url }) if (defined $product_url and defined $product->get_column('product_url') and $product_url ne $product->get_column('product_url'));
+	$product->update({ ispublic => $media->{ispublic} }) if ($media->{ispublic} and ($media->{ispublic}==0 or $media->{ispublic}==1));
 	warn "add_product($product_url): updated ".($product?$product->id:'-')."\n"
 				if($ENV{DEBUG});
 
-	# vicero ISBN se ulozi do product params
+	# vic ISBN se ulozi do product params
 	if (@params){
+		# pridani novych
 		foreach my $param (@params){
-			my $ppToSearch = { book => $book->id, product => $product->id };
-			$ppToSearch->{nbn} = $bibinfo->{nbn} if (defined $bibinfo);
-			$ppToSearch->{oclc} = $bibinfo->{oclc} if (defined $bibinfo);
+			$param = $param->{ean13} if (ref($param) eq 'HASH' and defined $param->{ean13});
+			my $ppToSearch = { book => $book->id, product => $product->id, ean13 => $param };
 			DB->resultset('ProductParams')->find_or_create($ppToSearch);
 		}
+		# odstraneni neexistujicich
+		my $resProductParams = DB->resultset('ProductParams')->search({ product => $product->id });
+		foreach my $recProductParam ($resProductParams->all) {
+			warn $recProductParam->get_column('ean13');
+			$recProductParam->delete() unless (grep { $_ eq $recProductParam->get_column('ean13')} @params);
+		}
 	}
+	# neni poslano vic ISBN, najdi jestli nejaky jiny ean13 zaznam neobsahuje a zrus
+	else {
+		my $ppToSearch = { book => $book->id, product => $product->id, ean13 => { '!=', undef } };
+		my $resProductParams = DB->resultset('ProductParams')->search($ppToSearch);
+		foreach my $recProductParam ($resProductParams->all) {
+			$recProductParam->delete;
+		}
+	}
+
    	# uloz bibinfo do productu
 	$bibinfo->save_to($product);
 	# podle bibinfo zakutalizovat book?
-	$media->save_to($product) if ($media);
+	$media->save_to($product) if (defined $media and ref($media) and UNIVERSAL::can($media,'can'));
+	if (defined $media and ref($media) and UNIVERSAL::can($media,'can')) {
+		warn Dumper("\n\n\n\n\n\n\n");
+		warn Dumper($media);
+		warn Dumper("\n\n\n\n\n\n\n");
+	}
 
 	my $book_bibinfo = $book->bibinfo;
 	$book_bibinfo->save_to($book) if($book_bibinfo->merge($bibinfo));

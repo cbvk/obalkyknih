@@ -779,8 +779,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-08-17 16:57:43
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UTDusz2ecw1rtiIUKrnZEg
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2018-11-13 11:34:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Low/U2Nz+o+VADPQ/9nY+Q
 
 use Obalky::Media;
 use Data::Dumper;
@@ -801,8 +801,8 @@ sub displayable_dig_obj {
 	my($book) = @_;
 	my @displayable;
 	foreach my $product ($book->products) {
-		my $factory = $product->eshop->factory;
-		push @displayable, $product if($factory->{display} and substr($factory->name, 0, 9) eq 'Kramerius');
+		my $eshop = $product->eshop;
+		push @displayable, $product if($eshop->type eq 'kramerius');
 	}
 	return @displayable;
 }
@@ -1001,6 +1001,13 @@ sub get_ebook_list {
 			push @ebook, { type => $_->get_column('param_type'), url => $_->get_column('other_param_value')};
 		}
 	}
+	foreach my $product ($book->products) {
+		my $eshop = $product->eshop;
+		if($eshop->type eq 'kramerius' and $product->ispublic == 1) {
+			push @ebook, { type => 'Digitalizovaný dokument', url => $product->product_url };
+			last;
+		}
+	}
 	return \@ebook if (scalar @ebook);
 	return undef;
 }
@@ -1139,6 +1146,7 @@ sub del_review {
 sub get_most_recent {
 	my($book) = @_;
 	return $book unless ($book->id);
+	return $book if ($book->id eq $book->get_column('id_parent'));
 	
 	my ($max_year,$max_volume,$eq_year,$eq_volume) = (undef,undef,undef,undef);
 	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime();
@@ -1396,11 +1404,13 @@ sub enrich {
 	while (my $rowUUID = $resUUID->next) {
 		if ($rowUUID->get_column('uuid')) {
 			my $uuid = $rowUUID->get_column('uuid');
-			push @uuid, $uuid;
-			my $libsigla = $rowUUID->eshop->library->get_column('code');
-			$uuidLib->{$libsigla}->{uuid} = $uuid;
-			$uuidLib->{$libsigla}->{url} = $rowUUID->get_column('product_url');
-			$uuidLib->{$libsigla}->{public} = $rowUUID->get_column('ispublic') || 0;
+			push @uuid, $uuid if (not grep(/^$uuid$/, @uuid));
+			if ($rowUUID->eshop and $rowUUID->eshop->library) {
+				my $libsigla = $rowUUID->eshop->library->get_column('code');
+				$uuidLib->{$libsigla}->{uuid} = $uuid;
+				$uuidLib->{$libsigla}->{url} = $rowUUID->get_column('product_url');
+				$uuidLib->{$libsigla}->{public} = $rowUUID->get_column('ispublic') || 0;
+			}
 		}
 	}
 	$info->{uuid} = \@uuid if (@uuid);
@@ -1437,11 +1447,34 @@ sub enrich {
 	my $ebook = $book->get_ebook_list;
 	$info->{ebook} = $ebook if (defined $ebook);
 	
-	# 15. ostatni parametry EAN
+	# 15. ostatni parametry EAN, NBN, OCLC
 	my $retParams = DB->resultset('ProductParams')->search({ book => $book->id });
 	$info->{ean_other} = [];
+	$info->{nbn_other} = [];
+	$info->{oclc_other} = [];
+	my $parValue;
 	while (my $otherParams = $retParams->next) {
-		push @{$info->{ean_other}}, $otherParams->get_column('ean13') if ($otherParams->get_column('ean13'));
+		# EAN_OTHER
+		if ($otherParams->get_column('ean13')) {
+			$parValue = $otherParams->get_column('ean13');
+			if (not grep(/^$parValue$/, @{$info->{ean_other}} ) ) {
+				push @{$info->{ean_other}}, $parValue;
+			}
+		}
+		# NBN_OTHER
+		if ($otherParams->get_column('nbn')) {
+			$parValue = $otherParams->get_column('nbn');
+			if (not grep(/^$parValue$/, @{$info->{nbn_other}} ) ) {
+				push @{$info->{nbn_other}}, $parValue;
+			}
+		}
+		# OCLC_OTHER
+		if ($otherParams->get_column('oclc')) {
+			$parValue = $otherParams->get_column('oclc');
+			if (not grep(/^$parValue$/, @{$info->{oclc_other}} ) ) {
+				push @{$info->{oclc_other}}, $parValue;
+			}
+		}
 	}
 	
 	return $info;

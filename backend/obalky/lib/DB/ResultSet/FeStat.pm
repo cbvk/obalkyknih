@@ -12,7 +12,8 @@ my $select_requests_by_type = '
 	IFNULL(SUM(toc_thumbnail_api_requests),0)+IFNULL(SUM(toc_thumbnail_requests),0)+IFNULL(SUM(etag_toc_thumbnail_match),0),
 	IFNULL(SUM(toc_pdf_api_requests),0)+IFNULL(SUM(toc_pdf_requests),0)+IFNULL(SUM(etag_toc_pdf_match),0),
 	IFNULL(SUM(file_requests),0)+IFNULL(SUM(etag_file_match),0),
-	IFNULL(SUM(meta_requests),0)';
+	IFNULL(SUM(meta_requests),0),
+	IFNULL(SUM(apiruntime_requests),0)+IFNULL(SUM(unbound_requests),0)+IFNULL(SUM(operative_requests),0)';
 
 my $select_requests_sum = '
 	IFNULL(SUM(cover_api_requests),0)+IFNULL(SUM(cover_requests),0)+IFNULL(SUM(etag_match),0)+
@@ -29,7 +30,7 @@ sub req_stats_daily {
 		group_by => 'DATE(timestamp)',
 		order_by => 'DATE(timestamp) DESC',
 		'select' => \[ 'CONCAT(DATE(timestamp), " 00:00:00") AS ts,'.$select_requests_by_type ],
-		'as' => ['ts', 'cover_requests', 'toc_thumbnail_requests', 'toc_pdf_requests', 'file_requests', 'meta_requests']
+		'as' => ['ts', 'cover_requests', 'toc_thumbnail_requests', 'toc_pdf_requests', 'file_requests', 'meta_requests', 'operative']
     });
 }
 
@@ -41,7 +42,7 @@ sub req_stats_monthly {
 		group_by => 'YEAR(timestamp), MONTH(timestamp)',
 		order_by => 'YEAR(timestamp) DESC, MONTH(timestamp) DESC',
 		'select' => \[ 'CONCAT(DATE(timestamp), " 00:00:00") AS ts,'.$select_requests_by_type ],
-		'as' => ['ts', 'cover_requests', 'toc_thumbnail_requests', 'toc_pdf_requests', 'file_requests', 'meta_requests']
+		'as' => ['ts', 'cover_requests', 'toc_thumbnail_requests', 'toc_pdf_requests', 'file_requests', 'meta_requests', 'operative']
     });
 }
 

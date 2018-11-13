@@ -203,6 +203,8 @@ sub login : Local {
 	my($self,$c) = @_;
 	my($user,$passwd) = ($c->req->param('email'),$c->req->param('password'));
 	my $return = $c->req->param('return');
+	$return = $c->req->referer unless ($return);
+	
 #	warn Dumper($c->models,$c->model('Obalky::AuthUser'));
 	if($user and $passwd) {
 		if($c->authenticate({ login => $user, password => $passwd })) {
@@ -1104,6 +1106,7 @@ sub view : Local {
 	$c->stash->{seznam_main_image} = ($books[0] and $books[0]->cover) ? 
 		$books[0]->cover->get_cover_url : undef;
 	$c->stash->{search_value} = $search_value;
+	$c->stash->{books_other} = [ DB->resultset('ProductParams')->search({ book => $book->id, ean13 => { '!=' => undef } })->all ] if ($book); 
 
 	my $ip = $c->req->address; $ip =~ s/\.\d+$/.../;
 	$c->stash->{visitor_blurred_ip} = $ip;
@@ -1136,12 +1139,26 @@ sub view_auth : Local {
 		my $cover = DB->resultset('Cover')->find($c->req->param("cover")) if ($c->req->param("cover"));
 		my $note = $c->req->param('note');
 		my $spamQuestion = $c->req->param('spamQuestion');
-		
 		my $auth = DB->resultset('Auth')->find($c->req->param('auth'));
-		my $abuse = DB->resultset('Abuse')->abuse_auth($auth,$cover,$c->req->address,$referer,$note) if ($spamQuestion eq 23);
 		
-		$c->stash->{error} = "Děkujeme za nahlášení, chybnou obálku se ".
-					"pokusíme co nejdřív opravit." if($abuse);
+		my ($isAdmin, $username, $resAdminUser) = (0, undef, undef);
+		if ($c->user) {
+			$username = $c->user->get_column('login');
+		    $resAdminUser = DB->resultset('User')->search({ 'login' => $username, 'is_admin' => 1 });
+		}
+	    if ($c->user and $resAdminUser->count() == 1) {
+	    	my $adminUser = $resAdminUser->next;
+	    	$isAdmin = 1 if ($adminUser->get_column('login') eq $username);
+	    	if ($isAdmin eq 1) {
+	    		my $abuse = DB->resultset('Abuse')->abuse_auth($auth,$cover,$c->req->address,$referer,$note,1) if ($spamQuestion eq 23);		
+				$c->stash->{error} = "Odstráněno." if($abuse);
+	    	}
+	    }	
+		unless ($isAdmin) {
+	    	my $abuse = DB->resultset('Abuse')->abuse_auth($auth,$cover,$c->req->address,$referer,$note,0) if ($spamQuestion eq 23);		
+			$c->stash->{error} = "Děkujeme za nahlášení, chybnou obálku se pokusíme co nejdřív opravit. ".
+					"Vaše žádost byla zaznamenána." if($abuse);
+	    }
 	}
 	
 	# ziskani zaznamu autority
@@ -1449,13 +1466,6 @@ sub testt : Local {
 	$c->response->body('ok ok ok ok ok ok');
 	$c->response->headers->content_type('text/plain');
 	$c->response->headers->content_length(17);
-	$c->response->status(200);
-}
-
-sub chunktest : Local {
-	my($self,$c) = @_;
-	warn 'chunktest';
-	$c->response->headers->content_type('text/plain');
 	$c->response->status(200);
 }
 

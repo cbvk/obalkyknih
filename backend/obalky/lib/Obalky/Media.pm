@@ -194,6 +194,16 @@ sub save_to {
 	$process_rating = 0 if ($product->eshop->get_column('process_rating') == 0);
 	$process_review = 0 if ($product->eshop->get_column('process_review') == 0);
 	
+	# nevkladej obalku a obsah z Krameria, pokud uz zaznam obalku/obsah obsahuje
+	# pravdepodobne to bude to same a taky kvuli zaplneni db a storage (9.8.2018)
+	if ($product->eshop->type eq 'kramerius') {
+		my $neigProducts = DB->resultset('Product')->search({ book => $book->id });
+		foreach ($neigProducts->all) {
+			$process_cover = 0 if ($_->get_column('cover'));
+			$process_toc = 0 if ($_->get_column('toc'));
+		}
+	}
+	
 	# 1. Cover
 	# vytvor cover jen pokud je novy/lisi-se
 	$media->{cover_url} = undef unless ($process_cover);
@@ -207,6 +217,20 @@ sub save_to {
 			my $filename = "$TMP_DIR/cover-".$product->id;
 			$tmp = Obalky::Tools->wget_to_file(
 						$cover_url, $filename);
+			
+			# Kramerius obalky resampluj, neni potreba extra kvalitni obrazek, originaly jsou v Krameriovi
+			if ($coverurl) {
+				if (-e $filename) {
+					warn 'KRAMERIUS RESAMPLE ...' if ($ENV{DEBUG});
+					my ($width,$height) = Obalky::Tools->image_size($filename);
+					if ($height > 510) {
+						my($iw,$ih) = Obalky::Tools->resize(9999,510,$width,$height);
+						if ($iw) {
+							system("convert","-resize", $iw."x".$ih, $filename, $filename);
+						}
+					}
+				}
+			}
 			
 			unless (-e $filename) {
 				my $browser = LWP::UserAgent->new;
@@ -300,6 +324,7 @@ sub save_to {
 			}
 			if($toc_text) {
 				$toc->update({ full_text => $toc_text });
+#				$toc->update({ toctext_not_in_pdf => 1 });
 			}
 			$product->update({ toc => $toc });
 			$book->update({ toc => $toc });

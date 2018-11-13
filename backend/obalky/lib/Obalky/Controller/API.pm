@@ -502,7 +502,6 @@ sub _do_import {
     $self->_do_log("import begin");
 	warn Dumper($c->req->params) if ($ENV{DEBUG});
 	# autentizuj uzivatelem, misto cookies staci user/password parametry
-=asf
 	unless($c->user) {
 		# login, password a over.. $c->authenticate
 		unless($c->authenticate({ login => $c->req->param('login'), 
@@ -513,10 +512,6 @@ sub _do_import {
 		}
 	}
 	my $user = $c->user->login;
-=cut
-	my $user;
-
-
 
 	# z parametru zkonstruuj identifikator knizky (TODO jen BibInfo->fields?)
 	my $bibinfo_params = {};
@@ -536,9 +531,9 @@ sub _do_import {
 			$c->response->body("Missing params part_year, or part_volume, part_no, or part_name.");
 			return;
 		}
-		
  
 		my $bibinfo_aggr = Obalky::BibInfo->new_from_params($bibinfo_params);
+#warn Dumper($bibinfo_params);
 
  		my @other_part_eans;
 		if ($c->req->param('part_other_isbn') && $bibinfo_aggr->{ean13}){
@@ -547,7 +542,7 @@ sub _do_import {
 		}
 		my $book_aggr = DB->resultset('Book')->find_by_bibinfo($bibinfo_aggr);
 		
-		# spracovani vicero ISBN
+		# spracovani vic ISBN
 		if (!$book_aggr and @other_part_eans) {
 			foreach (@other_part_eans){
 				($_, $bibinfo_aggr->{ean13}) = ($bibinfo_aggr->{ean13}, $_);
@@ -571,13 +566,6 @@ sub _do_import {
 			$book_aggr = DB->resultset('Book')->create($hash);
 		}
 
-		# ulozeni dalsich ISBN
-		if (@other_part_eans){
-			foreach my $param (@other_part_eans){
-				DB->resultset('ProductParams')->find_or_create({book => $book_aggr->id, ean13 =>$param, nbn => $book_aggr->{nbn}, oclc => $book_aggr->{oclc}});
-			}
-		}
-
 		# pokud se jedna o cast monografie musime nacist identifikatory casti
 		if ($part_type eq "mono") {
 			$bibinfo_params = {};
@@ -591,8 +579,8 @@ sub _do_import {
 		$bibinfo_params->{part_type} = 2 if ($part_type eq "serial"); # periodikum
 		$bibinfo_params->{id_parent} = $book_aggr->id;
 		$bibinfo_params = DB->resultset('Book')->normalize_bibinfo($bibinfo_params);
-		warn 'BIBINFO po normalizaci' if($ENV{DEBUG});
-		warn Dumper($bibinfo_params) if($ENV{DEBUG});
+#warn 'BIBINFO po normalizaci' if($ENV{DEBUG});
+#warn Dumper($bibinfo_params) if($ENV{DEBUG});
 	}
 
 	# bibinfo skenovaneho zaznamu
@@ -601,7 +589,7 @@ sub _do_import {
 	# vicero isbn
 	my @other_eans;
 	if ($bibinfo->{ean13}){
-		@other_eans = split(',', $c->req->param('other_isbn'));
+		@other_eans = split(',', $c->req->param('part_other_isbn'));
 		@other_eans = map {Obalky::BibInfo->parse_code($_)} @other_eans;	
 	}
 	
@@ -632,7 +620,7 @@ sub _do_import {
     $self->_do_log("cover done, uploading meta");
 	$self->_upload_file($c,"meta","$dir/meta") if($c->req->param('meta'));
 
-	# ze stranek obsahu vytvor PDF a prozen ho OCR
+	# ze stranek TOC vytvor PDF a prozen ho OCR
     $self->_do_log("meta done, uploading toc");
 	if($c->req->param('toc')) {
 		$self->_upload_file($c,"toc","$dir/toc_big.pdf");
@@ -644,14 +632,14 @@ sub _do_import {
 	}
     $self->_do_log("toc done");
 
-	# nebo toc PDF zkonstruuj ze stranek
+	# nebo TOC PDF zkonstruuj ze stranek
 	for(my $page=1;;$page++) {
         last unless($c->req->param("toc_page_$page"));
         $self->_do_log("uploading toc page $page");
 		$self->_upload_file($c,"toc_page_$page",sprintf("$dir/toc_page_%04d",
                                 $page));
 	}
-    $self->_do_log("done uploading to $dir");
+    $self->_do_log("done TOC uploading to $dir");
 
 #	my $first = $c->req->param('toc_page_0001') || '';
 	if(-f "$dir/toc_page_0001") {
@@ -913,6 +901,169 @@ sub do_auth_request {
 	$auth->enrich($this,$authinfo,$c->request->secure,$c->req->params);
 	
 	return ($auth->{auth_id},$this);
+}
+
+sub cam : Local {
+	my($self,$c) = @_;
+	$c->response->content_type("text/plain");
+	my $res = "";
+	
+	my $bookidIsbn = $c->req->param("bookid_isbn");
+	my $bookidNbn = $c->req->param("bookid_nbn");
+	my $bookidOclc = $c->req->param("bookid_oclc");
+	warn $bookidIsbn;
+	warn $bookidNbn;
+	warn $bookidOclc;
+	
+	if (defined $bookidIsbn and defined $bookidNbn and $bookidIsbn ne '' and $bookidNbn ne '' and $bookidIsbn ne $bookidNbn) {
+		my $book_master = DB->resultset('Book')->find($bookidIsbn);
+		my $book_slave = DB->resultset('Book')->find($bookidNbn);
+		if ($book_master and $book_slave) {
+			my $diff = compare_book($book_master, $book_slave);
+			if ($diff > -1) {
+				merge_book($book_master, $book_slave, $diff);
+				$res = "Merged. ";
+			} else {
+				$res = 'Identificator conflict';
+			}
+		}
+		$bookidNbn = undef;
+	}
+	
+	if (defined $bookidIsbn and defined $bookidOclc and $bookidIsbn ne '' and $bookidOclc ne '' and $bookidIsbn ne $bookidOclc) {
+		my $book_master = DB->resultset('Book')->find($bookidIsbn);
+		my $book_slave = DB->resultset('Book')->find($bookidOclc);
+		if ($book_master and $book_slave) {
+			my $diff = compare_book($book_master, $book_slave);
+			if ($diff > -1) {
+				merge_book($book_master, $book_slave, $diff);
+				$res .= "Merged. ";
+			} else {
+				$res = 'Identificator conflict';
+			}
+		}
+		$bookidOclc = undef;
+	}
+	
+	$res = "Nothing to do" if ($res eq "");
+	$c->response->body($res);
+}
+
+#######################################################################
+# POROVNAJ 2 TITULY A ROZHODNI, CO ZO SLAVE PRENIEST NA MASTER ZAZNAM
+#######################################################################
+
+sub compare_book {
+	my($book_master,$book_slave) = @_;
+	my $diff;
+	
+	my $ean13_match = (($book_master->get_column('ean13') eq $book_slave->get_column('ean13')) or (not $book_master->get_column('ean13')) or (not $book_slave->get_column('ean13')));
+	my $nbn_match   = (($book_master->get_column('nbn') eq $book_slave->get_column('nbn')) or (not $book_master->get_column('nbn')) or (not $book_slave->get_column('nbn')));
+	my $oclc_match  = (($book_master->get_column('oclc') eq $book_slave->get_column('oclc')) or (not $book_master->get_column('oclc')) or (not $book_slave->get_column('oclc')));
+	
+	# kolizie identifikatorov
+	if ((not $ean13_match) or (not $nbn_match) or (not $oclc_match)) {
+		warn ' !!! KOLIZIA !!!   '.$book_master->get_column('ean13').'|'.$book_master->get_column('nbn').'|'.$book_master->get_column('oclc').'   x   '.$book_slave->get_column('ean13').'|'.$book_slave->get_column('nbn').'|'.$book_slave->get_column('oclc');
+		return -1;
+	}
+	
+	# dopln identifikatory 
+	$diff->{'ean13'} = $book_slave->get_column('ean13') if ($book_master->get_column('ean13') ne $book_slave->get_column('ean13') and not $book_master->get_column('ean13'));
+	$diff->{'nbn'} = $book_slave->get_column('nbn') if ($book_master->get_column('nbn') ne $book_slave->get_column('nbn') and not $book_master->get_column('nbn'));
+	$diff->{'oclc'} = $book_slave->get_column('oclc') if ($book_master->get_column('oclc') ne $book_slave->get_column('oclc') and not $book_master->get_column('oclc'));
+	$diff->{'ismn'} = $book_slave->get_column('ismn') if ($book_master->get_column('ismn') ne $book_slave->get_column('ismn') and not $book_master->get_column('ismn'));
+	
+	# dopln autora a titul
+	$diff->{'authors'} = $book_slave->get_column('authors') if ($book_master->get_column('authors') ne $book_slave->get_column('authors') and not $book_master->get_column('authors'));
+	$diff->{'title'} = $book_slave->get_column('title') if ($book_master->get_column('title') ne $book_slave->get_column('title') and not $book_master->get_column('title'));
+	
+	# dopln toc
+	$diff->{'toc'} = $book_slave->get_column('toc') if ($book_slave->get_column('toc') and not $book_master->get_column('toc'));
+	
+	# anotacia
+	$diff->{'review'} = $book_slave->get_column('review') if ($book_slave->get_column('review') and not $book_master->get_column('review'));
+	
+	# hodnotenie
+	if ($book_slave->get_column('cached_rating_count')) {
+		$diff->{'cached_rating_count'} = $book_master->get_column('cached_rating_count') + $diff->{'cached_rating_count'};
+		$diff->{'cached_rating_sum'} = $book_master->get_column('cached_rating_sum') + $diff->{'cached_rating_sum'};
+	}
+	
+	# citacia
+	if ($book_slave->get_column('citation') and not $book_master->get_column('citation')) {
+		$diff->{'citation'} = $book_slave->get_column('citation');
+		$diff->{'citation_time'} = $book_slave->get_column('citation_time');
+		$diff->{'citation_source'} = $book_slave->get_column('citation_source');
+	}
+	
+	return $diff;
+}
+
+
+
+#######################################################################
+# MERGUJ 2 TITULY
+#######################################################################
+
+sub merge_book {
+	my($book_master,$book_slave,$diff) = @_;
+	return unless($book_master);
+	return unless($book_slave);
+	my $id_master = $book_master->id;
+	my $id_slave = $book_slave->id;
+	
+	# cover
+	$book_master->update({ cover => $diff->{'cover'} }) if ($diff->{'cover'});
+	
+	# toc
+	$book_master->update({ toc => $diff->{'toc'} }) if ($diff->{'toc'});
+	
+	# anotacia
+	$book_master->update({ review => $diff->{'review'} }) if ($diff->{'review'});
+	
+	# citacia
+	$book_master->update({
+		citation => $diff->{'citation'},
+		citation_time => $diff->{'citation_time'},
+		citation_source => $diff->{'citation_source'}
+	}) if ($diff->{'review'});
+	
+	# identifikatory a nazvy
+	$book_master->update({ ean13 => $diff->{'ean13'} }) if ($diff->{'ean13'});
+	$book_master->update({ nbn => $diff->{'nbn'} }) if ($diff->{'nbn'});
+	$book_master->update({ ismn => $diff->{'ismn'} }) if ($diff->{'ismn'});
+	$book_master->update({ oclc => $diff->{'oclc'} }) if ($diff->{'oclc'});
+	$book_master->update({ title => $diff->{'title'} }) if ($diff->{'title'});
+	$book_master->update({ authors => $diff->{'authors'} }) if ($diff->{'authors'});
+	
+	###
+	# VYMAZ SLAVE
+	###
+	
+	DB->resultset('FeSync')->book_sync_remove($book_slave->id, undef, 1);
+	
+ 	my $dbh = DBI->connect(DB->dsn,DB->user,DB->pass);
+ 	my $sth = $dbh->prepare("SET FOREIGN_KEY_CHECKS=0"); $sth->execute();
+ 	$sth = $dbh->prepare("DELETE FROM product WHERE book = $id_slave"); $sth->execute();
+ 	$sth = $dbh->prepare("DELETE FROM cover WHERE book = $id_slave"); $sth->execute();
+ 	$sth = $dbh->prepare("DELETE FROM toc WHERE book = $id_slave"); $sth->execute();
+ 	$sth = $dbh->prepare("DELETE FROM review WHERE book = $id_slave"); $sth->execute();
+ 	$sth = $dbh->prepare("DELETE FROM tip WHERE book1 = $id_slave"); $sth->execute();
+ 	$sth = $dbh->prepare("DELETE FROM tip WHERE book2 = $id_slave"); $sth->execute();
+ 	$sth = $dbh->prepare("DELETE FROM tag WHERE book = $id_slave"); $sth->execute();
+ 	$sth = $dbh->prepare("DELETE FROM book_relation WHERE book_parent = $id_slave"); $sth->execute();
+ 	$sth = $dbh->prepare("DELETE FROM book_relation WHERE book_relation = $id_slave"); $sth->execute();
+ 	$sth = $dbh->prepare("DELETE FROM abuse WHERE book = $id_slave"); $sth->execute();
+ 	$sth = $dbh->prepare("DELETE FROM product_params WHERE book = $id_slave"); $sth->execute();
+ 	$sth = $dbh->prepare("SET FOREIGN_KEY_CHECKS=1"); $sth->execute();
+	$sth->finish();
+	$dbh->disconnect();
+	
+	$book_slave->delete();
+	
+	$book_master->recalc_rating;
+	$book_master->recalc_review;
+	$book_master->invalidate(1);
 }
 
 1;

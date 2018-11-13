@@ -220,8 +220,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uWhKkV7AnH3MLqYcN1eOEw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2018-11-01 11:01:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2n5PMKQtEa8tt82VTuqhCA
 
 
 use Obalky::Config;
@@ -243,7 +243,7 @@ sub set_pdf {
 sub to_xml {
 	my($toc) = @_;
 	my $text = $toc->full_text;
-	$text =~ s/^L//g;
+	$text =~ s/^L//g if (defined $text);
 	return "" unless($text);
 	unless($toc->product) {
 		warn $toc->id." no product\n";
@@ -256,8 +256,11 @@ sub to_xml {
 		return "";
 	}
 	my $bibinfo = Obalky::BibInfo->new($book);
-	return "\t<book>\n".$bibinfo->to_xml.
+	my $bibinfoText = $bibinfo->to_xml || '';
+	my $metadataChange = $toc->product->book->metadata_change || $toc->product->book->created;
+	return "\t<book>\n".$bibinfoText.
 			"\t\t<book_id>".$toc->product->book->id."</book_id>\n".
+			"\t\t<book_metadata_change>".$metadataChange."</book_metadata_change>\n".
 			"\t\t<toc><![CDATA[\n".
 			HTML::Tiny->entity_encode($text).
 			"\n\t\t]]></toc>\n\t</book>\n";

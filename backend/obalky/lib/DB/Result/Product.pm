@@ -314,6 +314,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 bib
+
+Type: might_have
+
+Related object: L<DB::Result::Bib>
+
+=cut
+
+__PACKAGE__->might_have(
+  "bib",
+  "DB::Result::Bib",
+  { "foreign.product" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 book
 
 Type: belongs_to
@@ -465,8 +480,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-11-09 13:25:45
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:N5wJWRl4i1fH51ZCutvlhQ
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2018-11-08 18:09:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wJnm2jb7zP+wtJcFoNuUcw
 
 
 sub media { Obalky::Media->new(shift) }

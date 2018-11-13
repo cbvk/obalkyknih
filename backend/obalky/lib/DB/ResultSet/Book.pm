@@ -51,7 +51,7 @@ sub find_by_bibinfo {
 	my($pkg,$id,$creating) = @_;
 	my @books;
 	
-#warn '---------------------';
+warn '---------------------';
 	$creating = 0 unless($creating);
 	$id->{part_year} = undef unless(defined $id->{part_year});
 	$id->{part_volume} = undef unless(defined $id->{part_volume});
@@ -69,7 +69,7 @@ sub find_by_bibinfo {
 	
 	# dotaz na cislo periodika, nebo cast monografie
 	if ($id->{part_no} or $id->{part_name} or $id->{part_year} or $id->{part_volume}) {
-#warn "# dotaz na cislo periodika, nebo cast monografie";
+warn "# dotaz na cislo periodika, nebo cast monografie";
 		@books = $pkg->search_book_part($id);
 		if (${@books}) {
 			map { # pro kazdy nalezeny zaznam (normalne cekame ze je jeden) zkontrolujeme, jestli ma vyplnenou kombinaci rok/rocnik
@@ -114,10 +114,8 @@ sub find_by_bibinfo {
 	
 	# dotazy na zaznam book (souborny zaznam)
 	unless (defined $books[0]) {
-#warn "# dotazy na zaznam book (souborny zaznam)";
 		return undef if ($creating and ($id->{part_no} or $id->{part_name} or $id->{part_year} or $id->{part_volume}));
 		
-		#$id->{part_year} = $id->{part_volume} = undef;
 		push @books, $pkg->search({ ean13=>$id->{ean13} }, { order_by=>\'(SELECT COUNT(*) FROM book WHERE id_parent = me.id) DESC, cover DESC' }) if($id->{ean13});
 		my ($acceptable,$i,$part_type,$first_row) = (1,0,undef,undef);
 		foreach (@books) {
@@ -164,23 +162,34 @@ sub find_by_bibinfo {
 			$part_type = $_->get_column('part_type');
 			$first_row = $_ unless ($i);			
 			$i++;
+			last;
 		}
 		$acceptable = 0 if ($part_type);
-  		return $first_row if(@books and not wantarray and $acceptable);
-  		
-  		### VYHLEDAVANI V DALSICH PARAMETRECH ###
-  		
-  		if (defined $id->{ean13}) {
-	  		my $bookRes = DB->resultset('ProductParams')->search({ ean13 => $id->{ean13}});
+		return $first_row if(@books and not wantarray and $acceptable);
+		
+		### VYHLEDAVANI V DALSICH PARAMETRECH ###
+		
+		if (defined $id->{ean13} or defined $id->{nbn} or defined $id->{oclc}) {
+			my $nextParamsQuery;
+			$nextParamsQuery->{ean13} = $id->{ean13} if defined $id->{ean13};
+			$nextParamsQuery->{nbn} = $id->{nbn} if defined $id->{nbn};
+			$nextParamsQuery->{oclc} = $id->{oclc} if defined $id->{oclc};
+			my $bookRes = DB->resultset('ProductParams')->search($nextParamsQuery);
 			$acceptable=1; $i=0; $part_type=undef; $first_row=undef;
 			if ($bookRes) {
 				while (my $params = $bookRes->next) {
 					my $book = DB->resultset('Book')->find($params->get_column('book'));
-					next unless (defined $_);
-					push @books, $book;
+					next unless (defined $book);
 					$part_type = $book->get_column('part_type');
+					my $parent = $book->get_column('id_parent');
+					if ($part_type and $parent) {
+						$book = DB->resultset('Book')->find($parent);
+						$part_type = $book->get_column('part_type');
+					}
+					push @books, $book;
 					$first_row = $book unless ($i);
 					$i++;
+					last;
 				}
 				$acceptable = 0 if ($part_type);
 		   		return $first_row if(@books and not wantarray and $acceptable);
@@ -411,24 +420,44 @@ sub search_book_part {
 		push @partNo, $id->{part_no} if (ref $id->{part_no} ne 'ARRAY');
 
 		# cast periodika podle EAN/ISBN/ISSN
+#warn '# cast periodika podle EAN/ISBN/ISSN';
 		push @books, $pkg->search_book_part_helper([ $pkg->search({ ean13 => $id->{ean13}, part_type => 2 }) ], \@partYear, \@partVolume, \@partNo)
 				if ($id->{ean13});
 		return @books if(@books);
 	   	
 	   	# cast periodika podle NBN
+#warn '# cast periodika podle NBN';
 	   	push @books, $pkg->search_book_part_helper([ $pkg->search({ nbn => $id->{nbn}, part_type => 2 }) ], \@partYear, \@partVolume, \@partNo)
 				if ($id->{nbn});
 		return @books if(@books);
 		
 		# cast periodika podle ISMN
+#warn '# cast periodika podle ISMN';
 	   	push @books, $pkg->search_book_part_helper([ $pkg->search({ ismn => $id->{ismn}, part_type => 2 }) ], \@partYear, \@partVolume, \@partNo)
 				if ($id->{ismn});
 		return @books if(@books);
 	   	
 	   	# cast periodika podle OCLC
+#warn '# cast periodika podle OCLC';
 	   	push @books, $pkg->search_book_part_helper([ $pkg->search({ oclc => $id->{oclc}, part_type => 2 }) ], \@partYear, \@partVolume, \@partNo)
 				if ($id->{oclc});
 		return @books if(@books);
+		
+		### VYHLEDAVANI V DALSICH PARAMETRECH ###
+#warn '# VYHLEDAVANI V DALSICH PARAMETRECH ###';
+  		if (defined $id->{ean13}) {
+	  		my $bookRes = DB->resultset('ProductParams')->search({ ean13 => $id->{ean13}});
+			if ($bookRes) {
+				while (my $params = $bookRes->next) {
+					my $book = DB->resultset('Book')->find($params->get_column('book'));
+					next unless (defined $book);
+					my $part_type = $book->get_column('part_type');
+					next if ($part_type ne 2);
+					push @books, $pkg->search_book_part_helper([ $pkg->search({ ean13 => $book->get_column('ean13'), part_type => 2 }) ], \@partYear, \@partVolume, \@partNo);
+					return @books if(@books);
+				}
+			}
+  		}
 	}
 	
 	# MONOGRAFIE

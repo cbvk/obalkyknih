@@ -207,6 +207,24 @@ __PACKAGE__->table("fe_stats");
   extra: {unsigned => 1}
   is_nullable: 1
 
+=head2 apiruntime_requests
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
+=head2 unbound_requests
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
+=head2 operative_requests
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
 =head2 raw_timeout_count
 
   data_type: 'integer'
@@ -339,6 +357,24 @@ __PACKAGE__->table("fe_stats");
   extra: {unsigned => 1}
   is_nullable: 1
 
+=head2 raw_apiruntime_requests
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
+=head2 raw_unbound_requests
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
+=head2 raw_operative_requests
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
 =head2 raw_meta_count
 
   data_type: 'integer'
@@ -432,6 +468,12 @@ __PACKAGE__->add_columns(
   { data_type => "mediumint", extra => { unsigned => 1 }, is_nullable => 1 },
   "toc_thumbnail_removes",
   { data_type => "mediumint", extra => { unsigned => 1 }, is_nullable => 1 },
+  "apiruntime_requests",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  "unbound_requests",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  "operative_requests",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "raw_timeout_count",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "raw_etag_match",
@@ -476,6 +518,12 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "raw_toc_thumbnail_removes",
   { data_type => "mediumint", extra => { unsigned => 1 }, is_nullable => 1 },
+  "raw_apiruntime_requests",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  "raw_unbound_requests",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  "raw_operative_requests",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "raw_meta_count",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "raw_cover_count",
@@ -504,10 +552,11 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("id_fe_stats");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2015-09-09 01:56:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:PtSWLjyMg8l0s1MKVrhB5A
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2018-08-10 03:39:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Og2z0AtTCLTnztOkImBxMA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 __PACKAGE__->meta->make_immutable;
 1;
+

@@ -4,6 +4,7 @@ package Obalky::Tools;
 use LWP::UserAgent;
 use File::Copy;
 use Obalky::Config;
+use Data::Dumper;
 
 # Samostatna knihovna
 
@@ -55,6 +56,7 @@ sub image_size {
 	my $dim = `$sizecmd`;
 	my($width,$height) = ($dim and $dim =~ /^(\d+)x(\d+)/); # or die!!!
 	warn "identify('$file') failed ($dim)!\n" unless($height);
+	_do_log("identify('$file') failed ($dim)!");
 	return $height ? ($width,$height) : ();
 }
 
@@ -86,13 +88,14 @@ sub cmdCronTocOcr {
 		}
 		unless(-f $out) { # udelej na vstupnim pdf OCR
 			warn "Running ocr/run.sh $inpdf $out\n" if($ENV{DEBUG});
+			_do_log("Running ocr/run.sh $inpdf $out");
 			system("/opt/obalky/ocr/run.sh $inpdf $out >/dev/null 2>/dev/null");
 		}
 		if(-f $out) { # OCR na file system
 			my $text = decode_utf8(`cat $outTxt`);
-			my $content = Obalky::Tools->slurp($out);
-			warn "Updating $tocId, text ".length($text)." chars, PDF ".
-				length($content)." bytes\n";
+			my $content = Obalky::Tools->slurp($in);
+			warn "Updating $tocId, text ".length($text)." chars, PDF ".length($content)." bytes\n";
+			_do_log("Updating $tocId, text ".length($text)." chars, PDF ".length($content)." bytes");
 			$toc->update({ full_text => $text, pdf_file => undef });
 			# metadata changed; do FE sync
 			DB->resultset('FeSync')->book_sync_remove($toc->book->id);
@@ -113,26 +116,29 @@ sub cmdCronTocOcrNkp {
 	my $Toc = DB->resultset('Toc') or die;
 	my $feSync = 0;
 	foreach my $in (glob("$OCR_DIR_OUTPUT_NKP/*")) {
-		my($tocId,$suffix) = ($in =~ /\/(\d+)\.?(\w*)$/);
+		my($tocId,$unused,$suffix) = ($in =~ /\/(\d+)(\.\d+)?\.?(\w*)$/);
 		my $toc = $Toc->find($tocId);
 		# zaznam uz neni v DB, podezrele, ale neni
 		# presunout do adresare se sirotky
 		unless ($toc) {
 			move($in, "$OCR_DIR_ORPHAN_NKP/$tocId.$suffix");
 			warn "!!! ORPHAN... $tocId.$suffix";
+			_do_log("!!! ORPHAN... $tocId.$suffix");
 		}
 		# ochrana pred nulovym obsahem souboru
 		unless (-s $in) {
 			unlink $in;
 			warn "!!! EMPTY... $tocId.$suffix";
+			_do_log("!!! EMPTY... $tocId.$suffix");
 			next;
 		}
 		# PDF
 		if ($suffix eq 'pdf') {
 			my $out = "$OCR_DIR_OUTPUT_NKP/$tocId.pdf";
-			my $content = Obalky::Tools->slurp($out);
+			my $content = Obalky::Tools->slurp($in);
 			$toc->update({ pdf_file => undef });
 			warn "Updating PDF $tocId, ".length($content)." bytes\n";
+			_do_log("Updating PDF $tocId, ".length($content)." bytes");
 			# PDF files are grouped in dir
 			my $dirGroupName = int($tocId/10000+1)*10000;
 			mkdir($Obalky::Config::TOC_DIR.'/'.$dirGroupName) unless (-d $Obalky::Config::TOC_DIR.'/'.$dirGroupName);
@@ -152,9 +158,10 @@ sub cmdCronTocOcrNkp {
 		# FULLTEXT
 		if ($suffix eq 'txt') {
 			my $outTxt = "$OCR_DIR_OUTPUT_NKP/$tocId.txt";
-			my $text = decode('cp1250', `cat $outTxt`);
+			my $text = decode('cp1250', `cat $in`);
 			$toc->update({ full_text => $text });
 			warn "Updating FULLTEXT $tocId, text ".length($text)." chars\n";
+			_do_log("Updating FULLTEXT $tocId, text ".length($text)." chars");
 			# metadata changed; do FE sync
 			DB->resultset('FeSync')->book_sync_remove($toc->book->id);
 			$feSync = 1;
@@ -162,6 +169,14 @@ sub cmdCronTocOcrNkp {
 		}
 	}
 }
+
+sub _do_log {
+    my($msg) = @_;
+    open(LOG,">>utf8","/opt/obalky/log/ocr_nkp.log");
+    print LOG localtime." ".$msg."\n";
+    close(LOG);
+}
+
 
 #sub is_ocr_done {
 #	my($pkg

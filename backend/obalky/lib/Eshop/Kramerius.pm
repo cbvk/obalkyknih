@@ -15,6 +15,7 @@ use Switch;
 use JSON;
 use File::Path;
 use LWP::Simple;
+use Try::Tiny;
 use Eshop;
 use DB;
 
@@ -63,9 +64,8 @@ print "\n$i / $numberOfQueries";
 				$PIDua->ssl_opts( verify_hostname => 0 ,SSL_verify_mode => 0x00);
 #debug
 #$baseURL = 'http://kramerius.mzk.cz/search/';
-
 #$method = 'monograph';
-#$PID = 'uuid:0e3f44d7-890a-4976-aeb9-783228b4a2f0';
+#$PID = 'uuid:ee7baf80-8144-11e4-a321-5ef3fc9bb22f';
 
 				# zaznam dig. objektu
 				my ($OBJjsonurl,$OBJreq,$OBJresp,$jsondata);
@@ -276,9 +276,13 @@ print "  UUID: $PID";
 					my $custom_ean = $ean || $nbn;
 					my $jdata;
 #debug
-#					($jdata, $info->{tocpdf_tmpfile}, $info->{toc_firstpage}) = downloadtoc($PID,$PIDua,$tmp_dir,$custom_ean) if ($method eq 'periodicalitem' || $method eq 'monograph');
+					($jdata, $info->{tocpdf_tmpfile}, $info->{toc_firstpage}, $info->{toctext}) = downloadtoc($PID,$PIDua,$tmp_dir,$custom_ean) if ($method eq 'periodicalitem' || $method eq 'monograph');
 					$info->{cover_url} = downloadcover($baseURL, $PID, $jdata);
 					$media = Obalky::Media->new_from_info($info);
+					
+					# verejny, alebo neverejny dokument
+					$media->{ispublic} = 0;
+					$media->{ispublic} = 1 if ($jsondata->{'policy'} eq 'public');
 					
 					# PDF fulltext
 					my $pdfurl;
@@ -322,7 +326,7 @@ sub get_response {
 	my($from,$to,$method) = @_;
 	$method = "map" if ($method eq 'maprecord');
 	$query_url = $baseURL . "api/v5.0/search?q=fedora.model:$method%20AND%20modified_date:[".$from."T00:00:00Z%20TO%20".$to."T23:59:59Z]&fl=PID&wt=xml&start=$start";
-	warn "URL: $query_url" if ($ENV{DEBUG} == 2);
+	warn "URL: $query_url" if ($ENV{DEBUG} && $ENV{DEBUG} eq 2);
 	$ua = LWP::UserAgent->new;
 	$ua->timeout(60);
 	$ua->ssl_opts( verify_hostname => 0, SSL_verify_mode => 0x00 );
@@ -340,17 +344,23 @@ sub getEAN{
 
 sub downloadtoc {
 	my ($PID,$PIDua,$tmp_dir,$ean) = @_;
-	my $parent_uuid = $PID;
-	$parent_uuid =~ s/uuid\://g;
-	my $toc_dir = "$tmp_dir/$PID";
-	my $PIDjsonurl = $baseURL . 'api/v5.0/item/'. $PID .'/children';
-	my $PIDreq = HTTP::Request->new(GET => $PIDjsonurl);
-	$PIDreq->header('content-type' => 'application/json');
-    my $PIDresp = $PIDua->request($PIDreq);
-    my $jsondata= decode_json($PIDresp->content);
-    return if (!$jsondata);
-    my $index = 0;
-    my ($toc_page, $toc_file, $first_page) = (undef, undef, undef);
+	my $tocOcrText;
+	
+	#try {
+		my $parent_uuid = $PID;
+		$parent_uuid =~ s/uuid\://g;
+		my $toc_dir = "$tmp_dir/$PID";
+		$toc_dir =~ s/uuid\://g;
+		my $PIDjsonurl = $baseURL . 'api/v5.0/item/'. $PID .'/children';
+		my $PIDreq = HTTP::Request->new(GET => $PIDjsonurl);
+		$PIDreq->header('content-type' => 'application/json');
+		my $PIDresp = $PIDua->request($PIDreq);
+		my $jsondata= decode_json($PIDresp->content);
+		return if (!$jsondata or ref $jsondata ne 'ARRAY');
+	#} catch {}
+	
+	my $index = 0;
+	my ($toc_page, $toc_file, $first_page) = (undef, undef, undef);
 	foreach my $pagemodel (@{$jsondata}) {
 		if (($pagemodel->{'details'}->{'type'}) && ($pagemodel->{'details'}->{'type'} eq 'TableOfContents')) {
 			if ($index == 0) {
@@ -361,22 +371,28 @@ sub downloadtoc {
 			my $tocurl = $baseURL . "api/v5.0/item/$toc_page/full";
 			if(system("wget --no-check-certificate -q $tocurl -O $toc_dir/$index >/dev/null")) {
 				warn "$tocurl: failed to wget!\n";
-				return ($jsondata, undef);
+				return ($jsondata, undef, undef);
 			}
+			my $toctxtUrl = $baseURL . 'img?pid=' . $toc_page . '&stream=TEXT_OCR&action=GETRAW';
+			my $toctextReq = HTTP::Request->new(GET => $toctxtUrl);
+			my $toctextResp = $PIDua->request($toctextReq);
+			$tocOcrText .= $toctextResp->content if ($toctextResp);
+			
+			# https://kramerius.mzk.cz/search/img?pid=uuid:a0d213c0-1df6-11e4-8e0d-005056827e51&stream=TEXT_OCR&action=GETRAW
 			# first page
 			if ($index == 0) {
-				system("wget --no-check-certificate -q $tocurl -O $tmp_dir/$parent_uuid >/dev/null")
+				system("wget --no-check-certificate -q $tocurl -O $tmp_dir/$parent_uuid-first >/dev/null");
 			}
 			$index++;
 		}
 	}
 	if ($index != 0) {
 		$toc_file = "$tmp_dir/$parent_uuid.pdf";
-		$first_page = "$tmp_dir/$parent_uuid";
+		$first_page = "$tmp_dir/$parent_uuid-first";
 		system("convert $toc_dir/* $toc_file");
 		system("rm -rf $toc_dir");
 	}
-	return ($jsondata, $toc_file, $first_page);	
+	return ($jsondata, $toc_file, $first_page, $tocOcrText);	
 }
 
 sub downloadcover{
@@ -392,7 +408,7 @@ sub downloadcover{
     	my $PIDresp = $ua->request($PIDreq);
     	$jsondata = decode_json($PIDresp->content);
 	}
-	return if (!$jsondata);
+	return if (!$jsondata or ref $jsondata ne 'ARRAY');
 	return unless (scalar @{$jsondata});
 	my ($uuid, $coverurl);
 	my $lowestTitleNumeric = 99999;
@@ -416,12 +432,12 @@ sub downloadcover{
 			last;
 		}
 	}
-warn $uuid;
 	$coverurl = downloadcover_helper($url, $uuid) if ($uuid ne '' and !$coverurl);
 print "\n\n---------\n";
 print Dumper("Vybrana obalka UUID: ".$uuid);
 print Dumper("Vybrana obalka URL: ".$coverurl);
-print "---------\n\n";
+print "\n---------\n\n";
+
 	return $coverurl;
 }
 
