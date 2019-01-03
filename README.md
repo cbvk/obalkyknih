@@ -1,4 +1,13 @@
-Obálky knih.cz 3.3 (aktualizace 2017)
+Obálky knih.cz 3.4 (aktualizace 2018)
+==================
+
+Implementátorům doporučuje shlédnout tyto nové funkce:
+* [Doporučování literatury](https://github.com/cbvk/obalkyknih/wiki/Doporu%C4%8Dov%C3%A1n%C3%AD-literatury)
+* [Další vydání titulu](https://github.com/cbvk/obalkyknih/wiki/Dal%C5%A1%C3%AD-vyd%C3%A1n%C3%AD-titulu)
+* [Seznam použité literatury](https://github.com/cbvk/obalkyknih/wiki/Seznam-pou%C5%BEit%C3%A9-literatury)
+
+
+Obálky knih.cz 3.3
 ==================
 
 Metadatový kontejner obohacen o odkazy na digitalizované dokumenty z digitální knihovny Kramerius včetně informace, jestli se jedná o veřejný dokument, např.:
