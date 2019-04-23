@@ -17,7 +17,8 @@
     {
         Cover,
         Toc,
-        Auth
+        Auth,
+        Bibliography
     }
 
     /// <summary>

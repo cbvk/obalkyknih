@@ -129,6 +129,9 @@
     <Compile Include="Classes\MetadataRetriever.cs" />
     <Compile Include="Classes\Enums.cs" />
     <Compile Include="Classes\Settings.cs" />
+    <Compile Include="LoadFromPDFWindow.xaml.cs">
+      <DependentUpon>LoadFromPDFWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MessageBoxDialogWindow.xaml.cs">
       <DependentUpon>MessageBoxDialogWindow.xaml</DependentUpon>
     </Compile>
@@ -137,6 +140,9 @@
     </Compile>
     <Compile Include="MoveScannedPageWindow.xaml.cs">
       <DependentUpon>MoveScannedPageWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="SetMultipleISBNsWindow.xaml.cs">
+      <DependentUpon>SetMultipleISBNsWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="SettingsWindow.xaml.cs">
       <DependentUpon>SettingsWindow.xaml</DependentUpon>
@@ -171,6 +177,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="LoadFromPDFWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -192,6 +202,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="MoveScannedPageWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SetMultipleISBNsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -275,6 +289,10 @@
     <ProjectReference Include="..\CroppingAdorner\CroppingAdorner\CroppingAdorner.csproj">
       <Project>{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}</Project>
       <Name>CroppingAdorner</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PdfToImage\PdfToImage.csproj">
+      <Project>{0AC963ED-4835-41D8-9BE2-57623402819D}</Project>
+      <Name>PdfToImage</Name>
     </ProjectReference>
     <ProjectReference Include="..\SobekCM_Marc_Library\SobekCM_Marc_Library\SobekCM_Marc_Library.csproj">
       <Project>{E92393B7-C13C-407B-B24F-A6CED0C2F2EA}</Project>

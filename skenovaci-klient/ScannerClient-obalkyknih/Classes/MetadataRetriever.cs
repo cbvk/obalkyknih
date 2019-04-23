@@ -45,6 +45,9 @@ namespace ScannerClient_obalkyknih.Classes
                 case IdentifierType.ISBN:
                     identifierValue = generalRecord.IdentifierValue;
                     break;
+                case IdentifierType.ISMN:
+                    identifierValue = generalRecord.Ismn;
+                    break;
                 case IdentifierType.ISSN:
                     identifierValue = ((Periodical)generalRecord).Issn;
                     break;
@@ -245,6 +248,9 @@ namespace ScannerClient_obalkyknih.Classes
                     break;
                 case IdentifierType.ISSN:
                     identifierFieldNumber = Settings.Z39IssnField;
+                    break;
+                case IdentifierType.ISMN:
+                    identifierFieldNumber = Settings.Z39IsmnField;
                     break;
                 case IdentifierType.OCLC:
                     identifierFieldNumber = Settings.Z39OclcField;

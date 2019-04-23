@@ -12,6 +12,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Text.RegularExpressions;
+using System.Windows.Threading;
 using WIA;
 using System.ComponentModel;
 using System.IO;
@@ -84,6 +85,9 @@ namespace ScannerClient_obalkyknih
         // Dictionary containing Guid of AUTH image and its thumbnail with wrapping Grid
         private Dictionary<Guid, Grid> authThumbnailGridsDictionary = new Dictionary<Guid, Grid>();
 
+        // Dictionary containing Guid of BIBLIOGRAPHY image and its thumbnail with wrapping Grid
+        private Dictionary<Guid, Grid> bibThumbnailGridsDictionary = new Dictionary<Guid, Grid>();
+
         // Object responsible for cropping of images
         private CroppingAdorner cropper;
 
@@ -101,6 +105,7 @@ namespace ScannerClient_obalkyknih
 
         private Dictionary<string, byte[]> tocDescriptionsDictionaryToDelete;
         private Dictionary<string, byte[]> authDescriptionsDictionaryToDelete;
+        private Dictionary<string, byte[]> bibDescriptionsDictionaryToDelete;
         private string coverFileNameToDelete;
 
         // WebClient for downloading of pdf version of toc
@@ -118,6 +123,15 @@ namespace ScannerClient_obalkyknih
         private Grid newestThumbnail;
         private Grid workingThumbnail;
 
+        // Authority existence = authority could be scanned
+        private bool authScannable = false;
+
+        // Posledni nactene pdf
+        public string pdfFile = "";
+
+        // Posledni odskenovane book_id
+        public string scannedBookId = "";
+
         #endregion
 
         /// <summary>Constructor, creates new TabsControl based on given barcode</summary>
@@ -128,6 +142,8 @@ namespace ScannerClient_obalkyknih
             InitializeComponent();
             if (record is Monograph)
             {
+                generalRecord.AdditionalIdentifiers = new HashSet<string>();
+                generalRecord.AdditionalUnionIdentifiers = new HashSet<string>();
                 this.addUnionButton.IsEnabled = true;
                 this.addUnionButton.Visibility = Visibility.Visible;
 
@@ -154,6 +170,10 @@ namespace ScannerClient_obalkyknih
                 this.isbnTextBox.Visibility = Visibility.Visible;
                 // part and union grid hidden by default
                 this.gridIdentifiers.Visibility = Visibility.Hidden;
+
+                //button for additional ISBNs
+                this.addMoreISBN.Visibility = Visibility.Visible;
+                this.addMoreISBN.IsEnabled = false;
             }
             else if (record is Periodical)
             {
@@ -471,7 +491,7 @@ namespace ScannerClient_obalkyknih
                             this.DownloadCoverAndToc();
 
                             // show union tab
-                            if ((this.generalRecord as Monograph).listIdentifiers.Count > 2) showUnionTab();
+                            //if ((this.generalRecord as Monograph).listIdentifiers.Count > 2) showUnionTab();
                         }
                     }
                 }
@@ -482,7 +502,9 @@ namespace ScannerClient_obalkyknih
         {
             BackgroundWorker worker = sender as BackgroundWorker;
             GeneralRecord record = e.Argument as GeneralRecord;
-            
+
+            this.authScannable = false;
+
             if (record == null)
             {
                 return;
@@ -500,10 +522,7 @@ namespace ScannerClient_obalkyknih
             {
                 var tmpRecord = record as Monograph;
                 requestObject.isbn = string.IsNullOrWhiteSpace(tmpRecord.PartIsbn) ? null : tmpRecord.PartIsbn;
-                if (string.IsNullOrEmpty(requestObject.isbn))
-                {
-                    requestObject.isbn = (string.IsNullOrWhiteSpace(tmpRecord.PartEan)) ? null : tmpRecord.PartEan;
-                }
+                requestObject.ismn = (string.IsNullOrWhiteSpace(tmpRecord.PartIsmn)) ? null : tmpRecord.PartIsmn;
                 requestObject.oclc = (string.IsNullOrWhiteSpace(tmpRecord.PartOclc)) ? null : tmpRecord.PartOclc;
                 if (!string.IsNullOrWhiteSpace(tmpRecord.PartCnb))
                 {
@@ -523,10 +542,7 @@ namespace ScannerClient_obalkyknih
             if (record is Periodical)
             {
                 requestObject.isbn = (string.IsNullOrWhiteSpace(((Periodical)record).Issn)) ? null : ((Periodical)record).Issn;
-                if (string.IsNullOrEmpty(requestObject.isbn))
-                {
-                    requestObject.isbn = (string.IsNullOrWhiteSpace(record.Ean)) ? null : record.Ean;
-                }
+                requestObject.ismn = (string.IsNullOrWhiteSpace(record.Ismn)) ? null : record.Ismn;
                 requestObject.oclc = (string.IsNullOrWhiteSpace(record.Oclc)) ? null : record.Oclc;
                 if (!string.IsNullOrWhiteSpace(record.Cnb))
                 {
@@ -578,8 +594,24 @@ namespace ScannerClient_obalkyknih
                     record.OriginalCoverImageLink = responseObject.cover_medium_url;
                     record.OriginalTocThumbnailLink = responseObject.toc_thumbnail_url;
                     record.OriginalTocPdfLink = responseObject.toc_pdf_url;
+                    record.OriginalBibThumbnailLink = responseObject.bib_thumbnail_url;
+                    record.OriginalBibPdfLink = responseObject.bib_pdf_url;
+                    if (!string.IsNullOrWhiteSpace(responseObject.orig_height) && Int32.Parse(responseObject.orig_height) < 510)
+                    {
+                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                        {
+                            coverLowResGrid.Visibility = Visibility.Visible;
+                        }));
+                    }
+                    else
+                    {
+                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                        {
+                            coverLowResGrid.Visibility = Visibility.Hidden;
+                        }));
+                    }
 
-                    if (this.generalRecord.AuthList.Count > 0)
+                    if (this.generalRecord.AuthList != null && this.generalRecord.AuthList.Count > 0)
                     {
                         var firstAuth = this.generalRecord.AuthList.First();
                         var urlStringAuth = "http://www.obalkyknih.cz/api/auth?auth=[{\"authinfo\":{\"auth_id\":\"" + firstAuth.Key + "\"}}]";
@@ -597,6 +629,7 @@ namespace ScannerClient_obalkyknih
                             if (responseObjectAuth != null)
                             {
                                 //assign values
+                                this.authScannable = true;
                                 record.OriginalAuthImageLink = responseObjectAuth.cover_medium_url;
                                 e.Result = record;
                             }
@@ -627,7 +660,7 @@ namespace ScannerClient_obalkyknih
                     }
                     else
                     {
-                        this.originalCoverImage.Source = new BitmapImage();
+                        this.originalCoverImage.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-empty.png");
                     }
 
                     if (generalRecord.OriginalTocThumbnailLink != null)
@@ -641,7 +674,21 @@ namespace ScannerClient_obalkyknih
                     }
                     else
                     {
-                        this.originalTocImage.Source = new BitmapImage();
+                        this.originalTocImage.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-empty.png");
+                    }
+
+                    if (generalRecord.OriginalBibThumbnailLink != null)
+                    {
+                        if ((Window.GetWindow(this) as MainWindow) != null) (Window.GetWindow(this) as MainWindow).AddMessageToStatusBar("Stahuji obsah.");
+                        using (WebClient bibWc = new WebClient())
+                        {
+                            bibWc.OpenReadCompleted += new OpenReadCompletedEventHandler(BibDownloadCompleted);
+                            bibWc.OpenReadAsync(new Uri(generalRecord.OriginalBibThumbnailLink));
+                        }
+                    }
+                    else
+                    {
+                        this.originalBibliographyImage.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-empty.png");
                     }
 
                     if (generalRecord.OriginalAuthImageLink != null)
@@ -655,13 +702,13 @@ namespace ScannerClient_obalkyknih
                     }
                     else
                     {
-                        this.originalCoverImage.Source = new BitmapImage();
+                        this.originalCoverImage.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-empty.png");
                     }
                 }
                 else
                 {
-                    this.originalCoverImage.Source = new BitmapImage();
-                    this.originalTocImage.Source = new BitmapImage();
+                    this.originalCoverImage.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-empty.png");
+                    this.originalTocImage.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-empty.png");
                 }
             }
         }
@@ -739,6 +786,35 @@ namespace ScannerClient_obalkyknih
                 {
                     this.originalTocImage.Source = imgsrc;
                     this.originalTocImage.IsEnabled = true;
+                }
+            }
+        }
+
+        // Actions after bib image was downloaded - shows image
+        void BibDownloadCompleted(object sender, OpenReadCompletedEventArgs e)
+        {
+            //if user created new record
+            if (Window.GetWindow(this) == null)
+            {
+                return;
+            }
+            MainWindow win = (Window.GetWindow(this) as MainWindow);
+            if (win.IsInitialized) win.RemoveMessageFromStatusBar("Stahuji seznam literatury.");
+            if (e.Error == null && !e.Cancelled)
+            {
+                BitmapImage imgsrc = new BitmapImage();
+                imgsrc.BeginInit();
+                imgsrc.StreamSource = e.Result;
+                imgsrc.EndInit();
+                if (this.tabControl.SelectedItem == this.controlTabItem)
+                {
+                    this.controlBibliographyImage.Source = imgsrc;
+                    this.controlBibliographyImage.IsEnabled = true;
+                }
+                else
+                {
+                    this.originalBibliographyImage.Source = imgsrc;
+                    this.originalBibliographyImage.IsEnabled = true;
                 }
             }
         }
@@ -860,14 +936,14 @@ namespace ScannerClient_obalkyknih
             }
             this.generalRecord.Cnb =
                 string.IsNullOrWhiteSpace(this.cnbTextBox.Text) ? null : this.cnbTextBox.Text;
-            //ean
+            //ismn
             if (this.generalRecord is Monograph)
             {
-                (this.generalRecord as Monograph).PartEan =
-                    string.IsNullOrWhiteSpace(this.partEanTextBox.Text) ? null : this.partEanTextBox.Text;
+                (this.generalRecord as Monograph).PartIsmn =
+                    string.IsNullOrWhiteSpace(this.partIsmnTextBox.Text) ? null : this.partIsmnTextBox.Text;
             }
-            this.generalRecord.Ean =
-                string.IsNullOrWhiteSpace(this.eanTextBox.Text) ? null : this.eanTextBox.Text;
+            this.generalRecord.Ismn =
+                string.IsNullOrWhiteSpace(this.ismnTextBox.Text) ? null : this.ismnTextBox.Text;
             //oclc
             if (this.generalRecord is Monograph)
             {
@@ -900,8 +976,8 @@ namespace ScannerClient_obalkyknih
             GeneralRecord record = this.generalRecord;
             if (this.generalRecord is Periodical)
             {
-                this.partTitleTextBox.Text = record.Title;
-                this.partAuthorTextBox.Text = record.Authors;
+                this.partTitleTextBox.Text = string.IsNullOrWhiteSpace(record.Title) ? "" : record.Title.Trim();
+                this.partAuthorTextBox.Text = string.IsNullOrWhiteSpace(record.Authors) ? "" : record.Authors.Trim();
                 this.partYearTextBox.Text = DateTime.Now.Year.ToString();
                 this.yearTextBox.Text = record.Year;
                 this.partVolumeTextBox.Text = (record as Periodical).PartVolume;
@@ -910,40 +986,49 @@ namespace ScannerClient_obalkyknih
                 this.partIssnTextBox.Text = (record as Periodical).Issn;
                 this.partCnbTextBox.Text = record.Cnb;
                 this.partOclcTextBox.Text = record.Oclc;
-                this.partEanTextBox.Text = record.Ean;
+                this.partIsbnTextBox.Text = record.Ean;
+                this.partIsmnTextBox.Text = record.Ismn;
                 this.partUrnNbnTextBox.Text = record.Urn;
                 // hide optional fields
+
                 this.partCnbTextBox.Visibility = Visibility.Hidden;
                 this.partOclcTextBox.Visibility = Visibility.Hidden;
-                this.partEanTextBox.Visibility = Visibility.Hidden;
+                this.partIsmnTextBox.Visibility = Visibility.Hidden;
                 this.partUrnNbnTextBox.Visibility = Visibility.Hidden;
                 this.partCnbLabel.Visibility = Visibility.Hidden;
                 this.partOclcLabel.Visibility = Visibility.Hidden;
-                this.partEanLabel.Visibility = Visibility.Hidden;
+                this.partIsbnLabel.Visibility = Visibility.Hidden;
+                this.partIsmnLabel.Visibility = Visibility.Hidden;
                 this.partUrnNbnLabel.Visibility = Visibility.Hidden;
                 this.optionalAtributesLink.Visibility = Visibility.Visible;
             }
             else if (this.generalRecord is Monograph && !(this.generalRecord as Monograph).IsUnionRequested)
             {
                 var tmpRecord = record as Monograph;
-                this.partTitleTextBox.Text = tmpRecord.PartTitle;
-                this.partAuthorTextBox.Text = tmpRecord.PartAuthors;
-                this.partYearTextBox.Text = tmpRecord.PartYear;
+                this.partTitleTextBox.Text = string.IsNullOrWhiteSpace(tmpRecord.PartTitle) ? "" : tmpRecord.PartTitle.Trim();
+                this.partAuthorTextBox.Text = string.IsNullOrWhiteSpace(tmpRecord.PartAuthors) ? "" : tmpRecord.PartAuthors.Trim();
+                string year = tmpRecord.PartYear;
+                year = year + ".";
+                if (!char.IsDigit(year[0])) year = year.Substring(1);
+                if (year.Length > 0 && !char.IsDigit(year[year.Length - 1])) year = year.Substring(0, year.Length - 1);
+                this.partYearTextBox.Text = year;
                 //this.partNumberTextBox.Text = tmpRecord.PartNo; //na zadost p.Zahorika automaticky nedoplnovat
                 //this.partNameTextBox.Text = tmpRecord.PartName;
                 this.partIsbnTextBox.Text = tmpRecord.PartIsbn;
+                if (string.IsNullOrWhiteSpace(this.partIsbnTextBox.Text)) this.partIsbnTextBox.Text = tmpRecord.PartEan;
                 this.partCnbTextBox.Text = tmpRecord.PartCnb;
                 this.partOclcTextBox.Text = tmpRecord.PartOclc;
-                this.partEanTextBox.Text = tmpRecord.PartEan;
+                this.partIsmnTextBox.Text = tmpRecord.PartIsmn;
                 this.partUrnNbnTextBox.Text = tmpRecord.PartUrn;
                 // show optional fields
                 this.partCnbTextBox.Visibility = Visibility.Visible;
                 this.partOclcTextBox.Visibility = Visibility.Visible;
-                this.partEanTextBox.Visibility = Visibility.Visible;
+                this.partIsmnTextBox.Visibility = Visibility.Visible;
                 this.partUrnNbnTextBox.Visibility = Visibility.Visible;
                 this.partCnbLabel.Visibility = Visibility.Visible;
                 this.partOclcLabel.Visibility = Visibility.Visible;
-                this.partEanLabel.Visibility = Visibility.Visible;
+                this.partIsbnLabel.Visibility = Visibility.Visible;
+                this.partIsmnLabel.Visibility = Visibility.Visible;
                 this.partUrnNbnLabel.Visibility = Visibility.Visible;
                 this.optionalAtributesLink.Visibility = Visibility.Hidden;
 
@@ -962,6 +1047,7 @@ namespace ScannerClient_obalkyknih
                     this.multipartIdentifierUnion.Items.Clear();
                     foreach (MetadataIdentifier identifier in tmpRecord.listIdentifiers)
                     {
+                        if (identifier.IdentifierCode == null) continue;
                         ComboboxItem item = new ComboboxItem();
                         item.Text = identifier.IdentifierCode + " " + identifier.IdentifierDescription;
                         item.Value = identifier.IdentifierCode;
@@ -972,57 +1058,79 @@ namespace ScannerClient_obalkyknih
                         j++;
                     }
 
-                    // pokud je jako skenovany dokument zvoleny prvni zaznam, musi byt
-                    if (partComboIndex == unionComboIndex) unionComboIndex = 0;
-
-                    this.multipartIdentifierOwn.SelectedIndex = partComboIndex == -1 ? 1 : partComboIndex;
-                    this.multipartIdentifierUnion.SelectedIndex = unionComboIndex;
-
-                    // multipart monography visual workaround
-                    this.partNumberLabel.Visibility = Visibility.Visible;
-                    this.partNumberLabel.IsEnabled = true;
-                    this.partNumberTextBox.Visibility = Visibility.Visible;
-                    this.partNumberTextBox.IsEnabled = true;
-                    this.partNameLabel.Visibility = Visibility.Visible;
-                    this.partNameLabel.IsEnabled = true;
-                    this.partNameTextBox.Visibility = Visibility.Visible;
-                    this.partNameTextBox.IsEnabled = true;
-                    this.gridCover.VerticalAlignment = VerticalAlignment.Top;
-                    this.gridToc.VerticalAlignment = VerticalAlignment.Top;
-
-                    // fill part/union texts
-                    //if (partComboIndex > -1) this.partNameTextBox.Text = tmpRecord.listIdentifiers[partComboIndex].IdentifierDescription;
-                    if (unionComboIndex > -1) this.isbnTextBox.Text = tmpRecord.listIdentifiers[unionComboIndex].IdentifierCode;
-                    this.titleTextBox.Text = tmpRecord.PartTitle;
-                    this.authorTextBox.Text = tmpRecord.PartAuthors;
-                    this.yearTextBox.Text = tmpRecord.PartYear;
-                    this.cnbTextBox.Text = tmpRecord.PartCnb;
-                    this.oclcTextBox.Text = tmpRecord.PartOclc;
-                    this.eanTextBox.Text = tmpRecord.PartEan;
-                    this.urnNbnTextBox.Text = tmpRecord.PartUrn;
-
-                    //is minor by default
-                    bool minorIsChecked = tmpRecord.listIdentifiers.Count > 2 ? true : false;
-                    this.checkboxMinorPartName.IsChecked = minorIsChecked;
-                    if (minorIsChecked)
+                    // muze se stat, ze jsou u zaznamu 2 identifikatory, ale jeden z nich je $$z, takze jej ignorujeme
+                    // a okno nema pro jeden identifikator vyznam (promenna j bude iterovana pouze jednou)
+                    if (j < 2)
                     {
-                        this.partCnbTextBox.Text = "";
-                        this.partOclcTextBox.Text = "";
+                        this.gridIdentifiers.Visibility = Visibility.Hidden;
                     }
                     else
                     {
-                        this.partCnbTextBox.Text = this.cnbTextBox.Text;
-                        this.partOclcTextBox.Text = this.oclcTextBox.Text;
-                        this.cnbTextBox.Text = "";
-                        this.oclcTextBox.Text = "";
+                        // pokud je jako skenovany dokument zvoleny prvni zaznam, musi byt
+                        if (partComboIndex == unionComboIndex) unionComboIndex = 0;
+
+                        this.multipartIdentifierOwn.SelectedIndex = partComboIndex == -1 ? 1 : partComboIndex;
+                        this.multipartIdentifierUnion.SelectedIndex = unionComboIndex;
+
+                        // multipart monography visual workaround
+                        this.partNumberLabel.Visibility = Visibility.Visible;
+                        this.partNumberLabel.IsEnabled = true;
+                        this.partNumberTextBox.Visibility = Visibility.Visible;
+                        this.partNumberTextBox.IsEnabled = true;
+                        this.partNameLabel.Visibility = Visibility.Visible;
+                        this.partNameLabel.IsEnabled = true;
+                        this.partNameTextBox.Visibility = Visibility.Visible;
+                        this.partNameTextBox.IsEnabled = true;
+                        this.gridCover.VerticalAlignment = VerticalAlignment.Top;
+                        this.gridToc.VerticalAlignment = VerticalAlignment.Top;
+                        this.gridAuth.VerticalAlignment = VerticalAlignment.Top;
+                        this.gridBibliographyList.VerticalAlignment = VerticalAlignment.Top;
+
+                        // fill part/union texts
+                        //if (partComboIndex > -1) this.partNameTextBox.Text = tmpRecord.listIdentifiers[partComboIndex].IdentifierDescription;
+                        if (unionComboIndex > -1) this.isbnTextBox.Text = tmpRecord.listIdentifiers[unionComboIndex].IdentifierCode;
+                        this.titleTextBox.Text = tmpRecord.PartTitle;
+                        this.authorTextBox.Text = tmpRecord.PartAuthors;
+                        this.yearTextBox.Text = tmpRecord.PartYear;
+                        this.cnbTextBox.Text = tmpRecord.PartCnb;
+                        this.oclcTextBox.Text = tmpRecord.PartOclc;
+                        this.isbnTextBox.Text = tmpRecord.PartIsbn;
+                        this.ismnTextBox.Text = tmpRecord.PartIsmn;
+                        this.urnNbnTextBox.Text = tmpRecord.PartUrn;
+
+                        //is minor by default
+                        //bool minorIsChecked = tmpRecord.listIdentifiers.Count > 2 ? true : false;
+                        bool minorIsChecked = false;
+                        this.checkboxMinorPartName.IsChecked = minorIsChecked;
+                        if (minorIsChecked)
+                        {
+                            this.partCnbTextBox.Text = "";
+                            this.partOclcTextBox.Text = "";
+                        }
+                        else
+                        {
+                            this.partCnbTextBox.Text = this.cnbTextBox.Text;
+                            this.partOclcTextBox.Text = this.oclcTextBox.Text;
+                            this.cnbTextBox.Text = "";
+                            this.oclcTextBox.Text = "";
+                        }
+                        this.partIsbnTextBox.Text = "";
+                        this.partIsmnTextBox.Text = "";
+                        this.partUrnNbnTextBox.Text = "";
+
+                        // coedition default choice
+                        showUnionTab(); // because of next step; will be set bat to hideUnionTab in next multiple steps
+                        checkboxMinorChanger(false);
+                        checkboxMultipartChanger(false);
+                        multipartIdentifierOwn_SelectionChanged(null, null);
                     }
-                    this.partEanTextBox.Text = "";
-                    this.partUrnNbnTextBox.Text = "";
                 }
                 else
                 {
-                    this.gridCover.VerticalAlignment = VerticalAlignment.Center;
-                    this.gridToc.VerticalAlignment = VerticalAlignment.Center;
+                    this.gridCover.VerticalAlignment = VerticalAlignment.Top;
+                    this.gridToc.VerticalAlignment = VerticalAlignment.Top;
+                    this.gridAuth.VerticalAlignment = VerticalAlignment.Top;
+                    this.gridBibliographyList.VerticalAlignment = VerticalAlignment.Top;
                 }
             }
             else
@@ -1041,7 +1149,8 @@ namespace ScannerClient_obalkyknih
                 && string.IsNullOrWhiteSpace(this.partIssnTextBox.Text)
                 && string.IsNullOrWhiteSpace(this.partCnbTextBox.Text)
                 && string.IsNullOrWhiteSpace(this.partOclcTextBox.Text)
-                && string.IsNullOrWhiteSpace(this.partEanTextBox.Text)
+                && string.IsNullOrWhiteSpace(this.partIsbnTextBox.Text)
+                && string.IsNullOrWhiteSpace(this.partIsmnTextBox.Text)
                 && string.IsNullOrWhiteSpace(this.partUrnNbnTextBox.Text)
                 && !string.IsNullOrWhiteSpace(record.Custom))
             {
@@ -1073,22 +1182,11 @@ namespace ScannerClient_obalkyknih
             rgx = new Regex("[\\]\\]\\?]");
             */
 
-            // nazev autora
-            if (this.generalRecord.AuthList.Count > 0)
-            {
-                var firstAuth = this.generalRecord.AuthList.First();
-                this.authName.Content = firstAuth.Value;
-            }
-            else
-            {
-                this.authName.Content = "";
-            }
-
             ValidateIdentifiers(null, null);
         }
 
         // Validates identifiers, highlights errors
-        private void ValidateIdentifiers(object sender, TextChangedEventArgs e)
+        public void ValidateIdentifiers(object sender, TextChangedEventArgs e)
         {
             bool warn = true;
             bool warnTmp = true;
@@ -1118,8 +1216,8 @@ namespace ScannerClient_obalkyknih
             // ISSN - 7 numbers + checksum
             warnTmp = ShowIdentifierWarningControl(IdentifierType.ISSN);
             warn = !warnTmp ? false : warn;
-            // EAN - 12 numbers + checksum
-            warnTmp = ShowIdentifierWarningControl(IdentifierType.EAN);
+            // ISMN - 10 chars, old format + 13 chars 979-x
+            warnTmp = ShowIdentifierWarningControl(IdentifierType.ISMN);
             warn = !warnTmp ? false : warn;
             // CNB - cnb + 9 numbers
             warnTmp = ShowIdentifierWarningControl(IdentifierType.CNB);
@@ -1175,7 +1273,8 @@ namespace ScannerClient_obalkyknih
                 textbox.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom(colorBorderError));
                 ret = false;
             }
-            else if (textbox.Text.All(c => (char.IsWhiteSpace(c) || char.IsDigit(c) || '-'.Equals(c) || ','.Equals(c) || '['.Equals(c) || ']'.Equals(c) || '('.Equals(c) || ')'.Equals(c))))
+            else if (textbox.Text.All(c => (char.IsWhiteSpace(c) || char.IsDigit(c) || '-'.Equals(c) || ','.Equals(c) || '['.Equals(c) || ']'.Equals(c) || '('.Equals(c) || ')'.Equals(c))) ||
+                textbox.Name == "partVolumeTextBox")
             {
                 warning.ToolTip = null;
                 warning.Visibility = Visibility.Hidden;
@@ -1275,20 +1374,17 @@ namespace ScannerClient_obalkyknih
 
                     unionTextBox = this.siglaTextBox;
                     break;
-                case IdentifierType.EAN:
-                    partTextBox = this.partEanTextBox;
-                    partImage = this.partEanWarning;
-                    partError = ValidateEan(partTextBox.Text);
-
-                    unionTextBox = this.eanTextBox;
-                    unionImage = this.eanWarning;
-                    unionError = ValidateEan(unionTextBox.Text);
-                    if (partError != null || unionError != null) ret = false;
+                case IdentifierType.ISMN:
+                    partTextBox = this.partIsmnTextBox;
+                    partImage = this.partIsmnWarning;
+                    partError = ValidateIsmn(partTextBox.Text);
+                    if (partError != null) ret = false;
                     break;
                 case IdentifierType.ISBN:
                     partTextBox = this.partIsbnTextBox;
                     partImage = this.partIsbnWarning;
                     partError = ValidateIsbn(partTextBox.Text);
+                    AllowMoreISBNs(partError, addMoreISBN, partTextBox.Text);
 
                     unionTextBox = this.isbnTextBox;
                     unionImage = this.isbnWarning;
@@ -1435,26 +1531,17 @@ namespace ScannerClient_obalkyknih
                         errorText = "Nesedí kontrolní znak";
                     }
                     break;
-                case 12:
+                case 11: // UPC 11 (doplni se 2 nuly na zacatek)
+                case 12: // UPC 12 (doplni se 1 nula na zacatek)
                 case 13:
                     sumIsbn = 0;
-                    for (int i = 0; i < 13; i += 2)
+                    int pos = 0;
+                    for (int i = isbn.Length - 1; i >= 0; i--)
                     {
+                        pos = isbn.Length - i;
                         if (char.IsDigit(isbnArray[i]))
                         {
-                            sumIsbn += (int)char.GetNumericValue(isbnArray[i]);
-                        }
-                        else
-                        {
-                            errorText = "ISBN obsahuje nečíselný znak";
-                            break;
-                        }
-                    }
-                    for (int i = 1; i < 12; i += 2)
-                    {
-                        if (char.IsDigit(isbnArray[i]))
-                        {
-                            sumIsbn += (int)char.GetNumericValue(isbnArray[i]) * 3;
+                            sumIsbn += (int)char.GetNumericValue(isbnArray[i]) * ((pos % 2) == 0 ? 3 : 1);
                         }
                         else
                         {
@@ -1468,7 +1555,7 @@ namespace ScannerClient_obalkyknih
                     }
                     break;
                 default:
-                    errorText = "ISBN musí obsahovat 10 nebo 13 čísel";
+                    errorText = "ISBN musí obsahovat 10 nebo 13 číslic. UPC musí obsahovat 11 nebo 12 číslic.";
                     break;
             }
             return errorText;
@@ -1515,6 +1602,29 @@ namespace ScannerClient_obalkyknih
             }
 
             return errorText;
+        }
+
+        // Validates given ismn, returns error message if invalid or null if valid
+        private string ValidateIsmn(string ismn)
+        {
+            if (string.IsNullOrWhiteSpace(ismn))
+            {
+                return null;
+            }
+
+            ismn = String.Join("", ismn.Where(c => !char.IsWhiteSpace(c)));// remove all white spaces
+            if (ismn.StartsWith("979"))
+            {
+                if (string.IsNullOrWhiteSpace(this.partIsbnTextBox.Text))
+                {
+                    this.partIsbnTextBox.Text = this.partIsmnTextBox.Text;
+                    this.partIsmnTextBox.Text = "";
+                    return null;
+                }
+                return "Identifikátory začínající na 979 prosím vložte do pole ISBN / EAN / UPC";
+            }
+
+            return null;
         }
 
         // Validates given oclc, returns error message or null
@@ -1694,8 +1804,8 @@ namespace ScannerClient_obalkyknih
             string partIsbn = isMonoPart ? this.partIsbnTextBox.Text : null;
             string oclc = isMonoPart ? this.oclcTextBox.Text : this.partOclcTextBox.Text;
             string partOclc = isMonoPart ? this.partOclcTextBox.Text : null;
-            string ean = isMonoPart ? this.eanTextBox.Text : this.partEanTextBox.Text;
-            string partEan = isMonoPart ? this.partEanTextBox.Text : null;
+            string ismn = isMonoPart ? this.ismnTextBox.Text : this.partIsmnTextBox.Text;
+            string partIsmn = isMonoPart ? this.partIsmnTextBox.Text : null;
             string cnb = isMonoPart ? this.cnbTextBox.Text : this.partCnbTextBox.Text;
             string partCnb = isMonoPart ? this.partCnbTextBox.Text : null;
             string urn = isMonoPart ? this.urnNbnTextBox.Text : this.partUrnNbnTextBox.Text;
@@ -1712,6 +1822,7 @@ namespace ScannerClient_obalkyknih
             NameValueCollection nvc = new NameValueCollection();
             nvc.Add("login", Settings.UserName);
             nvc.Add("password", Settings.Password);
+            nvc.Add("version", Settings.VersionInfo);
             if (!string.IsNullOrEmpty(isbn))
             {
                 isbn = String.Join("", isbn.Where(c => !char.IsWhiteSpace(c)));// remove all white spaces
@@ -1742,17 +1853,15 @@ namespace ScannerClient_obalkyknih
                 nvc.Add("part_oclc", partOclc);
                 error += ValidateOclc(partOclc);
             }
-            if (!string.IsNullOrEmpty(ean))
+            if (!string.IsNullOrEmpty(ismn))
             {
-                ean = String.Join("", ean.Where(c => !char.IsWhiteSpace(c)));// remove all white spaces
-                nvc.Add("ean", ean);
-                error += ValidateEan(ean);
+                ismn = String.Join("", ismn.Where(c => !char.IsWhiteSpace(c)));// remove all white spaces
+                nvc.Add("ismn", ismn);
             }
-            if (!string.IsNullOrEmpty(partEan))
+            if (!string.IsNullOrEmpty(partIsmn))
             {
-                partEan = String.Join("", partEan.Where(c => !char.IsWhiteSpace(c)));// remove all white spaces
-                nvc.Add("part_ean", partEan);
-                error += ValidateEan(partEan);
+                partIsmn = String.Join("", partIsmn.Where(c => !char.IsWhiteSpace(c)));// remove all white spaces
+                nvc.Add("part_ismn", partIsmn);
             }
             if (!string.IsNullOrEmpty(cnb))
             {
@@ -1794,6 +1903,24 @@ namespace ScannerClient_obalkyknih
                     nvc.Add("part_nbn", Settings.Sigla + "-" + partCustom);
                 }
             }
+            if (generalRecord.AdditionalUnionIdentifiers != null)
+            {
+                foreach (string identifier in generalRecord.AdditionalUnionIdentifiers)
+                {
+                    string other_isbn = String.Join("", identifier.Where(c => !char.IsWhiteSpace(c)));
+                    nvc.Add("other_isbn", other_isbn);
+                    error += ValidateIsbn(other_isbn);
+                }
+            }
+            if (generalRecord.AdditionalIdentifiers != null)
+            {
+                foreach (string identifier in generalRecord.AdditionalIdentifiers)
+                {
+                    string other_isbn = String.Join("", identifier.Where(c => !char.IsWhiteSpace(c)));
+                    nvc.Add("part_other_isbn", other_isbn);
+                    error += ValidateIsbn(other_isbn);
+                }
+            }
 
             if (!string.IsNullOrWhiteSpace(error))
             {
@@ -1804,7 +1931,7 @@ namespace ScannerClient_obalkyknih
             }
 
             if (string.IsNullOrEmpty(isbn) && string.IsNullOrEmpty(issn) && string.IsNullOrEmpty(cnb)
-                && string.IsNullOrEmpty(oclc) && string.IsNullOrEmpty(ean) && string.IsNullOrEmpty(urn)
+                && string.IsNullOrEmpty(oclc) && string.IsNullOrEmpty(ismn) && string.IsNullOrEmpty(urn)
                 && string.IsNullOrEmpty(custom))
             {
                 MessageBoxDialogWindow.Show("Žádný identifikátor",
@@ -1863,6 +1990,7 @@ namespace ScannerClient_obalkyknih
             string coverFileName = (this.coverGuid == Guid.Empty) ? null : this.imagesFilePaths[this.coverGuid];
             List<string> tocFileNames = new List<string>();
             List<string> authFileNames = new List<string>();
+            List<string> bibFileNames = new List<string>();
 
             // Save working image in memory to file
             if (this.workingImage.Key != Guid.Empty &&
@@ -1888,8 +2016,8 @@ namespace ScannerClient_obalkyknih
             String mainIdentifier = DateTime.Now.ToString("HHmmss");
             if (!string.IsNullOrEmpty(partIsbn)) mainIdentifier = partIsbn;
             else if (!string.IsNullOrEmpty(isbn)) mainIdentifier = isbn;
-            else if (!string.IsNullOrEmpty(partEan)) mainIdentifier = partEan;
-            else if (!string.IsNullOrEmpty(ean)) mainIdentifier = ean;
+            else if (!string.IsNullOrEmpty(partIsmn)) mainIdentifier = partIsmn;
+            else if (!string.IsNullOrEmpty(ismn)) mainIdentifier = ismn;
             else if (!string.IsNullOrEmpty(issn)) mainIdentifier = issn;
             else if (!string.IsNullOrEmpty(partCnb)) mainIdentifier = partCnb;
             else if (!string.IsNullOrEmpty(cnb)) mainIdentifier = cnb;
@@ -1900,7 +2028,7 @@ namespace ScannerClient_obalkyknih
             else if (!string.IsNullOrEmpty(partCustom)) mainIdentifier = partCustom;
             else if (!string.IsNullOrEmpty(custom)) mainIdentifier = Settings.Sigla + '-' + custom;
             uploadDirName = uploadDirName + '_' + mainIdentifier;
-            
+
             String localUploadDir = Settings.ScanOutputDir;
             localUploadDir = System.IO.Path.Combine(localUploadDir, uploadDirName);
             if (Settings.EnableLocalImageCopy && !System.IO.Directory.Exists(localUploadDir))
@@ -1990,10 +2118,44 @@ namespace ScannerClient_obalkyknih
                             }
                         }
                     }
-                    var firstAuth = this.generalRecord.AuthList.First();
-                    nvc.Add("auth_id", firstAuth.Key);
-                    nvc.Add("auth_name", firstAuth.Value);
-                    break;
+                }
+
+                // identifikatory autoru
+                cnt = 1;
+                foreach (Grid gridItem in this.authImagesList.Items.OfType<Grid>())
+                {
+                    foreach (ComboBox item in gridItem.Children.OfType<ComboBox>())
+                    {
+                        ComboboxItem selectedItem = (ComboboxItem)item.SelectedItem;
+                        nvc.Add("auth_" + cnt.ToString() + "_id", selectedItem.Value.ToString());
+                        nvc.Add("auth_" + cnt.ToString() + "_name", selectedItem.Text.ToString());
+                        cnt++;
+                    }
+                }
+                cnt--;
+                nvc.Add("auth_cnt", cnt.ToString());
+            }
+
+            //bib
+            if (this.bibImagesList.HasItems)
+            {
+                int cnt = 1;
+                foreach (var grid in bibImagesList.Items)
+                {
+                    Guid guid = Guid.Empty;
+                    foreach (var record in this.bibThumbnailGridsDictionary)
+                    {
+                        if (record.Value.Equals(grid))
+                        {
+                            bibFileNames.Add(this.imagesFilePaths[record.Key]);
+
+                            if (Settings.EnableLocalImageCopy)
+                            {
+                                System.IO.File.Copy(this.imagesFilePaths[record.Key], System.IO.Path.Combine(localUploadDir, "bib-" + cnt.ToString().PadLeft(2, '0') + "-" + mainIdentifier + ".tiff"), true);
+                                cnt++;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -2049,6 +2211,12 @@ namespace ScannerClient_obalkyknih
                     authElement.Add(new XElement("images", this.authImagesList.Items.Count));
                     rootElement.Add(authElement);
                 }
+                if (this.bibImagesList.Items.Count > 0)
+                {
+                    XElement bibElement = new XElement("bib");
+                    bibElement.Add(new XElement("pages", this.bibImagesList.Items.Count));
+                    rootElement.Add(bibElement);
+                }
                 XDocument xmlDoc = new XDocument(
                 new XDeclaration("1.0", "utf-8", "yes"), rootElement);
                 metaXml = xmlDoc.ToString();
@@ -2064,6 +2232,7 @@ namespace ScannerClient_obalkyknih
             param.Url = Settings.ImportLink;
             param.TocFilePaths = tocFileNames;
             param.AuthFilePaths = authFileNames;
+            param.BibFilePaths = bibFileNames;
             param.CoverFilePath = coverFileName;
             param.MetaXml = metaXml;
             param.Nvc = nvc;
@@ -2079,7 +2248,7 @@ namespace ScannerClient_obalkyknih
 
         // Method for uploading multipart/form-data
         // url where will be data posted, login, password
-        private void UploadFilesToRemoteUrl(string url, string coverFileName, List<string> tocFileNames, List<string> authFileNames,
+        private void UploadFilesToRemoteUrl(string url, string coverFileName, List<string> tocFileNames, List<string> authFileNames, List<string> bibFileNames,
             string metaXml, NameValueCollection nvc, DoWorkEventArgs e)
         {
             //Stopwatch sw = new Stopwatch();
@@ -2113,7 +2282,7 @@ namespace ScannerClient_obalkyknih
 
             UTF8Encoding utf8 = new UTF8Encoding();
             string boundaryStringLine = "\r\n--" + boundaryString + "\r\n";
-            
+
             string lastBoundaryStringLine = "\r\n--" + boundaryString + "--\r\n";
             byte[] lastBoundaryStringLineBytes = utf8.GetBytes(lastBoundaryStringLine);
 
@@ -2122,7 +2291,7 @@ namespace ScannerClient_obalkyknih
             string formDataString = "";
             foreach (string key in nvc.Keys)
             {
-                formDataString += boundaryStringLine 
+                formDataString += boundaryStringLine
                     + String.Format(
                 "Content-Disposition: form-data; name=\"{0}\"\r\n\r\n{1}",
                 key,
@@ -2139,13 +2308,13 @@ namespace ScannerClient_obalkyknih
                  + "filename=\"{1}\"\r\nContent-Type: {2}\r\n\r\n",
                 "cover", "cover.tif", "image/tif");
             byte[] coverDescriptionBytes = utf8.GetBytes(coverDescriptionString);
-            
+
             if (coverFileName != null)
             {
                 FileInfo fileInfo = new FileInfo(coverFileName);
                 coverSize = fileInfo.Length + coverDescriptionBytes.Length;
             }
-            
+
 
             // TOC PARAMETERS
             int counter = 1;
@@ -2185,7 +2354,26 @@ namespace ScannerClient_obalkyknih
 
                 authDescriptionsDictionary.Add(fileName, authDescriptionBytes);
                 counter++;
-                break;
+            }
+
+            // BIB PARAMETERS
+            counter = 1;
+            Dictionary<string, byte[]> bibDescriptionsDictionary = new Dictionary<string, byte[]>();
+            long bibSize = 0;
+            foreach (var fileName in bibFileNames)
+            {
+                string bibDescription = boundaryStringLine
+                    + String.Format(
+                "Content-Disposition: form-data; name=\"{0}\"; "
+                 + "filename=\"{1}\"\r\nContent-Type: {2}\r\n\r\n",
+                "bib_page_" + counter, "bib_page_" + counter + ".tif", "image/tif");
+                byte[] bibDescriptionBytes = utf8.GetBytes(bibDescription);
+
+                FileInfo fi = new FileInfo(fileName);
+                bibSize += fi.Length + bibDescriptionBytes.Length;
+
+                bibDescriptionsDictionary.Add(fileName, bibDescriptionBytes);
+                counter++;
             }
 
             // META PARAMETER
@@ -2198,13 +2386,14 @@ namespace ScannerClient_obalkyknih
             byte[] metaDataBytes = utf8.GetBytes(metaDataString);
 
             // Calculate the total size of the HTTP request
-            long totalRequestBodySize = 
-                + lastBoundaryStringLineBytes.Length
+            long totalRequestBodySize =
+                +lastBoundaryStringLineBytes.Length
                 + formDataBytes.Length
                 + coverSize
                 + tocSize
                 + authSize
-                +metaDataBytes.Length;
+                + bibSize
+                + metaDataBytes.Length;
 
             // And indicate the value as the HTTP request content length
             requestToServer.ContentLength = totalRequestBodySize;
@@ -2247,6 +2436,16 @@ namespace ScannerClient_obalkyknih
                     s.Write(buffer, 0, buffer.Length);
                 }
 
+                // Send bib
+                foreach (var bibRecord in bibDescriptionsDictionary)
+                {
+                    GC.Collect();
+
+                    byte[] buffer = File.ReadAllBytes(bibRecord.Key);
+                    s.Write(bibRecord.Value, 0, bibRecord.Value.Length);
+                    s.Write(buffer, 0, buffer.Length);
+                }
+
                 // Send meta
                 s.Write(metaDataBytes, 0, metaDataBytes.Length);
 
@@ -2260,6 +2459,7 @@ namespace ScannerClient_obalkyknih
             // when a HTTP OK status is not returned
             tocDescriptionsDictionaryToDelete = tocDescriptionsDictionary;
             authDescriptionsDictionaryToDelete = authDescriptionsDictionary;
+            bibDescriptionsDictionaryToDelete = bibDescriptionsDictionary;
             coverFileNameToDelete = coverFileName;
             WebResponse response = requestToServer.GetResponse();
             StreamReader responseReader = new StreamReader(response.GetResponseStream());
@@ -2281,7 +2481,7 @@ namespace ScannerClient_obalkyknih
         {
             BackgroundWorker worker = sender as BackgroundWorker;
             UploadParameters up = e.Argument as UploadParameters;
-            UploadFilesToRemoteUrl(up.Url, up.CoverFilePath, up.TocFilePaths, up.AuthFilePaths, up.MetaXml, up.Nvc, e);
+            UploadFilesToRemoteUrl(up.Url, up.CoverFilePath, up.TocFilePaths, up.AuthFilePaths, up.BibFilePaths, up.MetaXml, up.Nvc, e);
         }
 
         // Shows result of uploading process (OK or error message)
@@ -2289,14 +2489,15 @@ namespace ScannerClient_obalkyknih
         {
             //using (StreamWriter sw = new StreamWriter(Settings.TemporaryFolder + "DEBUG.LOG",true))
             //{
-                //DEBUGLOG.AppendLine("-----------------------------------------------------------------");
-                //sw.Write(DEBUGLOG.ToString());
-                //DEBUGLOG.Clear();
+            //DEBUGLOG.AppendLine("-----------------------------------------------------------------");
+            //sw.Write(DEBUGLOG.ToString());
+            //DEBUGLOG.Clear();
             //}
 
-         /*   this.uploadWindow.isClosable = true;
-            this.uploadWindow.Close();*/
+            /*   this.uploadWindow.isClosable = true;
+               this.uploadWindow.Close();*/
             uploadProgressBar.Visibility = System.Windows.Visibility.Hidden;
+            this.zobrazitVysledek.Visibility = System.Windows.Visibility.Hidden;
             if (e.Error != null)
             {
                 controlTabDoneIcon.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-icon-ban.png");
@@ -2335,9 +2536,18 @@ namespace ScannerClient_obalkyknih
             else if (!e.Cancelled)
             {
                 string response = (e.Result as string) ?? "";
-                if ("OK".Equals(response))
+                if (string.IsNullOrEmpty(response))
+                {
+                    controlTabDoneIcon.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-icon-ban.png");
+                    MessageBoxDialogWindow.Show("Zpracování nepotvrzené",
+                        "Server nepotvrdil zpracování dat. Je možné, že data nebyla zpracována správně." + response,
+                        "OK", MessageBoxDialogWindow.Icons.Warning);
+                }
+                else
                 {
                     controlTabDoneIcon.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-icon-done.png");
+                    this.scannedBookId = response;
+                    this.zobrazitVysledek.Visibility = System.Windows.Visibility.Visible;
 
                     //delete sent files
                     foreach (var tocRecord in tocDescriptionsDictionaryToDelete)
@@ -2347,6 +2557,16 @@ namespace ScannerClient_obalkyknih
                         if (File.Exists(tocRecord.Key))
                         {
                             File.Delete(tocRecord.Key);
+                        }
+                    }
+
+                    foreach (var bibRecord in bibDescriptionsDictionaryToDelete)
+                    {
+                        GC.Collect();
+
+                        if (File.Exists(bibRecord.Key))
+                        {
+                            File.Delete(bibRecord.Key);
                         }
                     }
 
@@ -2360,10 +2580,12 @@ namespace ScannerClient_obalkyknih
 
                     //remove working images and reset controls
                     tocPagesNumber.Content = "0 stran";
+                    bibPagesNumber.Content = "0 stran";
                     coverThumbnail.IsEnabled = false;
                     coverGuid = Guid.Empty;
                     coverThumbnail.Source = new BitmapImage(
                     new Uri("/ObalkyKnih-scanner;component/Images/default-icon.png", UriKind.Relative));
+                    
                     int cnt = this.tocImagesList.Items.Count;
                     for (int i = cnt - 1; i >= 0; i--)
                     {
@@ -2375,9 +2597,22 @@ namespace ScannerClient_obalkyknih
                         this.imagesFilePaths.Remove(guid);
                         this.imagesOriginalSizes.Remove(guid);
                     }
-                    //tocImagesList = new MyListView();
+
+                    cnt = this.bibImagesList.Items.Count;
+                    for (int i = cnt - 1; i >= 0; i--)
+                    {
+                        Guid guid = (from record in bibThumbnailGridsDictionary.ToList()
+                                     where record.Value.Equals(this.bibImagesList.Items.GetItemAt(i))
+                                     select record.Key).First();
+                        this.bibImagesList.Items.RemoveAt(i);
+                        this.bibThumbnailGridsDictionary.Remove(guid);
+                        this.imagesFilePaths.Remove(guid);
+                        this.imagesOriginalSizes.Remove(guid);
+                    }
+
                     imagesFilePaths = new Dictionary<Guid, string>();
                     tocThumbnailGridsDictionary = new Dictionary<Guid, Grid>();
+                    bibThumbnailGridsDictionary = new Dictionary<Guid, Grid>();
                     this.selectedImageGuid = Guid.Empty;
                     this.selectedImage.Source = new BitmapImage(
                         new Uri("/ObalkyKnih-scanner;component/Images/default-icon.png", UriKind.Relative));
@@ -2393,13 +2628,6 @@ namespace ScannerClient_obalkyknih
 
                     MessageBoxDialogWindow.Show("Odesláno", "Odesílání úspěšné.",
                         "OK", MessageBoxDialogWindow.Icons.Information);
-                }
-                else
-                {
-                    controlTabDoneIcon.Source = getIconSource("ObalkyKnih-scanner;component/Images/ok-icon-ban.png");
-                    MessageBoxDialogWindow.Show("Zpracování nepotvrzené",
-                        "Server nepotvrdil zpracování dat. Je možné, že data nebyla zpracována správně." + response,
-                        "OK", MessageBoxDialogWindow.Icons.Warning);
                 }
             }
         }
@@ -2440,57 +2668,70 @@ namespace ScannerClient_obalkyknih
 
             //Setting configuration of scanner (dpi, color)
             Object value;
+            String debug = "";
             foreach (IProperty property in item.Properties)
             {
+                debug = "\n" + property.PropertyID + "=" + property.get_Value();
                 switch (property.PropertyID)
                 {
                     case 6146: //4 is Black-white,gray is 2, color 1
                         value = (documentType == DocumentType.Cover) ? Settings.CoverScanType : Settings.TocScanType;
-                        property.set_Value(ref value);
+                        //MessageBoxDialogWindow.Show("Debug", "property 6146 (Black-white=4,gray=2,color=1); nastavovana hodnota: " + value, "OK", MessageBoxDialogWindow.Icons.Information);
+                        try { property.set_Value(ref value); } catch { }
                         break;
                     case 6147: //dots per inch/horizontal
                         value = dpi;
-                        property.set_Value(ref value);
+                        //MessageBoxDialogWindow.Show("Debug", "property 6147 (horizontal DPI); nastavovana hodnota: " + value, "OK", MessageBoxDialogWindow.Icons.Information);
+                        try { property.set_Value(ref value); } catch { }
                         break;
                     case 6148: //dots per inch/vertical
                         value = dpi;
-                        property.set_Value(ref value);
+                        //MessageBoxDialogWindow.Show("Debug", "property 6148 (vertical DPI); nastavovana hodnota: " + value, "OK", MessageBoxDialogWindow.Icons.Information);
+                        try { property.set_Value(ref value); } catch { }
                         break;
                     case 4104: //BitsPerPixel
                         value = 24;
-                        try { property.set_Value(ref value); } catch {}
+                        //MessageBoxDialogWindow.Show("Debug", "property 4104 (BitsPerPixel); nastavovana hodnota: " + value, "OK", MessageBoxDialogWindow.Icons.Information);
+                        try { property.set_Value(ref value); } catch { }
                         break;
                     case 6151: //HorizontalExtent
                         if (format == null) break;
-                        value = Settings.EnableScanLowRes ? 1720 : 2450; // A4, A5
-                        if (format == "A3") value = Settings.EnableScanLowRes ? 2300 : 3400;
-                        try { property.set_Value(ref value); } catch {}
+                        value = Settings.EnableScanLowRes ? 1225 : 2450; // A4, A5
+                        if (format == "A3") value = Settings.EnableScanLowRes ? 1700 : 3400;
+                        //MessageBoxDialogWindow.Show("Debug", "property 6151 (HorizontalExtent); nastavovana hodnota: " + value, "OK", MessageBoxDialogWindow.Icons.Information);
+                        try { property.set_Value(ref value); } catch { }
                         break;
                     case 6152: // vertical extent
                         if (format == null) break;
-                        value = Settings.EnableScanLowRes ? 2300 : 3400; // A4
+                        value = Settings.EnableScanLowRes ? 1700 : 3400; // A4
                         if (format == "A5")
-                            value = Settings.EnableScanLowRes ? 1200 : 1720;
+                            value = Settings.EnableScanLowRes ? 860 : 1720;
                         else if (format == "A3")
-                            value = Settings.EnableScanLowRes ? 3400 : 4800;
-                        try { property.set_Value(ref value); } catch {}
+                            value = Settings.EnableScanLowRes ? 2400 : 4800;
+                        //MessageBoxDialogWindow.Show("Debug", "property 6152 (vertical extent); nastavovana hodnota: " + value, "OK", MessageBoxDialogWindow.Icons.Information);
+                        try { property.set_Value(ref value); } catch { }
                         break;
                     case 6157: // rotation
                         if (format == null) break;
                         value = 0;
                         if (format == "A5") value = 1;
-                        try { property.set_Value(ref value); } catch {}
+                        //MessageBoxDialogWindow.Show("Debug", "property 6157 (rotation); nastavovana hodnota: " + value, "OK", MessageBoxDialogWindow.Icons.Information);
+                        try { property.set_Value(ref value); } catch { }
                         break;
                     case 5130: //TimeDelay
                         value = 0;
-                        try { property.set_Value(ref value); } catch {}
+                        //MessageBoxDialogWindow.Show("Debug", "property 5130 (TimeDelay); nastavovana hodnota: " + value, "OK", MessageBoxDialogWindow.Icons.Information);
+                        try { property.set_Value(ref value); } catch { }
                         break;
                     case 6161: //LampWarmUpTime
                         value = 0;
-                        try { property.set_Value(ref value); } catch {}
+                        //MessageBoxDialogWindow.Show("Debug", "property 6161 (LampWarmUpTime); nastavovana hodnota: " + value, "OK", MessageBoxDialogWindow.Icons.Information);
+                        try { property.set_Value(ref value); } catch { }
                         break;
                 }
             }
+
+            //MessageBoxDialogWindow.Show("Debug", debug, "OK", MessageBoxDialogWindow.Icons.Information);
 
             ImageFile image = null;
             try
@@ -2538,6 +2779,10 @@ namespace ScannerClient_obalkyknih
             {
                 filePrefix = "obalkyknih-auth_";
             }
+            else if (documentType == DocumentType.Bibliography)
+            {
+                filePrefix = "obalkyknih-bib_";
+            }
 
             string newFileName = Settings.TemporaryFolder + filePrefix + "_" + guid + ".tif";
 
@@ -2557,6 +2802,10 @@ namespace ScannerClient_obalkyknih
             else if (documentType == DocumentType.Auth)
             {
                 AddAuthImage(smallerSizeImage, guid);
+            }
+            else if (documentType == DocumentType.Bibliography)
+            {
+                AddBibImage(smallerSizeImage, guid);
             }
 
             //set workingImage and save previous to file
@@ -2590,6 +2839,7 @@ namespace ScannerClient_obalkyknih
             }
 
             List<DeviceInfo> foundDevices = GetDevices();
+            //MessageBoxDialogWindow.Show("Chyba!", foundDevices.Count.ToString(), "OK", MessageBoxDialogWindow.Icons.Error); //pocet skeneru
             if (foundDevices.Count == 1 && foundDevices[0].Type == WiaDeviceType.ScannerDeviceType)
             {
                 try
@@ -2682,17 +2932,27 @@ namespace ScannerClient_obalkyknih
         {
             if (documentType == DocumentType.Auth)
             {
-                if (this.authImagesList.Items.Count > 0) {
-                    MessageBoxDialogWindow.Show("Autority",
+                // debug
+                /*if (this.authImagesList.Items.Count > 0) {
+                    MessageBoxDialogWindow.Show("Skenování autority",
                             "V současné verzi skenovacího klienta je možné posílat pouze foto prvního autora.",
+                            "OK", MessageBoxDialogWindow.Icons.Warning);
+                    return;
+                }*/
+
+                if (this.generalRecord.AuthList == null || this.generalRecord.AuthList.Count == 0)
+                {
+                    MessageBoxDialogWindow.Show("Skenování autority",
+                            "Dokument nemá autora (tag 100, nebo 700).",
                             "OK", MessageBoxDialogWindow.Icons.Warning);
                     return;
                 }
 
-                if (this.generalRecord.AuthList.Count == 0)
+                if (!this.authScannable)
                 {
-                    MessageBoxDialogWindow.Show("Autority",
-                            "Dokument nemá autora (tag 100, nebo 700).",
+                    var firstAuth = this.generalRecord.AuthList.First();
+                    MessageBoxDialogWindow.Show("Skenování autority",
+                            "Identifikátor autora " + firstAuth.Key + " (" + firstAuth.Value + ") ještě nebyl zařazen do národní autoritní báze, případně se ještě záznam autority národní autoritní báze nepromítl na obálky knih. Tuto autoritu zatím není možné skenovat. Zkuste to prosím později.",
                             "OK", MessageBoxDialogWindow.Icons.Warning);
                     return;
                 }
@@ -2730,43 +2990,12 @@ namespace ScannerClient_obalkyknih
         {
             ExternalImageLoadWindow window = new ExternalImageLoadWindow();
             window.Image_Clicked += new MouseButtonEventHandler(LoadButtonClicked);
+            window.Pdf_Clicked += new MouseButtonEventHandler(PdfLoadButtonClicked);
             window.ShowDialog();
         }
 
-        // Shows dialog for loading image
-        private void LoadButtonClicked(object sender, MouseButtonEventArgs e)
+        private void BackupOldCover(DocumentType documentType)
         {
-            DocumentType documentType;
-            if ((sender as Image).Name.Equals("coverImage"))
-            {
-                documentType = DocumentType.Cover;
-            }
-            else if ((sender as Image).Name.Equals("tocImage"))
-            {
-                documentType = DocumentType.Toc;
-            }
-            else
-            {
-                documentType = DocumentType.Auth;
-                if (this.authImagesList.Items.Count > 0)
-                {
-                    MessageBoxDialogWindow.Show("Autority",
-                            "V současné verzi skenovacího klienta je možné posílat pouze foto prvního autora.",
-                            "OK", MessageBoxDialogWindow.Icons.Warning);
-
-                    return;
-                }
-
-                if (this.generalRecord.AuthList.Count == 0)
-                {
-                    MessageBoxDialogWindow.Show("Autority",
-                            "Dokument nemá autora (tag 100, nebo 700).",
-                            "OK", MessageBoxDialogWindow.Icons.Warning);
-                    return;
-                }
-            }
-
-            // backup old cover
             if (documentType == DocumentType.Cover && this.coverGuid != Guid.Empty)
             {
                 string filePath = this.imagesFilePaths[this.coverGuid];
@@ -2782,6 +3011,69 @@ namespace ScannerClient_obalkyknih
                 }
                 SignalLoadedBackup();
             }
+        }
+
+        private void ImportFromFile(DocumentType documentType, string fileName)
+        {
+            Guid guid = Guid.NewGuid();
+            while (this.imagesFilePaths.ContainsKey(guid))
+            {
+                guid = Guid.NewGuid();
+            }
+
+            LoadExternalImage(documentType, fileName, guid);
+        }
+
+        // Shows dialog for loading image
+        private void LoadButtonClicked(object sender, MouseButtonEventArgs e)
+        {
+            DocumentType documentType;
+            if ((sender as Image).Name.Equals("coverImage"))
+            {
+                documentType = DocumentType.Cover;
+            }
+            else if ((sender as Image).Name.Equals("tocImage"))
+            {
+                documentType = DocumentType.Toc;
+            }
+            else if ((sender as Image).Name.Equals("bibliographyImage"))
+            {
+                documentType = DocumentType.Bibliography;
+            }
+            else
+            {
+                documentType = DocumentType.Auth;
+
+                if (this.generalRecord.AuthList == null)
+                {
+                    MessageBoxDialogWindow.Show("Vložení obrázku autority",
+                            "Dokument nemá autora (tag 100, nebo 700).",
+                            "OK", MessageBoxDialogWindow.Icons.Warning);
+                    return;
+                }
+
+                if (!this.authScannable)
+                {
+                    if (this.generalRecord.AuthList.Count > 0)
+                    {
+                        var firstAuth = this.generalRecord.AuthList.First();
+                        MessageBoxDialogWindow.Show("Vložení obrázku autority",
+                                "Identifikátor autora " + firstAuth.Key + " (" + firstAuth.Value + ") ještě nebyl zařazen do národní autoritní báze, případně se ještě záznam autority národní autoritní báze nepromítl na obálky knih. Obrázek této autority zatím není možné vložit. Zkuste to prosím později.",
+                                "OK", MessageBoxDialogWindow.Icons.Warning);
+                        return;
+                    }
+                    else
+                    {
+                        MessageBoxDialogWindow.Show("Vložení obrázku autority",
+                                "Titul nemá autora. Nelze přidat foto autora.",
+                                "OK", MessageBoxDialogWindow.Icons.Warning);
+                        return;
+                    }
+                }
+            }
+
+            // backup old cover
+            BackupOldCover(documentType);
 
             Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
             dlg.Title = (documentType == DocumentType.Cover) ? "Načíst obálku" : "Načíst obsah";
@@ -2793,14 +3085,8 @@ namespace ScannerClient_obalkyknih
             if (result == true)
             {
                 string fileName = dlg.FileName;
-                Guid guid = Guid.NewGuid();
-                while (this.imagesFilePaths.ContainsKey(guid))
-                {
-                    guid = Guid.NewGuid();
-                }
-
                 DisableImageControllers();
-                LoadExternalImage(documentType, fileName, guid);
+                ImportFromFile(documentType, fileName);
                 EnableImageControllers();
                 this.contrastSlider.IsEnabled = true;
             }
@@ -2809,17 +3095,6 @@ namespace ScannerClient_obalkyknih
         // Loads image from external file
         private void LoadExternalImage(DocumentType documentType, string fileName, Guid guid)
         {
-            //Stopwatch totalSW = new Stopwatch();
-            //Stopwatch partialSW = new Stopwatch();
-            //long preparationTime;
-            //long loadingTime;
-            //long colorCorrectionTime;
-            //long imageSaveTime;
-            //long thumbCreateTime;
-            //long saveWorkingImageTime = 0;
-            //totalSW.Start();
-            //partialSW.Start();
-
             string filePrefix = "";
             if (documentType == DocumentType.Cover)
             {
@@ -2828,6 +3103,10 @@ namespace ScannerClient_obalkyknih
             else if (documentType == DocumentType.Toc)
             {
                 filePrefix = "obalkyknih-toc_";
+            }
+            else if (documentType == DocumentType.Bibliography)
+            {
+                filePrefix = "obalkyknih-bib_";
             }
             else
             {
@@ -2840,34 +3119,13 @@ namespace ScannerClient_obalkyknih
             Size originalSize;
             try
             {
-                //partialSW.Stop();
-                //preparationTime = partialSW.ElapsedMilliseconds;
-                //partialSW.Restart();
                 originalSizeImage = ImageTools.LoadFullSize(fileName);
-
-                //partialSW.Stop();
-                //loadingTime = partialSW.ElapsedMilliseconds;
-                //partialSW.Restart();
-
                 originalSizeImage = ImageTools.ApplyAutoColorCorrections(originalSizeImage);
-
-                //partialSW.Stop();
-                //colorCorrectionTime = partialSW.ElapsedMilliseconds;
-                //partialSW.Restart();
-
                 originalSize = new Size(originalSizeImage.PixelWidth, originalSizeImage.PixelHeight);
 
                 ImageTools.SaveToFile(originalSizeImage, newFileName);
 
-                //partialSW.Stop();
-                //imageSaveTime = partialSW.ElapsedMilliseconds;
-                //partialSW.Restart();
-
                 smallerSizeImage = ImageTools.LoadGivenSizeFromBitmapSource((BitmapSource)originalSizeImage, 800);
-
-                //partialSW.Stop();
-                //thumbCreateTime = partialSW.ElapsedMilliseconds;
-                //partialSW.Restart();
             }
             catch (Exception ex)
             {
@@ -2886,6 +3144,10 @@ namespace ScannerClient_obalkyknih
             else if (documentType == DocumentType.Toc)
             {
                 AddTocImage(smallerSizeImage, guid);
+            }
+            else if (documentType == DocumentType.Bibliography)
+            {
+                AddBibImage(smallerSizeImage, guid);
             }
             else
             {
@@ -2987,6 +3249,23 @@ namespace ScannerClient_obalkyknih
             //DEBUGLOG.AppendLine("Color correction: Total time: " + sw.ElapsedMilliseconds);
         }
 
+        // Save state of contrast and brightness changes
+        private void SliderSaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            Settings.DefaultBrightness = this.brightnessSlider.Value;
+            Settings.DefaultContrast = this.contrastSlider.Value;
+            Settings.DefaultGamma = this.gammaSlider.Value * 100;
+        }
+
+        // Reset state of contrast and brightness changes
+        private void SliderResetButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.brightnessSlider.Value = 0;
+            this.contrastSlider.Value = 0;
+            this.gammaSlider.Value = 1;
+            TransformImage(ImageTransforms.CorrectColors);
+        }
+
         //Saves selection
         private void SaveSelected()
         {
@@ -3000,6 +3279,9 @@ namespace ScannerClient_obalkyknih
             {
                 return;
             }
+
+            // rozeznava jestli pracujeme s vyznacenym TOC, nebo BIB
+            Boolean flagToc = (Grid)tocImagesList.SelectedItem != null;
 
             string filePath = this.imagesFilePaths[selectedGuid];
 
@@ -3049,9 +3331,9 @@ namespace ScannerClient_obalkyknih
             }
 
             //get new temporary filename
-            string newFileName = Settings.TemporaryFolder +
-                "obalkyknih-toc_"
-                + "_" + guid + ".tif";
+            string newFileName = Settings.TemporaryFolder
+                + (flagToc ? "obalkyknih-toc_" : "obalkyknih-bib_")
+                + guid + ".tif";
 
             BitmapSource originalSizeImage = null;
             BitmapSource smallerSizeImage = null;
@@ -3077,7 +3359,15 @@ namespace ScannerClient_obalkyknih
             this.imagesFilePaths.Add(guid, newFileName);
             this.imagesOriginalSizes.Add(guid, originalSize);
 
-            AddTocImage(smallerSizeImage, guid);
+            if (flagToc)
+            {
+                AddTocImage(smallerSizeImage, guid);
+            }
+            else
+            {
+                AddBibImage(smallerSizeImage, guid);
+            }
+
             saveSelectedCount++;
             newestThumbnail.IsEnabled = false;
 
@@ -3106,9 +3396,12 @@ namespace ScannerClient_obalkyknih
                 return;
             }
 
+            // rozeznava jestli pracujeme s vyznacenym TOC, nebo BIB
+            Boolean flagToc = (Grid)tocImagesList.SelectedItem != null;
+
             if (!saveSelectedMode)
             {
-                workingThumbnail = (Grid)tocImagesList.SelectedItem;
+                workingThumbnail = flagToc ? (Grid)tocImagesList.SelectedItem : (Grid)bibImagesList.SelectedItem;
 
                 saveSelecteModeButton.ToolTip = "Vypnout výsekový režim";
                 saveSelecteModeButton.Content = "Hotovo";
@@ -3128,12 +3421,17 @@ namespace ScannerClient_obalkyknih
                 scanTocA5.IsEnabled = false;
                 scanTocA4.IsEnabled = false;
                 scanTocA3.IsEnabled = false;
+                scanBibliographyButton.IsEnabled = false;
+                scanBibliographyA5.IsEnabled = false;
+                scanBibliographyA4.IsEnabled = false;
+                scanBibliographyA3.IsEnabled = false;
                 loadFromFileLabel.IsEnabled = false;
                 sendButton.IsEnabled = false;
 
                 coverThumbnail.IsEnabled = false;
 
-                foreach (var grid in this.tocThumbnailGridsDictionary.Values)
+                var gridArray = flagToc ? this.tocThumbnailGridsDictionary.Values : this.bibThumbnailGridsDictionary.Values;
+                foreach (var grid in gridArray)
                 {
                     grid.IsEnabled = false;
                 }
@@ -3162,12 +3460,17 @@ namespace ScannerClient_obalkyknih
                 scanTocA5.IsEnabled = true;
                 scanTocA4.IsEnabled = true;
                 scanTocA3.IsEnabled = true;
+                scanBibliographyButton.IsEnabled = true;
+                scanBibliographyA5.IsEnabled = true;
+                scanBibliographyA4.IsEnabled = true;
+                scanBibliographyA3.IsEnabled = true;
                 loadFromFileLabel.IsEnabled = true;
                 sendButton.IsEnabled = true;
 
                 coverThumbnail.IsEnabled = true;
 
-                foreach (var grid in this.tocThumbnailGridsDictionary.Values)
+                var gridArray = flagToc ? this.tocThumbnailGridsDictionary.Values : this.bibThumbnailGridsDictionary.Values;
+                foreach (var grid in gridArray)
                 {
                     grid.IsEnabled = true;
                 }
@@ -3179,7 +3482,14 @@ namespace ScannerClient_obalkyknih
 
                 if (saveSelectedCount > 0)
                 {
-                    delete(tocImagesList.Items.IndexOf(workingThumbnail));
+                    if (flagToc)
+                    {
+                        delete(tocImagesList.Items.IndexOf(workingThumbnail));
+                    }
+                    else
+                    {
+                        bibDelete(bibImagesList.Items.IndexOf(workingThumbnail));
+                    }
                 }
             }
         }
@@ -3257,7 +3567,7 @@ namespace ScannerClient_obalkyknih
                     break;
                 case ImageTransforms.Deskew:
                     double skewAngle = ImageTools.GetDeskewAngle(this.selectedImage.Source as BitmapSource);
-                    this.workingImage = new KeyValuePair<Guid,BitmapSource>(guid,
+                    this.workingImage = new KeyValuePair<Guid, BitmapSource>(guid,
                         ImageTools.DeskewImage(this.workingImage.Value, skewAngle));
                     break;
                 case ImageTransforms.Crop:
@@ -3267,7 +3577,7 @@ namespace ScannerClient_obalkyknih
                 case ImageTransforms.CorrectColors:
                     BitmapSource tmp = ImageTools.AdjustContrast(this.workingImage.Value, (int)this.contrastSlider.Value);
                     tmp = ImageTools.AdjustGamma(tmp, (int)this.gammaSlider.Value);
-                    tmp = ImageTools.AdjustBrightness(tmp, (int)this.gammaSlider.Value);
+                    tmp = ImageTools.AdjustBrightness(tmp, (int)this.brightnessSlider.Value);
                     this.workingImage = new KeyValuePair<Guid, BitmapSource>(guid, tmp);
                     break;
             }
@@ -3290,6 +3600,11 @@ namespace ScannerClient_obalkyknih
             {
                 (LogicalTreeHelper.FindLogicalNode(this.authThumbnailGridsDictionary[this.selectedImageGuid],
                     "authThumbnail") as Image).Source = this.selectedImage.Source;
+            }
+            else if (this.bibThumbnailGridsDictionary.ContainsKey(this.selectedImageGuid))
+            {
+                (LogicalTreeHelper.FindLogicalNode(this.bibThumbnailGridsDictionary[this.selectedImageGuid],
+                    "bibThumbnail") as Image).Source = this.selectedImage.Source;
             }
 
             // set new width and height
@@ -3318,6 +3633,12 @@ namespace ScannerClient_obalkyknih
             BitmapSource tmp = ImageTools.AdjustContrast(this.sliderOriginalImage.Value, (int)this.contrastSlider.Value);
             tmp = ImageTools.AdjustGamma(tmp, this.gammaSlider.Value);
             this.selectedImage.Source = ImageTools.AdjustBrightness(tmp, (int)e.NewValue);
+            
+            // Priznak - doslo ke zmene
+            if (sender != null)
+            {
+                Settings.ImageTransformationSlidersChanged = true;
+            }
         }
 
         // Changes contrast of cover - only preview
@@ -3335,6 +3656,12 @@ namespace ScannerClient_obalkyknih
             BitmapSource tmp = ImageTools.AdjustContrast(this.sliderOriginalImage.Value, (int)e.NewValue);
             tmp = ImageTools.AdjustGamma(tmp, this.gammaSlider.Value);
             this.selectedImage.Source = ImageTools.AdjustBrightness(tmp, (int)this.brightnessSlider.Value);
+
+            // Priznak - doslo ke zmene
+            if (sender != null)
+            {
+                Settings.ImageTransformationSlidersChanged = true;
+            }
         }
 
         // Changes contrast of cover - only preview
@@ -3353,6 +3680,12 @@ namespace ScannerClient_obalkyknih
             BitmapSource tmp = ImageTools.AdjustContrast(this.sliderOriginalImage.Value, (int)this.contrastSlider.Value);
             tmp = ImageTools.AdjustGamma(tmp, e.NewValue);
             this.selectedImage.Source = ImageTools.AdjustBrightness(tmp, (int)this.brightnessSlider.Value);
+
+            // Priznak - doslo ke zmene
+            if (sender != null)
+            {
+                Settings.ImageTransformationSlidersChanged = true;
+            }
         }
         #endregion
 
@@ -3443,7 +3776,7 @@ namespace ScannerClient_obalkyknih
             {
                 moveUpImage.Visibility = Visibility.Hidden;
             }
-            
+
 
             Image moveDownImage = new Image();
             moveDownImage.Name = "moveDownThumbnail";
@@ -3456,7 +3789,7 @@ namespace ScannerClient_obalkyknih
             moveDownImage.Cursor = Cursors.Hand;
             moveDownImage.MouseLeftButtonDown += TocThumbnail_MoveDown;
             moveDownImage.Visibility = Visibility.Hidden;
-            
+
             Image moveIntoImage = new Image();
             moveIntoImage.Name = "moveIntoThumbnail";
             moveIntoImage.VerticalAlignment = VerticalAlignment.Top;
@@ -3570,18 +3903,85 @@ namespace ScannerClient_obalkyknih
             {
                 authImageBorder.BorderBrush = Brushes.Transparent;
             }
-            authImageBorder.Margin = new Thickness(50, 0, 50, 0);
+            authImageBorder.Margin = new Thickness(50, 35, 50, 0); // 50,0,50,0
 
             Image deleteImage = new Image();
             deleteImage.Name = "deleteThumbnail";
             deleteImage.VerticalAlignment = VerticalAlignment.Top;
             deleteImage.HorizontalAlignment = HorizontalAlignment.Right;
             deleteImage.Source = new BitmapImage(new Uri("/ObalkyKnih-scanner;component/Images/ok-icon-delete.png", UriKind.Relative));
-            deleteImage.Margin = new Thickness(0, 0, 26, 0);
+            deleteImage.Margin = new Thickness(26, 40, 26, 0); // 26,0,26,0
             deleteImage.Width = 18;
             deleteImage.Stretch = Stretch.None;
             deleteImage.Cursor = Cursors.Hand;
             deleteImage.MouseLeftButtonDown += AuthThumbnail_Delete;
+
+            ComboBox comboAuthor = new ComboBox();
+            comboAuthor.Name = "comboAuthor";
+            comboAuthor.VerticalAlignment = VerticalAlignment.Top;
+            comboAuthor.HorizontalAlignment = HorizontalAlignment.Center;
+            comboAuthor.Padding = new Thickness(7, 7, 7, 7);
+            comboAuthor.BorderThickness = new Thickness(1, 1, 1, 1);
+            comboAuthor.Background = new SolidColorBrush(Colors.LightGray);
+            comboAuthor.Foreground = new SolidColorBrush(Colors.Black);
+            comboAuthor.BorderBrush = new SolidColorBrush(Colors.Gray);
+            comboAuthor.Resources.Add(SystemColors.WindowBrushKey, Brushes.LightGray);
+            comboAuthor.Resources.Add(SystemColors.HighlightBrushKey, Brushes.Gray);
+            comboAuthor.Width = 210;
+            comboAuthor.SelectionChanged += comboAuthor_SelectionChanged;
+
+            int selectedAuthIndex = -1;
+            int i = 0;
+            foreach (var auth in this.generalRecord.AuthList)
+            {
+                ComboboxItem comboItemAuth = new ComboboxItem();
+                comboItemAuth.Text = auth.Value;
+                comboItemAuth.Value = auth.Key;
+                comboAuthor.Items.Add(comboItemAuth);
+
+                // doteraz nebolo nic vybrane, vyber prvu moznost
+                if (!this.authImagesList.HasItems && selectedAuthIndex == -1)
+                {
+                    selectedAuthIndex = 0;
+                }
+
+                // prejdi vsetky ostatne uz pridane obrazky autorov
+                else if (this.authImagesList.HasItems && selectedAuthIndex == -1)
+                {
+                    bool found = false; // sem sa poznaci, ci uz autor bol odskenovany
+                    foreach (Grid gridItem in this.authImagesList.Items.OfType<Grid>())
+                    {
+                        foreach (ComboBox item in gridItem.Children.OfType<ComboBox>())
+                        {
+                            ComboboxItem selectedItem = (ComboboxItem)item.SelectedItem;
+                            if (auth.Key == selectedItem.Value)
+                            {
+                                // autor uz bol odskenovany
+                                found = true;
+                            }
+                        }
+                    }
+                    if (!found)
+                    {
+                        // autor este nebol odskenovany = nastav ho ako aktivneho
+                        selectedAuthIndex = i;
+                    }
+                }
+                i++;
+            }
+
+            if (selectedAuthIndex == -1)
+            {
+                MessageBoxDialogWindow.Show("Skenování autority",
+                            "Dílo neobsahuje více autorů.",
+                            "OK", MessageBoxDialogWindow.Icons.Warning);
+                return;
+            }
+            else
+            {
+                // nastavit aktivnu polozku
+                comboAuthor.SelectedIndex = selectedAuthIndex;
+            }
 
             Grid gridWrapper = new Grid();
             gridWrapper.Margin = new Thickness(0, 10, 0, 10);
@@ -3589,17 +3989,8 @@ namespace ScannerClient_obalkyknih
             authImageBorder.Child = authImage;
             gridWrapper.Children.Add(authImageBorder);
             gridWrapper.Children.Add(deleteImage);
-            #endregion
-
-            // edit previously last item - enable moveDown arrow
-            if (this.authImagesList.HasItems)
-            {
-                var lastItem = this.authImagesList.Items.OfType<Grid>().LastOrDefault();
-                foreach (Image item in lastItem.Children.OfType<Image>())
-                {
-                    item.IsEnabled = true;
-                }
-            }
+            gridWrapper.Children.Add(comboAuthor);
+            #endregion            
 
             if (!saveSelectedMode)
             {
@@ -3634,11 +4025,202 @@ namespace ScannerClient_obalkyknih
             (Window.GetWindow(this) as MainWindow).DeactivateRedo();
         }
 
+        private void comboAuthor_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.RemovedItems.Count == 0)
+            {
+                return;
+            }
+            ComboboxItem newValue = (ComboboxItem)e.AddedItems[0];
+            int found = 0; // sem sa poznaci pocet uz existujucich zvolenych tych istych autorov (jeden bude on sam, prave selektnuty)
+
+            if (this.authImagesList.HasItems)
+            {
+                foreach (Grid gridItem in this.authImagesList.Items.OfType<Grid>())
+                {
+                    foreach (ComboBox item in gridItem.Children.OfType<ComboBox>())
+                    {
+                        ComboboxItem selectedItem = (ComboboxItem)item.SelectedItem;
+                        if (newValue.Value == selectedItem.Value)
+                        {
+                            // autor uz bol selektnuty
+                            found++;
+                        }
+                    }
+                }
+            }
+
+            if (found > 1)
+            {
+                ((ComboBox)sender).SelectedItem = e.RemovedItems[0];
+            }
+        }
+
+        // Adds new Bibiliography image to list of BIB images (bibliography references)
+        private void AddBibImage(BitmapSource bitmapSource, Guid guid)
+        {
+            #region construction of ListItem
+            Image bibImage = new Image();
+            bibImage.Name = "bibThumbnail";
+            bibImage.MouseLeftButtonDown += Thumbnail_Clicked;
+            bibImage.Source = bitmapSource;
+            bibImage.Cursor = Cursors.Hand;
+            bibImage.MouseEnter += Icon_MouseEnter;
+            bibImage.MouseLeave += Icon_MouseLeave;
+
+            Border bibImageBorder = new Border();
+            bibImageBorder.BorderThickness = new Thickness(4);
+            if (!saveSelectedMode)
+            {
+                //green border
+                bibImageBorder.BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#6D8527"));
+            }
+            else
+            {
+                bibImageBorder.BorderBrush = Brushes.Transparent;
+            }
+            bibImageBorder.Margin = new Thickness(50, 0, 50, 0);
+
+            Image deleteImage = new Image();
+            deleteImage.Name = "deleteThumbnail";
+            deleteImage.VerticalAlignment = VerticalAlignment.Top;
+            deleteImage.HorizontalAlignment = HorizontalAlignment.Right;
+            deleteImage.Source = new BitmapImage(new Uri("/ObalkyKnih-scanner;component/Images/ok-icon-delete.png", UriKind.Relative));
+            deleteImage.Margin = new Thickness(0, 0, 26, 0);
+            deleteImage.Width = 18;
+            deleteImage.Stretch = Stretch.None;
+            deleteImage.Cursor = Cursors.Hand;
+            deleteImage.MouseLeftButtonDown += BibThumbnail_Delete;
+
+            Image moveUpImage = new Image();
+            moveUpImage.Name = "moveUpThumbnail";
+            moveUpImage.VerticalAlignment = VerticalAlignment.Top;
+            moveUpImage.HorizontalAlignment = HorizontalAlignment.Right;
+            moveUpImage.Source = new BitmapImage(new Uri("/ObalkyKnih-scanner;component/Images/ok-icon-up.png", UriKind.Relative));
+            moveUpImage.Margin = new Thickness(0, 25, 26, 0);
+            moveUpImage.Stretch = Stretch.None;
+            moveUpImage.Width = 18;
+            moveUpImage.Cursor = Cursors.Hand;
+            moveUpImage.MouseLeftButtonDown += BibThumbnail_MoveUp;
+            if (!this.bibImagesList.HasItems)
+            {
+                moveUpImage.Visibility = Visibility.Hidden;
+            }
+
+            Image moveDownImage = new Image();
+            moveDownImage.Name = "moveDownThumbnail";
+            moveDownImage.VerticalAlignment = VerticalAlignment.Top;
+            moveDownImage.HorizontalAlignment = HorizontalAlignment.Right;
+            moveDownImage.Source = new BitmapImage(new Uri("/ObalkyKnih-scanner;component/Images/ok-icon-down.png", UriKind.Relative));
+            moveDownImage.Margin = new Thickness(0, 50, 26, 0); // 0 50 26 0
+            moveDownImage.Width = 18;
+            moveDownImage.Stretch = Stretch.None;
+            moveDownImage.Cursor = Cursors.Hand;
+            moveDownImage.MouseLeftButtonDown += BibThumbnail_MoveDown;
+            moveDownImage.Visibility = Visibility.Hidden;
+
+            Image moveIntoImage = new Image();
+            moveIntoImage.Name = "moveIntoThumbnail";
+            moveIntoImage.VerticalAlignment = VerticalAlignment.Top;
+            moveIntoImage.HorizontalAlignment = HorizontalAlignment.Right;
+            moveIntoImage.Source = new BitmapImage(new Uri("/ObalkyKnih-scanner;component/Images/ok-icon-up-down.png", UriKind.Relative));
+            moveIntoImage.Margin = new Thickness(0, 75, 23, 0); //init
+            moveIntoImage.Width = 23;
+            moveIntoImage.Cursor = Cursors.Hand;
+            moveIntoImage.MouseLeftButtonDown += BibThumbnail_MoveInto;
+            if (bibImagesList.Items.Count < 2)
+            {
+                moveIntoImage.Visibility = Visibility.Hidden;
+            }
+
+            Grid gridWrapper = new Grid();
+            gridWrapper.Margin = new Thickness(0, 10, 0, 10);
+            gridWrapper.Name = "guid_" + guid.ToString().Replace("-", "");
+            bibImageBorder.Child = bibImage;
+            gridWrapper.Children.Add(bibImageBorder);
+            gridWrapper.Children.Add(moveIntoImage);
+            gridWrapper.Children.Add(moveUpImage);
+            gridWrapper.Children.Add(moveDownImage);
+            gridWrapper.Children.Add(deleteImage);
+            #endregion
+
+            // edit previously last item - enable moveDown arrow
+            if (this.bibImagesList.HasItems)
+            {
+                var lastItem = this.bibImagesList.Items.OfType<Grid>().LastOrDefault();
+                foreach (Image item in lastItem.Children.OfType<Image>())
+                {
+                    if (item.Name.Contains("moveDownThumbnail"))
+                    {
+                        item.IsEnabled = true;
+                    }
+                }
+            }
+
+            if (!saveSelectedMode)
+            {
+                RemoveAllBorders();
+            }
+            HideAllThumbnailControls();
+
+            // add to list
+            this.bibImagesList.Items.Add(gridWrapper);
+
+            if (!saveSelectedMode)
+            {
+                this.bibImagesList.SelectedItem = gridWrapper;
+            }
+            else
+            {
+                //its saved so it can be disabled upon adding to list when working with other mode
+                newestThumbnail = gridWrapper;
+            }
+
+            // assign "pointers" to these elements into dictionaries
+            if (!saveSelectedMode)
+            {
+                this.selectedImageGuid = guid;
+                this.selectedImage.Source = bitmapSource;
+            }
+            this.bibThumbnailGridsDictionary.Add(guid, gridWrapper);
+            SetAppropriateCrop(Size.Empty, this.selectedImage.RenderSize, true);
+            string pages = "";
+            int pagesNumber = this.bibImagesList.Items.Count;
+            switch (pagesNumber)
+            {
+                case 1:
+                    pages = "strana";
+                    break;
+                case 2:
+                case 3:
+                case 4:
+                    pages = "strany";
+                    break;
+                default:
+                    pages = "stran";
+                    break;
+            }
+            this.bibPagesNumber.Content = pagesNumber + " " + pages;
+            EnableImageControllers();
+
+
+            (Window.GetWindow(this) as MainWindow).DeactivateUndo();
+            (Window.GetWindow(this) as MainWindow).DeactivateRedo();
+        }
+
         // Removes colored border from all thumbnails
         private void RemoveAllBorders()
         {
             (this.coverThumbnail.Parent as Border).BorderBrush = Brushes.Transparent;
             foreach (var grid in this.tocThumbnailGridsDictionary.Values)
+            {
+                grid.Children.OfType<Border>().First().BorderBrush = Brushes.Transparent;
+            }
+            foreach (var grid in this.bibThumbnailGridsDictionary.Values)
+            {
+                grid.Children.OfType<Border>().First().BorderBrush = Brushes.Transparent;
+            }
+            foreach (var grid in this.authThumbnailGridsDictionary.Values)
             {
                 grid.Children.OfType<Border>().First().BorderBrush = Brushes.Transparent;
             }
@@ -3649,6 +4231,13 @@ namespace ScannerClient_obalkyknih
         {
             this.deleteCoverIcon.Visibility = Visibility.Hidden;
             foreach (var grid in this.tocThumbnailGridsDictionary.Values)
+            {
+                foreach (var imageControl in grid.Children.OfType<Image>())
+                {
+                    imageControl.Visibility = Visibility.Hidden;
+                }
+            }
+            foreach (var grid in this.bibThumbnailGridsDictionary.Values)
             {
                 foreach (var imageControl in grid.Children.OfType<Image>())
                 {
@@ -3673,7 +4262,7 @@ namespace ScannerClient_obalkyknih
             Image moveUp = LogicalTreeHelper.FindLogicalNode(grid, "moveUpThumbnail") as Image;
             Image moveDown = LogicalTreeHelper.FindLogicalNode(grid, "moveDownThumbnail") as Image;
             Image moveInto = LogicalTreeHelper.FindLogicalNode(grid, "moveIntoThumbnail") as Image;
-            if(!grid.Equals(this.tocImagesList.Items.GetItemAt(0)))
+            if (!grid.Equals(this.tocImagesList.Items.GetItemAt(0)))
             {
                 moveUp.Visibility = Visibility.Visible;
             }
@@ -3684,6 +4273,31 @@ namespace ScannerClient_obalkyknih
             }
 
             if (tocImagesList.Items.Count > 2)
+            {
+                moveInto.Visibility = Visibility.Visible;
+            }
+        }
+
+        // Makes appropriate controls of bibliography thumbnail visible
+        private void SetBibThumbnailControls(Guid guid)
+        {
+            Grid grid = this.bibThumbnailGridsDictionary[guid];
+            // set delete icon visible
+            (LogicalTreeHelper.FindLogicalNode(grid, "deleteThumbnail") as Image).Visibility = Visibility.Visible;
+            Image moveUp = LogicalTreeHelper.FindLogicalNode(grid, "moveUpThumbnail") as Image;
+            Image moveDown = LogicalTreeHelper.FindLogicalNode(grid, "moveDownThumbnail") as Image;
+            Image moveInto = LogicalTreeHelper.FindLogicalNode(grid, "moveIntoThumbnail") as Image;
+            if (!grid.Equals(this.bibImagesList.Items.GetItemAt(0)))
+            {
+                moveUp.Visibility = Visibility.Visible;
+            }
+
+            if (!grid.Equals(this.bibImagesList.Items.GetItemAt(this.bibImagesList.Items.Count - 1)))
+            {
+                moveDown.Visibility = Visibility.Visible;
+            }
+
+            if (bibImagesList.Items.Count > 2)
             {
                 moveInto.Visibility = Visibility.Visible;
             }
@@ -3730,6 +4344,10 @@ namespace ScannerClient_obalkyknih
                 {
                     SetTocThumbnailControls(this.selectedImageGuid);
                 }
+                else if (image.Name.Contains("bibThumbnail"))
+                {
+                    SetBibThumbnailControls(this.selectedImageGuid);
+                }
                 else
                 {
                     SetAuthThumbnailControls(this.selectedImageGuid);
@@ -3738,7 +4356,7 @@ namespace ScannerClient_obalkyknih
 
             EnableImageControllers();
             SetAppropriateCrop(Size.Empty, this.selectedImage.RenderSize, true);
-        }        
+        }
 
         // Sets selected TOC image from list of all TOC images
         private void TocThumbnail_MoveUp(object sender, MouseButtonEventArgs e)
@@ -3750,7 +4368,7 @@ namespace ScannerClient_obalkyknih
             {
                 return;
             }
-            
+
             // get the grid
             var tmp = this.tocImagesList.Items.GetItemAt(selectedIndex);
             // move it
@@ -3809,7 +4427,7 @@ namespace ScannerClient_obalkyknih
                 HideAllThumbnailControls();
                 SetTocThumbnailControls(selectedImageGuid);
             }
-            
+
         }
 
         private void TocThumbnail_DeleteNoRemove()
@@ -3892,6 +4510,132 @@ namespace ScannerClient_obalkyknih
             if (result == true)
             {
                 authDelete(selectedIndex);
+            }
+        }
+
+        // Sets selected TOC image from list of all BIB images
+        private void BibThumbnail_MoveUp(object sender, MouseButtonEventArgs e)
+        {
+            int selectedIndex = this.bibImagesList.SelectedIndex;
+
+            // check sanity of moving up
+            if (selectedIndex <= 0 || selectedIndex > this.bibImagesList.Items.Count - 1)
+            {
+                return;
+            }
+
+            // get the grid
+            var tmp = this.bibImagesList.Items.GetItemAt(selectedIndex);
+            // move it
+            this.bibImagesList.Items.RemoveAt(selectedIndex);
+            this.bibImagesList.Items.Insert(selectedIndex - 1, tmp);
+
+            this.bibImagesList.SelectedIndex = selectedIndex - 1;
+
+            HideAllThumbnailControls();
+            SetBibThumbnailControls(this.selectedImageGuid);
+        }
+
+        // Sets selected BIB image from list of all BIB images
+        private void BibThumbnail_MoveDown(object sender, MouseButtonEventArgs e)
+        {
+            int selectedIndex = this.bibImagesList.SelectedIndex;
+
+            // check sanity of moving down
+            if (selectedIndex < 0 || selectedIndex >= this.bibImagesList.Items.Count - 1)
+            {
+                return;
+            }
+
+            // get the grid
+            var tmp = this.bibImagesList.Items.GetItemAt(selectedIndex);
+            // move it
+            this.bibImagesList.Items.RemoveAt(selectedIndex);
+            this.bibImagesList.Items.Insert(selectedIndex + 1, tmp);
+
+            this.bibImagesList.SelectedIndex = selectedIndex + 1;
+
+            HideAllThumbnailControls();
+            SetBibThumbnailControls(this.selectedImageGuid);
+        }
+
+        //Sets selected BIB image from list of all BIB images
+        private void BibThumbnail_MoveInto(object sender, MouseButtonEventArgs e)
+        {
+            int selectedIndex = this.bibImagesList.SelectedIndex;
+            // get the grid
+            var tmp = this.bibImagesList.Items.GetItemAt(selectedIndex);
+
+            //asks user for input
+            MoveScannedPageWindow window = new MoveScannedPageWindow(bibImagesList.Items.Count);
+            window.ShowDialog();
+
+            //move it to selected position if input value is valid
+            if (window.DialogResult.HasValue && window.DialogResult.Value)
+            {
+                int theValue = window.moveIntoValue;
+                bibImagesList.Items.RemoveAt(selectedIndex);
+                bibImagesList.Items.Insert(--theValue, tmp);
+                bibImagesList.SelectedIndex = theValue;
+
+                HideAllThumbnailControls();
+                SetBibThumbnailControls(selectedImageGuid);
+            }
+
+        }
+
+        private void BibThumbnail_DeleteNoRemove()
+        {
+            int selectedIndex = this.bibImagesList.SelectedIndex;
+            // sanity check
+            if (selectedIndex < 0 || selectedIndex >= this.bibImagesList.Items.Count)
+            {
+                return;
+            }
+
+            bool dontShowAgain;
+            bool? result = true;
+            if (!Settings.DisableBibDeletionNotification)
+            {
+                result = MessageBoxDialogWindow.Show("Potvrzení odstranění", "Opravdu chcete odstranit vybraný seznam literatury?",
+                    out dontShowAgain, "Příště se neptat a rovnou odstranit", "Ano", "Ne", false,
+                    MessageBoxDialogWindow.Icons.Question);
+                if (result == true && dontShowAgain)
+                {
+                    Settings.DisableBibDeletionNotification = true;
+                }
+            }
+            if (result == true)
+            {
+                bibDelete(selectedIndex, false);
+            }
+        }
+
+        //Removes image from BIB thumbnails
+        private void BibThumbnail_Delete(object sender, MouseButtonEventArgs e)
+        {
+            int selectedIndex = this.bibImagesList.SelectedIndex;
+            // sanity check
+            if (selectedIndex < 0 || selectedIndex >= this.bibImagesList.Items.Count)
+            {
+                return;
+            }
+
+            bool dontShowAgain;
+            bool? result = true;
+            if (!Settings.DisableBibDeletionNotification)
+            {
+                result = MessageBoxDialogWindow.Show("Potvrzení odstranění", "Opravdu chcete odstranit vybraný seznam literatury?",
+                    out dontShowAgain, "Příště se neptat a rovnou odstranit", "Ano", "Ne", false,
+                    MessageBoxDialogWindow.Icons.Question);
+                if (result == true && dontShowAgain)
+                {
+                    Settings.DisableBibDeletionNotification = true;
+                }
+            }
+            if (result == true)
+            {
+                bibDelete(selectedIndex);
             }
         }
 
@@ -4210,6 +4954,112 @@ namespace ScannerClient_obalkyknih
             }
         }
 
+
+        //delete TOC image at index
+        private void bibDelete(int index, bool removeFiles = true)
+        {
+            DisableImageControllers();
+
+            Guid guid = (from record in bibThumbnailGridsDictionary.ToList()
+                         where record.Value.Equals(this.bibImagesList.Items.GetItemAt(index))
+                         select record.Key).First();
+
+            if (guid != Guid.Empty)
+            {
+                if (guid != this.workingImage.Key)
+                {
+                    this.backupImage = new KeyValuePair<string, BitmapSource>(this.imagesFilePaths[guid],
+                        ImageTools.LoadFullSize(this.imagesFilePaths[guid]));
+                }
+                else
+                {
+                    this.backupImage = new KeyValuePair<string, BitmapSource>(this.imagesFilePaths[guid], this.workingImage.Value);
+                }
+                SignalLoadedBackup();
+            }
+
+            try
+            {
+                if (removeFiles && File.Exists(this.imagesFilePaths[guid]))
+                {
+                    File.Delete(this.imagesFilePaths[guid]);
+                }
+            }
+            catch (Exception)
+            {
+                MessageBoxDialogWindow.Show("Chyba mazání souboru.", "Nebylo možné zmazat soubor z disku.",
+                    "OK", MessageBoxDialogWindow.Icons.Error);
+            }
+
+            this.bibImagesList.Items.RemoveAt(index);
+            this.bibThumbnailGridsDictionary.Remove(guid);
+            this.imagesFilePaths.Remove(guid);
+            this.imagesOriginalSizes.Remove(guid);
+
+            HideAllThumbnailControls();
+
+            if (!this.bibImagesList.HasItems)
+            {
+                if (this.coverGuid == Guid.Empty)
+                {
+                    // set default image
+                    this.selectedImageGuid = Guid.Empty;
+                    this.selectedImage.Source = new BitmapImage(
+                        new Uri("/ObalkyKnih-scanner;component/Images/default-icon.png", UriKind.Relative));
+
+                    Mouse.OverrideCursor = null;
+                }
+                else
+                {
+                    this.selectedImageGuid = this.coverGuid;
+                    (this.coverThumbnail.Parent as Border).BorderBrush = (SolidColorBrush)(new BrushConverter()
+                        .ConvertFrom("#6D8527"));
+                    this.deleteCoverIcon.Visibility = Visibility.Visible;
+                    this.selectedImage.Source = coverThumbnail.Source;
+
+                    EnableImageControllers();
+                }
+            }
+            else
+            {
+                Grid grid = this.bibImagesList.Items.GetItemAt(bibImagesList.Items.Count - 1) as Grid;
+                Image thumbnail = LogicalTreeHelper.FindLogicalNode(grid, "bibThumbnail") as Image;
+                this.selectedImage.Source = thumbnail.Source;
+                foreach (var guidKey in this.imagesFilePaths.Keys)
+                {
+                    if (grid.Name.Contains(guidKey.ToString().Replace("-", "")))
+                    {
+                        this.selectedImageGuid = guidKey;
+                    }
+                }
+                SetBibThumbnailControls(this.selectedImageGuid);
+                this.bibThumbnailGridsDictionary[this.selectedImageGuid].Children.OfType<Border>().First()
+                    .BorderBrush = (SolidColorBrush)(new BrushConverter().ConvertFrom("#6D8527"));
+
+                this.bibImagesList.SelectedItem = this.bibThumbnailGridsDictionary[this.selectedImageGuid];
+                EnableImageControllers();
+            }
+
+            // set numer of pages
+            string pages = "";
+            int pagesNumber = this.bibImagesList.Items.Count;
+            switch (pagesNumber)
+            {
+                case 1:
+                    pages = "strana";
+                    break;
+                case 2:
+                case 3:
+                case 4:
+                    pages = "strany";
+                    break;
+                default:
+                    pages = "stran";
+                    break;
+            }
+            this.bibPagesNumber.Content = pagesNumber + " " + pages;
+        }
+
         #endregion
 
         #region Undo/Redo
@@ -4275,10 +5125,10 @@ namespace ScannerClient_obalkyknih
             {
                 // cover image was replaced, so put current cover to redo
                 if (this.imagesFilePaths.ContainsKey(this.workingImage.Key)
-                    &&this.coverGuid == this.workingImage.Key && this.coverGuid != Guid.Empty)
+                    && this.coverGuid == this.workingImage.Key && this.coverGuid != Guid.Empty)
                 {
-                   this.redoImage = new KeyValuePair<string, BitmapSource>
-                       (this.imagesFilePaths[guid], this.workingImage.Value);
+                    this.redoImage = new KeyValuePair<string, BitmapSource>
+                        (this.imagesFilePaths[guid], this.workingImage.Value);
                 }
 
                 // load backup to working image
@@ -4429,6 +5279,8 @@ namespace ScannerClient_obalkyknih
             this.contrastSlider.IsEnabled = false;
             this.gammaSlider.IsEnabled = false;
             this.sliderConfirmButton.IsEnabled = false;
+            this.sliderSaveButton.IsEnabled = false;
+            this.sliderResetButton.IsEnabled = false;
         }
 
         // Enables image editing controllers
@@ -4445,9 +5297,11 @@ namespace ScannerClient_obalkyknih
             this.contrastSlider.IsEnabled = true;
             this.gammaSlider.IsEnabled = true;
             this.sliderConfirmButton.IsEnabled = true;
-            this.brightnessSlider.Value = 0;
-            this.contrastSlider.Value = 0;
-            this.gammaSlider.Value = 1;
+            this.sliderSaveButton.IsEnabled = true;
+            this.sliderResetButton.IsEnabled = true;
+            //this.brightnessSlider.Value = 0;
+            //this.contrastSlider.Value = 0;
+            //this.gammaSlider.Value = 1;
         }
 
         private void SelectedImage_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -4551,14 +5405,14 @@ namespace ScannerClient_obalkyknih
 
         private void SignalLoadedBackup()
         {
-            this.redoImage = new KeyValuePair<string,BitmapSource>(null, null);
+            this.redoImage = new KeyValuePair<string, BitmapSource>(null, null);
             (Window.GetWindow(this) as MainWindow).ActivateUndo();
             (Window.GetWindow(this) as MainWindow).DeactivateRedo();
         }
         #endregion
 
         #region control tab controls
-        
+
         // Shows windows for barcode
         private void controlNewUnitButton_Click(object sender, RoutedEventArgs e)
         {
@@ -4595,9 +5449,9 @@ namespace ScannerClient_obalkyknih
                 counter++;
             }
 
-            if (!string.IsNullOrWhiteSpace(this.partEanTextBox.Text))
+            if (!string.IsNullOrWhiteSpace(this.partIsmnTextBox.Text))
             {
-                CreateIdentifierLabel("EAN", this.partEanTextBox.Text, counter);
+                CreateIdentifierLabel("ISMN", this.partIsmnTextBox.Text, counter);
                 counter++;
             }
 
@@ -4833,16 +5687,16 @@ namespace ScannerClient_obalkyknih
                         this.partOclcTextBox.Text = tmp;
                     }
                     break;
-                case "partEanWarning":
-                    if (string.IsNullOrWhiteSpace(this.partEanTextBox.Text))
-                        this.partEanTextBox.Text = this.eanTextBox.Text;
-                    else if (string.IsNullOrWhiteSpace(this.eanTextBox.Text))
-                        this.eanTextBox.Text = this.partEanTextBox.Text;
+                case "partIsmnWarning":
+                    if (string.IsNullOrWhiteSpace(this.partIsmnTextBox.Text))
+                        this.partIsmnTextBox.Text = this.ismnTextBox.Text;
+                    else if (string.IsNullOrWhiteSpace(this.ismnTextBox.Text))
+                        this.ismnTextBox.Text = this.partIsmnTextBox.Text;
                     else
                     {
-                        string tmp = this.eanTextBox.Text;
-                        this.eanTextBox.Text = this.partEanTextBox.Text;
-                        this.partEanTextBox.Text = tmp;
+                        string tmp = this.ismnTextBox.Text;
+                        this.ismnTextBox.Text = this.partIsmnTextBox.Text;
+                        this.partIsmnTextBox.Text = tmp;
                     }
                     break;
                 case "partUrnWarning":
@@ -4889,9 +5743,9 @@ namespace ScannerClient_obalkyknih
             {
                 if (this.partCnbTextBox.Text != "") this.cnbTextBox.Text = this.partCnbTextBox.Text;
                 if (this.partOclcTextBox.Text != "") this.oclcTextBox.Text = this.partOclcTextBox.Text;
-                if (this.partEanTextBox.Text != "") this.eanTextBox.Text = this.partEanTextBox.Text;
+                if (this.partIsmnTextBox.Text != "") this.ismnTextBox.Text = this.partIsmnTextBox.Text;
                 if (this.partUrnNbnTextBox.Text != "") this.urnNbnTextBox.Text = this.partUrnNbnTextBox.Text;
-                this.partCnbTextBox.Text = ""; this.partOclcTextBox.Text = ""; this.partEanTextBox.Text = ""; this.partUrnNbnTextBox.Text = "";
+                this.partCnbTextBox.Text = ""; this.partOclcTextBox.Text = ""; this.partIsmnTextBox.Text = ""; this.partUrnNbnTextBox.Text = "";
                 this.partCnbTextBox.IsEnabled = false;
                 this.partCnbTextBox.Visibility = Visibility.Hidden;
                 this.partCnbLabel.Visibility = Visibility.Hidden;
@@ -4913,9 +5767,9 @@ namespace ScannerClient_obalkyknih
                 this.partOclcWarning.Visibility = Visibility.Visible;
                 if (this.cnbTextBox.Text != "") this.partCnbTextBox.Text = this.cnbTextBox.Text;
                 if (this.oclcTextBox.Text != "") this.partOclcTextBox.Text = this.oclcTextBox.Text;
-                if (this.eanTextBox.Text != "") this.partEanTextBox.Text = this.eanTextBox.Text;
+                if (this.ismnTextBox.Text != "") this.partIsmnTextBox.Text = this.ismnTextBox.Text;
                 if (this.urnNbnTextBox.Text != "") this.partUrnNbnTextBox.Text = this.urnNbnTextBox.Text;
-                this.cnbTextBox.Text = ""; this.oclcTextBox.Text = ""; this.eanTextBox.Text = ""; this.urnNbnTextBox.Text = "";
+                this.cnbTextBox.Text = ""; this.oclcTextBox.Text = ""; this.ismnTextBox.Text = ""; this.urnNbnTextBox.Text = "";
             }
         }
 
@@ -4932,7 +5786,7 @@ namespace ScannerClient_obalkyknih
                 this.yearTextBox.Text = tmpRecord.Year == null ? (tmpRecord as Monograph).PartYear : tmpRecord.Year;
                 this.cnbTextBox.Text = tmpRecord.Cnb == null ? (tmpRecord as Monograph).PartCnb : tmpRecord.Cnb;
                 this.oclcTextBox.Text = tmpRecord.Oclc == null ? (tmpRecord as Monograph).PartOclc : tmpRecord.Oclc;
-                this.eanTextBox.Text = tmpRecord.Ean == null ? (tmpRecord as Monograph).PartEan : tmpRecord.Ean;
+                this.ismnTextBox.Text = tmpRecord.Ismn == null ? (tmpRecord as Monograph).PartIsmn : tmpRecord.Ismn;
                 this.urnNbnTextBox.Text = tmpRecord.Urn == null ? (tmpRecord as Monograph).PartUrn : tmpRecord.Urn;
                 this.partNameTextBox.Text = (this.generalRecord as Monograph).PartName;
                 this.partNumberLabel.Visibility = Visibility.Visible;
@@ -4940,6 +5794,7 @@ namespace ScannerClient_obalkyknih
                 this.partNameLabel.Visibility = Visibility.Visible;
                 this.partNameTextBox.Visibility = Visibility.Visible;
                 checkboxMinorChanger((bool)this.checkboxMinorPartName.IsChecked);
+                this.generalRecord.AdditionalIdentifiers = new HashSet<string>();
                 showUnionTab();
             }
             else
@@ -4947,18 +5802,33 @@ namespace ScannerClient_obalkyknih
                 var tmpRecord = this.generalRecord;
                 this.checkboxMinorPartName.IsEnabled = false;
                 this.multipartIdentifierUnion.IsEnabled = false;
-                this.titleTextBox.Text = ""; this.authorTextBox.Text = ""; this.yearTextBox.Text = ""; this.isbnTextBox.Text = ""; this.cnbTextBox.Text = ""; this.oclcTextBox.Text = ""; this.eanTextBox.Text = ""; this.urnNbnTextBox.Text = ""; this.partNameTextBox.Text = "";
-                this.partTitleTextBox.Text = tmpRecord.Title;
-                this.partAuthorTextBox.Text = tmpRecord.Authors;
-                this.partYearTextBox.Text = tmpRecord.Year;
+                this.titleTextBox.Text = ""; this.authorTextBox.Text = ""; this.yearTextBox.Text = ""; this.isbnTextBox.Text = ""; this.cnbTextBox.Text = ""; this.oclcTextBox.Text = ""; this.ismnTextBox.Text = ""; this.urnNbnTextBox.Text = ""; this.partNameTextBox.Text = "";
+                this.partTitleTextBox.Text = tmpRecord.Title ?? (this.generalRecord as Monograph).PartTitle;
+                this.partAuthorTextBox.Text = tmpRecord.Authors ?? (this.generalRecord as Monograph).PartAuthors;
+                this.partYearTextBox.Text = tmpRecord.Year ?? (this.generalRecord as Monograph).PartYear;
                 this.partCnbTextBox.Text = tmpRecord.Cnb;
                 this.partOclcTextBox.Text = tmpRecord.Oclc;
-                this.partEanTextBox.Text = tmpRecord.Ean;
+                this.partIsmnTextBox.Text = tmpRecord.Ismn;
                 this.partUrnNbnTextBox.Text = tmpRecord.Urn;
                 this.partNumberLabel.Visibility = Visibility.Hidden;
                 this.partNumberTextBox.Visibility = Visibility.Hidden;
                 this.partNameLabel.Visibility = Visibility.Hidden;
                 this.partNameTextBox.Visibility = Visibility.Hidden;
+                if (this.generalRecord is Monograph)
+                {
+                    HashSet<string> hs = new HashSet<string>();
+                    List<MetadataIdentifier> allIdentifiers = (this.generalRecord as Monograph).listIdentifiers;
+                    foreach (MetadataIdentifier identifier in allIdentifiers)
+                    {
+                        if (identifier.IdentifierCode == null) continue;
+                        var selected = this.multipartIdentifierOwn.SelectedIndex;
+                        if (selected > -1 && allIdentifiers[selected].IdentifierCode == null) continue;
+                        if (selected != -1 && identifier.IdentifierCode.Contains(allIdentifiers[selected].IdentifierCode)) continue;
+                        if (identifier.IdentifierType==IdentifierType.ISBN || identifier.IdentifierType==IdentifierType.ISSN || identifier.IdentifierType==IdentifierType.ISMN || identifier.IdentifierType==IdentifierType.EAN)
+                            hs.Add(identifier.IdentifierCode);
+                    }
+                    this.generalRecord.AdditionalIdentifiers = hs;
+                }
                 hideUnionTab();
             }
         }
@@ -4996,7 +5866,7 @@ namespace ScannerClient_obalkyknih
             if (selected == -1) return;
             this.isbnTextBox.Text = tmpRecord.listIdentifiers[selected].IdentifierCode;
             if (selected > 0) showUnionTab();
-            this.checkboxMinorChanger( (bool)this.checkboxMinorPartName.IsChecked );
+            this.checkboxMinorChanger((bool)this.checkboxMinorPartName.IsChecked);
         }
 
         private void controlSameUnitButton_Click(object sender, RoutedEventArgs e)
@@ -5020,7 +5890,7 @@ namespace ScannerClient_obalkyknih
             {
                 this.tocImagesList.SelectedIndex = i;
                 TocThumbnail_DeleteNoRemove();
-             //   TocThumbnail_Delete(null, null);
+                //   TocThumbnail_Delete(null, null);
             }
 
             // cleanup part info
@@ -5038,11 +5908,11 @@ namespace ScannerClient_obalkyknih
             // show optional fields
             this.partCnbTextBox.Visibility = Visibility.Visible;
             this.partOclcTextBox.Visibility = Visibility.Visible;
-            this.partEanTextBox.Visibility = Visibility.Visible;
+            this.partIsmnTextBox.Visibility = Visibility.Visible;
             this.partUrnNbnTextBox.Visibility = Visibility.Visible;
             this.partCnbLabel.Visibility = Visibility.Visible;
             this.partOclcLabel.Visibility = Visibility.Visible;
-            this.partEanLabel.Visibility = Visibility.Visible;
+            this.partIsmnLabel.Visibility = Visibility.Visible;
             this.partUrnNbnLabel.Visibility = Visibility.Visible;
             this.optionalAtributesLink.Visibility = Visibility.Hidden;
         }
@@ -5066,6 +5936,137 @@ namespace ScannerClient_obalkyknih
         {
             ScanButtonClicked(DocumentType.Auth, "A3");
         }
+
+        private void scanBibliographyButton_Click(object sender, RoutedEventArgs e)
+        {
+            ScanButtonClicked(DocumentType.Bibliography, null);
+        }
+
+        private void scanBibliographyA5_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            ScanButtonClicked(DocumentType.Bibliography, "A5");
+        }
+
+        private void scanBibliographyA4_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            ScanButtonClicked(DocumentType.Bibliography, "A4");
+        }
+
+        private void scanBibliographyA3_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            ScanButtonClicked(DocumentType.Bibliography, "A3");
+        }
+
+        private void PdfLoadButtonClicked(object sender, MouseButtonEventArgs e)
+        {
+            DocumentType documentType;
+            if ((sender as Label).Name.Equals("coverPdf"))
+            {
+                documentType = DocumentType.Cover;
+            }
+            else if ((sender as Label).Name.Equals("bibPdf"))
+            {
+                documentType = DocumentType.Bibliography;
+            }
+            else
+            {
+                documentType = DocumentType.Toc;
+            }
+
+            LoadFromPDF window = new LoadFromPDF(this);
+            bool? result = window.ShowDialog();
+
+            if (result.Value)
+            {
+                DisableImageControllers();
+
+                foreach (var fileName in window.ConvertedFiles)
+                {
+                    ImportFromFile(documentType, fileName);
+                }
+
+                EnableImageControllers();
+                this.contrastSlider.IsEnabled = true;
+            }
+
+            window.DeleteTempFiles();
+        }
+
+        private void zobrazitVysledek_Click(object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(this.scannedBookId))
+            {
+                System.Diagnostics.Process.Start("https://www.obalkyknih.cz/view?book_id=" + this.scannedBookId);
+            }
+        }
+
+        #region Importing multiple ISBNs
+
+        private HashSet<string> openAdditionalISBNWindow(string MainIdentifier, HashSet<string> Identifiers)
+        {
+            SetMultipleISBNs window = new SetMultipleISBNs(MainIdentifier, Identifiers);
+            bool? result = window.ShowDialog();
+            if (result == true)
+            {
+                return window.Identifiers;
+            }
+            return null;
+        }
+
+        private void addMoreISBNUnion_Click(object sender, RoutedEventArgs e)
+        {
+            HashSet<string> Identifiers = openAdditionalISBNWindow(isbnTextBox.Text, generalRecord.AdditionalUnionIdentifiers);
+            if (Identifiers != null)
+            {
+                generalRecord.AdditionalUnionIdentifiers = Identifiers;
+            }
+        }
+
+        // Fires up new window for additional identifiers
+        private void addMoreISBN_Click(object sender, RoutedEventArgs e)
+        {
+            HashSet<string> Identifiers = openAdditionalISBNWindow(partIsbnTextBox.Text, generalRecord.AdditionalIdentifiers);
+            if (Identifiers != null)
+            {
+                generalRecord.AdditionalIdentifiers = Identifiers;
+            }
+        }
+
+
+        // Enables/disables "Další ISBN" button
+        private void AllowMoreISBNs(string error, Button AddMoreIdentifiersButton, string IdentifierText)
+        {
+            if (error == null && !String.IsNullOrWhiteSpace(IdentifierText))
+            {
+                AddMoreIdentifiersButton.ToolTip = "Přidat další identifikátory";
+                AddMoreIdentifiersButton.IsEnabled = true;
+            }
+            else 
+            {
+                AddMoreIdentifiersButton.ToolTip = "Možnost přidat nasledující identifikátory vám bude umožněna po vyplnění hlavního pole";
+                AddMoreIdentifiersButton.IsEnabled = false;
+            }
+            
+        }
+        #endregion
+
+        private void scanningTabItem_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (!Settings.ImageTransformationSlidersChanged)
+            {
+                brightnessSlider.Value = Settings.DefaultBrightness;
+                contrastSlider.Value = Settings.DefaultContrast;
+                gammaSlider.Value = Settings.DefaultGamma / 100;
+
+                RoutedPropertyChangedEventArgs<double> eBrightness = new RoutedPropertyChangedEventArgs<double>(0, brightnessSlider.Value, null);
+                RoutedPropertyChangedEventArgs<double> eContrast = new RoutedPropertyChangedEventArgs<double>(0, contrastSlider.Value, null);
+                RoutedPropertyChangedEventArgs<double> eGamma = new RoutedPropertyChangedEventArgs<double>(0, gammaSlider.Value, null);
+                BrightnessSlider_ValueChanged(null, eBrightness);
+                ContrastSlider_ValueChanged(null, eContrast);
+                GammaSlider_ValueChanged(null, eGamma);
+            }
+        }
+
     }
 
     #region Custom WPF controls
@@ -5084,7 +6085,7 @@ namespace ScannerClient_obalkyknih
         {
             e.Handled = true;
 
-            var e2 = new MouseWheelEventArgs(e.MouseDevice,e.Timestamp,e.Delta);
+            var e2 = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta);
             e2.RoutedEvent = UIElement.MouseWheelEvent;
             this.RaiseEvent(e2);
         }

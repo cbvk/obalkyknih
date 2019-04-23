@@ -211,20 +211,26 @@ namespace ScannerClient_obalkyknih
         {
             if (!Settings.Version.ToString().Equals(Settings.VersionInfo))
             {
-                MessageBoxDialogWindow.Show("Verze 0.34",
-                      "Změny ve verzi 0.34:\n"
-                    + "* Podpora UPC kódu jako identifikátora záznamu.\n\n"
-                    + "Změny ve verzi 0.33:\n"
-                    + "* Skenování fotek hlavních autorů.\n\n"
-                    + "Změny ve verzi 0.32:\n"
-                    + "* Opravné vydání.\n\n"
-                    + "Změny ve verzi 0.31:\n"
-                    + "* Podpora skenování dvojstran.\n\n"
-                    + "* Možnost přesunu skenovaných stránek TOC na libovolnou pozici.\n"
-                    + "* Urychlení odesílání skenovaných dokumentů na server.\n\n"
-                    + "Změny ve verzi 0.30:\n"
-                    + "* Udržovací vydání léto 2016.\n"
-                    + "* Ukrytí nepovinných identifikátorů pro skenování periodik.\n", "OK", MessageBoxDialogWindow.Icons.Information);
+                MessageBoxDialogWindow.Show("Verze 0.39",
+                      "Změny ve verzi 0.39:\n"
+                    + "* Vkládání stránek seznamu literatury z PDF z Vašeho PC.\n\n"
+                    + "Změny ve verzi 0.38:\n"
+                    + "* Skenování seznamu literatury.\n\n"
+                    + "Změny ve verzi 0.37:\n"
+                    + "* Upozornění na obálky s nízkou kvalitou, které je doporučené přeskenovat.\n"
+                    + "* Ukládání nastavení jasu a kontrastu na záložce skenování.\n"
+                    + "* Menší opravy na podnět uživatelů skenovacího klienta..\n"
+                    + "* Možnost uložení více různých ISBN k jednomu titulu.\n\n"
+                    + "Změny ve verzi 0.36:\n"
+                    + "* Vkládání obálek a stránek TOC z PDF z Vašeho PC.\n"
+                    + "* Skenování vícerých autorů díla.\n\n"
+                    + "Změny ve verzi 0.35:\n"
+                    + "* Podpora ISMN jako identifikátora záznamu.\n"
+                    + "* Automatická oprava textů načtených z bibliografických záznamů\n"
+                    + "  (ošetření nadbytečných znaků, teček, mezer apod.).\n"
+                    + "* Opravní vydání pro skenování foto autorů.\n"
+                    + "* Opravní vydání pro skenování záznamů s tagem 024 UPC, ISMN, EAN.\n"
+                    + "* Menší opravy na podnět uživatelů skenovacího klienta.\n", "OK", MessageBoxDialogWindow.Icons.Information);
                 Settings.VersionInfo = Settings.Version.ToString();
             }
         }
@@ -319,7 +325,6 @@ namespace ScannerClient_obalkyknih
             }
             // don't care if some file can't be deleted right now
             catch (Exception) { }
-
             if (this.isVersionCheckFinished && Settings.NeverDownloadUpdates && isAllowedVersion != false) isAllowedVersion = true; //debug
             if (isAllowedVersion == null)
             {

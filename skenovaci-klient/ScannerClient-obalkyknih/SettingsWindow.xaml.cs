@@ -45,6 +45,10 @@ namespace ScannerClient_obalkyknih
             this.z39BarcodeField.Text = Settings.Z39BarcodeField.ToString();
             this.z39CnbField.IsEnabled = !Settings.IsAdminZ39CnbField && Settings.IsZ39Enabled;
             this.z39CnbField.Text = Settings.Z39CnbField.ToString();
+            this.z39IsmnField.IsEnabled = !Settings.IsAdminZ39IsmnField && Settings.IsZ39Enabled;
+            this.z39IsmnField.Text = Settings.Z39IsmnField.ToString();
+            this.z39EanField.IsEnabled = !Settings.IsAdminZ39EanField && Settings.IsZ39Enabled;
+            this.z39EanField.Text = Settings.Z39EanField.ToString();
             this.z39EncodingComboBox.IsEnabled = !Settings.IsAdminZ39Encoding && Settings.IsZ39Enabled;
             if (Settings.Z39Encoding == Record_Character_Encoding.MARC)
             {
@@ -142,6 +146,8 @@ namespace ScannerClient_obalkyknih
             Settings.Z39Password = this.z39PasswordTextBox.Text;
             Settings.Z39BarcodeField = int.Parse(this.z39BarcodeField.Text);
             Settings.Z39CnbField = int.Parse(this.z39CnbField.Text);
+            Settings.Z39IsmnField = int.Parse(this.z39IsmnField.Text);
+            Settings.Z39EanField = int.Parse(this.z39EanField.Text);
             if (this.z39EncodingComboBox.SelectedIndex == 2)
             {
                 Settings.Z39Encoding = Record_Character_Encoding.MARC;

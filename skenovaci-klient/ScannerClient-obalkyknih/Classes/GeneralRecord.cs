@@ -16,6 +16,12 @@ namespace ScannerClient_obalkyknih.Classes
         /// <summary>Barcode of processed unit</summary>
         public string Barcode { get; set; }
 
+        /// <summary>Additional ISBN identifiers of processed record</summary>
+        public HashSet<string> AdditionalIdentifiers { get; set; }
+
+        /// <summary>Additional ISBN identifiers of processed union record</summary>
+        public HashSet<string> AdditionalUnionIdentifiers { get; set; }
+
         /// <summary>ČNB identifier of processed record</summary>
         public string Cnb { get; set; }
 
@@ -24,6 +30,9 @@ namespace ScannerClient_obalkyknih.Classes
 
         /// <summary>EAN of processed record</summary>
         public string Ean { get; set; }
+
+        /// <summary>ISMN of processed record</summary>
+        public string Ismn { get; set; }
 
         /// <summary>URN:NBN identifier of processed record</summary>
         public string Urn { get; set; }
@@ -36,7 +45,6 @@ namespace ScannerClient_obalkyknih.Classes
 
         /// <summary>Publish year of processed record</summary>
         public string Year { get; set; }
-
         /// <summary>Publish year of particular processed unit</summary>
         public string PartYear { get; set; }
 
@@ -57,6 +65,12 @@ namespace ScannerClient_obalkyknih.Classes
 
         /// <summary> Download link for thumbnail of toc pfd from obalkyknih for this record </summary>
         public string OriginalTocThumbnailLink { get; set; }
+
+        /// <summary> Download link of bib pdf from obalkyknih for this record </summary>
+        public string OriginalBibPdfLink { get; set; }
+
+        /// <summary> Download link for thumbnail of bib pdf from obalkyknih for this record </summary>
+        public string OriginalBibThumbnailLink { get; set; }
 
         public string OriginalAuthImageLink { get; set; }
 
@@ -80,6 +94,8 @@ namespace ScannerClient_obalkyknih.Classes
             this.Ean = ParseIdentifier(metadata, Settings.MetadataUpcField).FirstOrDefault();
             // Parse EAN
             this.Ean = ParseIdentifier(metadata, Settings.MetadataEanField).FirstOrDefault();
+            // Parse ISMN
+            this.Ismn = ParseIdentifier(metadata, Settings.MetadataIsmnField).FirstOrDefault();
             // Parse OCLC
             this.Oclc = ParseIdentifier(metadata, Settings.MetadataOclcField).FirstOrDefault();
             // Custom ID
@@ -144,7 +160,11 @@ namespace ScannerClient_obalkyknih.Classes
                     }
                     else
                     {
-                        this.AuthList.Add(authorResults[i].Substring(1), lastAuthorName);
+                        String authId = authorResults[i].Substring(1);
+                        if (!this.AuthList.ContainsKey(authId))
+                        {
+                            this.AuthList.Add(authId, lastAuthorName);
+                        }
                     }
                 }
             }
@@ -158,7 +178,7 @@ namespace ScannerClient_obalkyknih.Classes
         /// <summary>Parse record publish year from single metadata field defined in Settings</summary>
         /// <param name="metadata">Metadata of record</param>
         /// <returns>Publish year</returns>
-         protected string ParseYear(Metadata metadata)
+        protected string ParseYear(Metadata metadata)
         {
             // AACR2
             string yearAacr2 = metadata.VariableFields.Where(vf => Settings.MetadataPublishYearField.Item1.ToString("D3").Equals(vf.TagName))

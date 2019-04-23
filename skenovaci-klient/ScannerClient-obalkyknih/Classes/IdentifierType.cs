@@ -9,6 +9,7 @@ namespace ScannerClient_obalkyknih.Classes
     {
         ISBN,
         ISSN,
+        ISMN,
         CNB,
         OCLC,
         URN,

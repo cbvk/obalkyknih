@@ -12,6 +12,7 @@ namespace ScannerClient_obalkyknih
     public class RequestObject3
     {
         public string isbn { get; set; }
+        public string ismn { get; set; }
         public string nbn { get; set; }
         public string oclc { get; set; }
         public string part_year { get; set; }
@@ -45,11 +46,16 @@ namespace ScannerClient_obalkyknih
         public List<object> reviews { get; set; }
         public string cover_icon_url { get; set; }
         public string toc_text_url { get; set; }
+        public string bib_text_url { get; set; }
         public string permalink { get; set; }
         public string backlink_url { get; set; }
         public string toc_thumbnail_url { get; set; }
+        public string bib_thumbnail_url { get; set; }
         public string cover_medium_url { get; set; }
         public string toc_pdf_url { get; set; }
+        public string bib_pdf_url { get; set; }
+        public string orig_width { get; set; }
+        public string orig_height { get; set; }
         public Bibinfo bibinfo { get; set; }
     }
 

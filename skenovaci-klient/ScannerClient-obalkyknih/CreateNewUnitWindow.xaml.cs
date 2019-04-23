@@ -90,6 +90,14 @@ namespace ScannerClient_obalkyknih
                     this.GeneralRecord.IdentifierType = IdentifierType.ISSN;
                     ((Periodical)this.GeneralRecord).Issn = this.GeneralRecord.IdentifierValue = identifierValue;
                     break;
+                case "ISMN":
+                    this.GeneralRecord.IdentifierType = IdentifierType.ISMN;
+                    this.GeneralRecord.Ismn = this.GeneralRecord.IdentifierValue = identifierValue;
+                    break;
+                case "EAN":
+                    this.GeneralRecord.IdentifierType = IdentifierType.EAN;
+                    this.GeneralRecord.Ean = this.GeneralRecord.IdentifierValue = identifierValue;
+                    break;
                 case "ČNB":
                     this.GeneralRecord.IdentifierType = IdentifierType.CNB;
                     this.GeneralRecord.Cnb = this.GeneralRecord.IdentifierValue = identifierValue;
@@ -153,6 +161,10 @@ namespace ScannerClient_obalkyknih
             }
             else if (this.monographIdentifierTextBox.Text.Substring(0, 3) == "cnb")
             {
+                this.monographIdentifierComboBox.SelectedIndex = 3;
+            }
+            else if (this.monographIdentifierTextBox.Text.Substring(0, 2).ToLower() == "m-" || this.monographIdentifierTextBox.Text.Substring(0, 3) == "979")
+            {
                 this.monographIdentifierComboBox.SelectedIndex = 2;
             }
         }
@@ -172,6 +184,10 @@ namespace ScannerClient_obalkyknih
                 this.periodicalIdentifierComboBox.SelectedIndex = 1;
             }
             else if (this.periodicalIdentifierTextBox.Text.Substring(0, 3) == "cnb")
+            {
+                this.periodicalIdentifierComboBox.SelectedIndex = 4;
+            }
+            else if (this.periodicalIdentifierTextBox.Text.Substring(0, 2).ToLower() == "m-" || this.periodicalIdentifierTextBox.Text.Substring(0, 3) == "979")
             {
                 this.periodicalIdentifierComboBox.SelectedIndex = 2;
             }

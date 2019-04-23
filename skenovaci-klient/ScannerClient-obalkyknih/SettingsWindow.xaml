@@ -1,13 +1,13 @@
 <Window x:Class="ScannerClient_obalkyknih.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Nastavení" Height="480" Width="600" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
-    <Grid Height="441">
+        Title="Nastavení" Height="516" Width="600" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+    <Grid Height="476">
         <Grid.Background>
             <ImageBrush Viewport="0,0,218,218" ViewportUnits="Absolute" Stretch="None" TileMode="Tile"
                         ImageSource="/ObalkyKnih-scanner;component/Images/ok-background-center.png"/>
         </Grid.Background>
-        <TabControl Height="392" VerticalAlignment="Top">
+        <TabControl Height="419" VerticalAlignment="Top">
             <TabControl.Resources>
                 <!--Background of tabs header-->
                 <Style TargetType="{x:Type TabPanel}">
@@ -64,7 +64,7 @@
                 </Style>
             </TabControl.Resources>
             <TabItem Header="Připojení">
-                <Grid Height="358">
+                <Grid Height="388">
                     <Grid.Background>
                         <ImageBrush Viewport="0,0,218,218" ViewportUnits="Absolute" Stretch="None" TileMode="Tile"
                         ImageSource="/ObalkyKnih-scanner;component/Images/ok-background-center.png"/>
@@ -124,12 +124,16 @@
                         <ComboBoxItem Content="Windows-1250" />
                         <ComboBoxItem Content="Marc-8" />
                     </ComboBox>
-                    <GroupBox Header=" Vyhledávací atributy " Height="62" HorizontalAlignment="Left" Margin="30,284,0,0" Name="groupBox1" VerticalAlignment="Top" Width="503" Grid.ColumnSpan="2">
+                    <GroupBox Header=" Vyhledávací atributy " Height="98" HorizontalAlignment="Left" Margin="30,284,0,0" Name="groupBox1" VerticalAlignment="Top" Width="503" Grid.ColumnSpan="2">
                         <Grid>
                             <Label Content="Čárový kód:" FontFamily="Arial" Foreground="#5e5e5e" Height="28" HorizontalAlignment="Left" Margin="10,7,0,0" VerticalAlignment="Top" />
                             <TextBox FontFamily="Arial" Foreground="#5e5e5e" Height="23" HorizontalAlignment="Left" Margin="109,8,0,0" Name="z39BarcodeField" VerticalAlignment="Top" Width="120" />
                             <Label Content="ČNB:" FontFamily="Arial" Foreground="#5e5e5e" Height="28" HorizontalAlignment="Left" Margin="272,7,0,0" VerticalAlignment="Top" />
                             <TextBox FontFamily="Arial" Foreground="#5e5e5e" Height="23" HorizontalAlignment="Left" Margin="354,9,0,0" Name="z39CnbField" VerticalAlignment="Top" Width="120" />
+                            <Label Content="ISMN:" FontFamily="Arial" Foreground="#5e5e5e" Height="28" HorizontalAlignment="Left" Margin="272,36,0,0" VerticalAlignment="Top" />
+                            <TextBox FontFamily="Arial" Foreground="#5e5e5e" Height="23" HorizontalAlignment="Left" Margin="354,38,0,0" Name="z39IsmnField" VerticalAlignment="Top" Width="120" />
+                            <Label Content="EAN:" FontFamily="Arial" Foreground="#5e5e5e" Height="28" HorizontalAlignment="Left" Margin="10,36,0,0" VerticalAlignment="Top" />
+                            <TextBox FontFamily="Arial" Foreground="#5e5e5e" Height="23" HorizontalAlignment="Left" Margin="109,38,0,0" Name="z39EanField" VerticalAlignment="Top" Width="120" />
                         </Grid>
                     </GroupBox>
                 </Grid>
@@ -215,13 +219,13 @@ VerticalAlignment="Top" Width="255" Foreground="#FF909090" />
                 </Grid>
             </TabItem>
         </TabControl>
-        <Grid HorizontalAlignment="Center" Margin="180,358,189,0" Width="209">
+        <Grid HorizontalAlignment="Center" Margin="180,413,189,0" Width="209">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="123*" />
                 <ColumnDefinition Width="77*" />
             </Grid.ColumnDefinitions>
             <Button Content="Uložit nastavení" Height="25" Name="saveButton" VerticalAlignment="Top" Click="SaveButton_Click" Style="{StaticResource MyButton}"
-                Foreground="#CECECE" BorderBrush="#656565" BorderThickness="1" Cursor="Hand" Margin="-13,49,0,0" HorizontalAlignment="Left" Width="133">
+                Foreground="#CECECE" BorderBrush="#656565" BorderThickness="1" Cursor="Hand" Margin="-4,18,0,0" HorizontalAlignment="Left" Width="133">
                 <Button.Background>
                     <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
                         <GradientStop Color="#535353" Offset="0.0" />
@@ -231,7 +235,7 @@ VerticalAlignment="Top" Width="255" Foreground="#FF909090" />
             </Button>
             <Button Content="Zrušit" Height="25" HorizontalAlignment="Right"
                 VerticalAlignment="Top" Style="{StaticResource MyButton}" IsCancel="True"
-                Foreground="#CECECE" BorderBrush="#656565" BorderThickness="1" Cursor="Hand" Grid.Column="1" Margin="0,49,0,0">
+                Foreground="#CECECE" BorderBrush="#656565" BorderThickness="1" Cursor="Hand" Grid.Column="1" Margin="0,18,-9,0">
                 <Button.Background>
                     <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
                         <GradientStop Color="#535353" Offset="0.0" />

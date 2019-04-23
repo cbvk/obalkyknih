@@ -23,6 +23,7 @@ namespace ScannerClient_obalkyknih
 
         // define event
         public event MouseButtonEventHandler Image_Clicked;
+        public event MouseButtonEventHandler Pdf_Clicked;
 
         public ExternalImageLoadWindow()
         {
@@ -42,6 +43,14 @@ namespace ScannerClient_obalkyknih
             this.Close();
             if (this.Image_Clicked != null)
                 this.Image_Clicked(sender, e);
+        }
+
+        // throw event on Pdf Clicked
+        protected void OnPdf_Clicked(object sender, MouseButtonEventArgs e)
+        {
+            this.Close();
+            if (this.Pdf_Clicked != null)
+                this.Pdf_Clicked(sender, e);
         }
 
         // Close on Esc

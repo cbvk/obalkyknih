@@ -39,6 +39,8 @@ Source: "..\ScannerClient-obalkyknih\bin\Release\Zoom.Net.dll"; DestDir: "{app}"
 Source: "..\ScannerClient-obalkyknih\bin\Release\Zoom.Net.YazSharp.dll"; DestDir: "{app}"
 Source: "..\ScannerClient-obalkyknih\bin\Release\\Newtonsoft.Json.dll"; DestDir: "{app}"
 Source: "..\ScannerClient-obalkyknih\bin\Release\SobekCM_Marc_Library.dll"; DestDir: "{app}"
+Source: "..\ScannerClient-obalkyknih\bin\Release\gsdll32.dll"; DestDir: "{app}"
+Source: "..\ScannerClient-obalkyknih\bin\Release\PdfToImage.dll"; DestDir: "{app}"
 Source: "..\ScannerClient-obalkyknih\bin\Release\ObalkyKnih-scanner.exe.config"; DestDir: "{app}"
 Source: "..\ScannerClient-obalkyknih\bin\Release\ObalkyKnih-scanner.exe.manifest"; DestDir: "{app}"
 Source: "..\ScannerClient-obalkyknih\WIA-DLL\wiaaut.dll"; DestDir: "{sys}"; Flags: onlyifdoesntexist 32bit

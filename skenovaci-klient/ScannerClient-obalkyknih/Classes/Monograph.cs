@@ -18,6 +18,10 @@ namespace ScannerClient_obalkyknih.Classes
 
         public string PartIsbn { get; set; }
 
+        public string Ismn { get; set; }
+
+        public string PartIsmn { get; set; }
+
         public string PartCnb { get; set; }
 
         public string PartOclc { get; set; }
@@ -44,7 +48,7 @@ namespace ScannerClient_obalkyknih.Classes
         {
             if (this.IsUnionRequested)
             {
-                this.Isbn = this.Cnb = this.Oclc = this.Ean = this.Urn = null;
+                this.Isbn = this.Cnb = this.Oclc = this.Ean = this.Urn = this.Ismn = null;
 
                 this.Isbn = ParseIdentifier(metadata, Settings.MetadataIsbnField).FirstOrDefault();
                 base.ImportFromMetadata(metadata);
@@ -58,6 +62,7 @@ namespace ScannerClient_obalkyknih.Classes
                 {
                     // souborny zaznam obsahuje jine ISBN napr. na krabici svazku = souborny zaznam bude obsahovat pouze rozdilne zaznamy (s nejvetsi pravdepodobnosti ISBN)
                     if (this.PartIsbn == this.Isbn) this.Isbn = null;
+                    if (this.PartIsmn == base.Ismn) base.Ismn = null;
                     if (this.PartCnb == base.Cnb) base.Cnb = null;
                     if (this.PartEan == base.Ean) base.Ean = null;
                     if (this.PartOclc == base.Oclc) base.Oclc = null;
@@ -84,6 +89,7 @@ namespace ScannerClient_obalkyknih.Classes
             SetPartIdentfier(metadata, IdentifierType.CNB, Settings.MetadataCnbField);
             SetPartIdentfier(metadata, IdentifierType.UPC, Settings.MetadataUpcField);
             SetPartIdentfier(metadata, IdentifierType.EAN, Settings.MetadataEanField);
+            SetPartIdentfier(metadata, IdentifierType.ISMN, Settings.MetadataIsmnField);
             SetPartIdentfier(metadata, IdentifierType.OCLC, Settings.MetadataOclcField);
             this.Custom = metadata.Sysno;
 
@@ -137,6 +143,9 @@ namespace ScannerClient_obalkyknih.Classes
                     break;
                 case IdentifierType.UPC:
                     if (string.IsNullOrWhiteSpace(this.PartEan)) this.PartEan = second;
+                    break;
+                case IdentifierType.ISMN:
+                    if (string.IsNullOrWhiteSpace(this.PartIsmn)) this.PartIsmn = second;
                     break;
                 case IdentifierType.OCLC:
                     this.PartOclc = second;

@@ -19,6 +19,8 @@ namespace ScannerClient_obalkyknih
         const int DEFAULT_ISBN_FIELD = 7;
         const int DEFAULT_ISSN_FIELD = 8;
         const int DEFAULT_CNB_FIELD = 48;
+        const int DEFAULT_ISMN_FIELD = 1016;
+        const int DEFAULT_EAN_FIELD = 1016;
         public const int DEFAULT_NKP_CNB_FIELD = 48; // for union search
         const int DEFAULT_BARCODE_FIELD = 1063;
         public const int DEFAULT_FIELD = 1035;
@@ -42,13 +44,13 @@ namespace ScannerClient_obalkyknih
         /// <param name="isAdminForced">indicates that user key value should be ignored if any</param>
         /// <param name="name">name associated with value</param>
         /// <returns>numeric value associated with given name</returns>
-        private static int GetIntRegistryValue(bool isAdminForced, string name)
+        private static int GetIntRegistryValue(bool isAdminForced, string name, int defaultValue = 0)
         {
             if (isAdminForced)
             {
-                return (int)AdminSettingsRegistryKey.GetValue(name, 0);
+                return (int)AdminSettingsRegistryKey.GetValue(name, defaultValue);
             }
-            return (int)UserSettingsRegistryKey.GetValue(name, 0);
+            return (int)UserSettingsRegistryKey.GetValue(name, defaultValue);
         }
 
         /// <summary>Returns REG_SZ registry value with specified name retrieved from admin or user key</summary>
@@ -589,6 +591,36 @@ namespace ScannerClient_obalkyknih
             }
         }
 
+        /// <summary>Search number for ISMN attribute in Z39.50</summary>
+        internal static int Z39IsmnField
+        {
+            get
+            {
+                int ismn = GetIntRegistryValue(IsAdminZ39IsmnField, "Z39IsmnField");
+                int defaultIsmn = DEFAULT_ISMN_FIELD;
+                switch (Settings.Sigla)
+                {
+                    case "CBA001": defaultIsmn = 2440; break;
+                    case "KLG001": defaultIsmn = 2440; break;
+                    case "LIA001": defaultIsmn = 2440; break;
+                }
+                return ismn == 0 ? defaultIsmn : ismn;
+            }
+            set
+            {
+                SetRegistryValue(IsAdminZ39IsmnField, "Z39IsmnField", value, RegistryValueKind.DWord);
+            }
+        }
+
+        /// <summary>Indicates that numeric code of ISMN field for Z39.50 was filled by admin and can't be changed in application</summary>
+        internal static bool IsAdminZ39IsmnField
+        {
+            get
+            {
+                return AdminSettingsRegistryKey != null && AdminSettingsRegistryKey.GetValue("Z39IsmnField", null) != null;
+            }
+        }
+
         /// <summary>Search number for OCLC attribute in Z39.50</summary>
         internal static int Z39OclcField
         {
@@ -618,7 +650,7 @@ namespace ScannerClient_obalkyknih
             get
             {
                 int ean = GetIntRegistryValue(IsAdminZ39EanField, "Z39EanField");
-                return ean == 0 ? DEFAULT_FIELD : ean;
+                return ean == 0 ? DEFAULT_EAN_FIELD : ean;
             }
             set
             {
@@ -784,6 +816,19 @@ namespace ScannerClient_obalkyknih
             }
         }
 
+        /// <summary>deletes bib image without confirmation</summary>
+        internal static bool DisableBibDeletionNotification
+        {
+            get
+            {
+                return Convert.ToBoolean(GetIntRegistryValue(false, "DisableBibDeletionNotification"));
+            }
+            set
+            {
+                SetRegistryValue(false, "DisableBibDeletionNotification", value ? 1 : 0, RegistryValueKind.DWord);
+            }
+        }
+
         /// <summary>do not show custom identifier notification</summary>
         internal static bool DisableCustomIdentifierNotification
         {
@@ -913,6 +958,72 @@ namespace ScannerClient_obalkyknih
             }
         }
 
+        /// <summary>Default brightness slider value</summary>
+        internal static double DefaultBrightness
+        {
+            get
+            {
+                return GetIntRegistryValue(IsAdminDefaultBrightness, "DefaultBrightness");
+            }
+            set
+            {
+                SetRegistryValue(IsAdminDefaultBrightness, "DefaultBrightness", value, RegistryValueKind.DWord);
+            }
+        }
+
+        /// <summary>Indicates that numeric code of default brightness was filled by admin and can't be changed in application</summary>
+        internal static bool IsAdminDefaultBrightness
+        {
+            get
+            {
+                return AdminSettingsRegistryKey != null && AdminSettingsRegistryKey.GetValue("IsAdminDefaultBrightness", null) != null;
+            }
+        }
+
+        /// <summary>Default contrast slider value</summary>
+        internal static double DefaultContrast
+        {
+            get
+            {
+                return GetIntRegistryValue(IsAdminDefaultContrast, "DefaultContrast");
+            }
+            set
+            {
+                SetRegistryValue(IsAdminDefaultContrast, "DefaultContrast", value, RegistryValueKind.DWord);
+            }
+        }
+
+        /// <summary>Indicates that numeric code of default contrast was filled by admin and can't be changed in application</summary>
+        internal static bool IsAdminDefaultContrast
+        {
+            get
+            {
+                return AdminSettingsRegistryKey != null && AdminSettingsRegistryKey.GetValue("IsAdminDefaultContrast", null) != null;
+            }
+        }
+
+        /// <summary>Default gama slider value</summary>
+        internal static double DefaultGamma
+        {
+            get
+            {
+                return GetIntRegistryValue(IsAdminDefaultGamma, "DefaultGamma", 1);
+            }
+            set
+            {
+                SetRegistryValue(IsAdminDefaultGamma, "DefaultGamma", value, RegistryValueKind.DWord);
+            }
+        }
+
+        /// <summary>Indicates that numeric code of default contrast was filled by admin and can't be changed in application</summary>
+        internal static bool IsAdminDefaultGamma
+        {
+            get
+            {
+                return AdminSettingsRegistryKey != null && AdminSettingsRegistryKey.GetValue("IsAdminDefaultGamma", null) != null;
+            }
+        }
+
         /// <summary>Indicates that scan output directory was filled by admin and can't be changed in application</summary>
         internal static bool IsAdminScanOutputDir
         {
@@ -959,10 +1070,12 @@ namespace ScannerClient_obalkyknih
 
         /// <summary>URL of folder containing update-info.xml file</summary>
         internal const string UpdateServer = "http://www.obalkyknih.cz/obalkyknih-scanner";
+        //internal const string UpdateServer = "http://10.89.56.102/obalkyknih-scanner";
 
         /// <summary>URL of import function on obalkyknih.</summary>
         internal const string ImportLink = "http://www.obalkyknih.cz/api/import";
         //internal const string ImportLink = "http://10.89.56.102/api/import";
+        //internal const string ImportLink = "http://localhost:3999/api/import";
 
         /// <summary>Returns path to temporary folder, where are stored images opened in external editor and downloaded updates</summary>
         internal static string TemporaryFolder { get { return System.IO.Path.GetTempPath() + "ObalkyKnih-scanner\\"; } }
@@ -1053,21 +1166,30 @@ namespace ScannerClient_obalkyknih
             }
         }
 
-        /// <summary>EAN field in Marc21 (field, subfield, ind1, ind2)</summary>
-        internal static Tuple<int, char, char?, char?> MetadataEanField
-        {
-            get
-            {
-                return new Tuple<int, char, char?, char?>(24, 'a', '3', null);
-            }
-        }
-
         /// <summary>UPC field in Marc21 (field, subfield, ind1, ind2)</summary>
         internal static Tuple<int, char, char?, char?> MetadataUpcField
         {
             get
             {
                 return new Tuple<int, char, char?, char?>(24, 'a', '1', null);
+            }
+        }
+
+        /// <summary>ISMN field in Marc21 (field, subfield, ind1, ind2)</summary>
+        internal static Tuple<int, char, char?, char?> MetadataIsmnField
+        {
+            get
+            {
+                return new Tuple<int, char, char?, char?>(24, 'a', '2', null);
+            }
+        }
+
+        /// <summary>EAN field in Marc21 (field, subfield, ind1, ind2)</summary>
+        internal static Tuple<int, char, char?, char?> MetadataEanField
+        {
+            get
+            {
+                return new Tuple<int, char, char?, char?>(24, 'a', '3', null);
             }
         }
         
@@ -1105,10 +1227,13 @@ namespace ScannerClient_obalkyknih
         internal const int TocDPI = 300;
 
         /// <summary>PPI used for scanning in low resolution</summary>
-        internal const int LowResDPI = 200;
+        internal const int LowResDPI = 150;
 
         /// <summary>Color type used for scanning of cover (Color/Grey/Black and White)</summary>
         internal const ScanColor TocScanType = ScanColor.Color;
+
+        /// <summary>Priznak posuvu slideru v tomto behu aplikace</summary>
+        public static bool ImageTransformationSlidersChanged = false;
         #endregion
 
         /// <summary>Saves settings into registry if not already</summary>

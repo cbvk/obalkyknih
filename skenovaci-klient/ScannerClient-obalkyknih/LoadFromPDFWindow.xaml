@@ -1,0 +1,65 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ScannerClient_obalkyknih" x:Class="ScannerClient_obalkyknih.LoadFromPDF"
+        Title="LoadFromPDF" Height="577.435" Width="997.177" WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <DataTemplate x:Key="ImageTemplate">
+            <WrapPanel>
+                <Image Width="200" Height="300" Stretch="Fill" Source="{Binding}"/>
+            </WrapPanel>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid Name="MainGrid">
+        <Grid x:Name="imageGrid" Margin="0,120,0,0.4">
+            <ListView Name ="ImageListView" ItemTemplate="{StaticResource ImageTemplate}" ItemsSource="{Binding Path = imagesList}">
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="5" />
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+            </ListView>
+        </Grid>
+        <Grid Height="114" VerticalAlignment="Top">
+            <Grid.Background>
+                <ImageBrush ImageSource="/ObalkyKnih-scanner;component/Images/ok-background-center.png" Stretch="None" TileMode="Tile" Viewport="0,0,218,218" ViewportUnits="Absolute" />
+            </Grid.Background>
+            <ComboBox HorizontalAlignment="Left" Margin="67,18,0,0" Name="ComboBoxPagesSelection" VerticalAlignment="Top" Width="120" FontSize="14" Grid.Column="1" Height="33" Padding="10,6" SelectionChanged="ComboBoxPagesSelection_SelectionChanged">
+                <ComboBoxItem Content="1-5" />
+                <ComboBoxItem Content="1-10" />
+                <ComboBoxItem Content="1-15" />
+                <ComboBoxItem Content="1-20" />
+                <ComboBoxItem Content="Všechny" />
+                <ComboBoxItem Content="Výběr" />
+            </ComboBox>
+            <Label Content="Stránky:" Height="31" HorizontalAlignment="Left" Margin="12,19,0,0" VerticalAlignment="Top" />
+            <Button Content="Načíst soubor" HorizontalAlignment="Left" Margin="211,18,0,0" Name="ButtonLoadPDFPages" VerticalAlignment="Top" Width="170" Height="33"
+                                Foreground="#b4b4b4" BorderBrush="#353535" Cursor="Hand"
+                                BorderThickness="1"
+                                Style="{StaticResource MyButtonNoPadding}" MouseLeftButtonDown="ButtonLoadPDFPages_Click" Click="ButtonLoadPDFPages_Click">
+                <Button.Background>
+                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                        <GradientStop Color="#484848" Offset="0.0" />
+                        <GradientStop Color="#363636" Offset="1.0" />
+                    </LinearGradientBrush>
+                </Button.Background>
+            </Button>
+            <Label Content="Od:" Height="31" HorizontalAlignment="Left" Margin="32,63,0,0" VerticalAlignment="Top" />
+            <Label Content="Do:" Height="30" HorizontalAlignment="Left" Margin="111,62,0,0" VerticalAlignment="Top" />
+            <TextBox Height="30" HorizontalAlignment="Left" Margin="67,62,0,0" Name="textBoxFrom" RenderTransformOrigin="-0.108,0.389" Text="-1" TextWrapping="Wrap" VerticalAlignment="Top" Width="42" Padding="4" />
+            <TextBox HorizontalAlignment="Left" Margin="145,61,0,23" Name="textBoxTo" RenderTransformOrigin="-0.108,0.389" Text="-1" TextWrapping="Wrap" Width="42" Padding="4" />
+            <Button Content="Vložit zvolené" HorizontalAlignment="Left" Margin="211,59,0,0" VerticalAlignment="Top" Width="170" Height="33" Foreground="#b4b4b4" BorderBrush="#353535" Cursor="Hand" BorderThickness="1" Style="{StaticResource MyButtonNoPadding}" Click="Button_Click">
+                <Button.Background>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#FF9B4848" Offset="0.0" />
+                        <GradientStop Color="#FF512013" Offset="1.0" />
+                    </LinearGradientBrush>
+                </Button.Background>
+            </Button>
+            <ProgressBar Height="30" HorizontalAlignment="Left" Margin="400,20,0,0" Name="progressBar" VerticalAlignment="Top" Visibility="Hidden" Width="366" />
+            <Label Content="" HorizontalAlignment="Left" Margin="400,62,0,0" Name="LabelConvertingInfo" VerticalAlignment="Top" Height="32" />
+        </Grid>
+    </Grid>
+</Window>

@@ -16,7 +16,8 @@
                       FontFamily="Arial" Foreground="#5e5e5e" VerticalAlignment="Top" Width="100" Padding="6,0" VerticalContentAlignment="Center">
                 <ComboBoxItem Content="Čárový kód" IsSelected="True" />
                 <ComboBoxItem Content="ISBN" />
-                <ComboBoxItem Content="ČNB" />
+                        <ComboBoxItem Content="ISMN" />
+                        <ComboBoxItem Content="ČNB" />
                 <ComboBoxItem Content="EAN" />
                 <ComboBoxItem Content="OCLC" />
                 <ComboBoxItem Content="URN:NBN" />
@@ -49,6 +50,8 @@
                       FontFamily="Arial" Foreground="#5e5e5e" VerticalAlignment="Top" Width="99" Padding="6,5" VerticalContentAlignment="Center">
                         <ComboBoxItem Content="Čárový kód" IsSelected="True" />
                         <ComboBoxItem Content="ISSN" />
+                        <ComboBoxItem Content="ISBN" />
+                        <ComboBoxItem Content="ISMN" />
                         <ComboBoxItem Content="ČNB" />
                         <ComboBoxItem Content="EAN" />
                         <ComboBoxItem Content="OCLC" />
