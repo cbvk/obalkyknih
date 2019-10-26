@@ -18,7 +18,8 @@
   var line13 = [ [% FOREACH row IN stat1 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('toc_pdf_requests')%]],[% END %] ];
   var line14 = [ [% FOREACH row IN stat1 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('file_requests')%]],[% END %] ];
   var line15 = [ [% FOREACH row IN stat1 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('meta_requests')%]],[% END %] ];
-  var lines1 = [line11,line12,line13,line14,line15];
+  var line16 = [ [% FOREACH row IN stat1 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('operative')%]],[% END %] ];
+  var lines1 = [line11,line12,line13,line14,line15,line16];
   
   var plot1 = $.jqplot('chart1', lines1, {
 	  series:[
@@ -26,7 +27,8 @@
         {yaxis:'y2axis', label:'Náhledy TOC (osa vpravo)'},
         {yaxis:'y2axis', label:'Stažení TOC (osa vpravo)'},
         {yaxis:'y2axis', label:'Statické soubory (osa vpravo)'},
-        {yaxis:'y2axis', label:'Metadata (osa vpravo)'}
+        {yaxis:'y2axis', label:'Metadata (osa vpravo)'},
+        {yaxis:'y2axis', label:'Provozní (osa vpravo)'}
       ],
       axes:{
         xaxis:{ renderer:$.jqplot.DateAxisRenderer, tickOptions:{ formatString:'%#d.%#m.' } },
@@ -49,7 +51,8 @@
   var line23 = [ [% FOREACH row IN stat2 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('toc_pdf_requests')%]],[% END %] ];
   var line24 = [ [% FOREACH row IN stat2 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('file_requests')%]],[% END %] ];
   var line25 = [ [% FOREACH row IN stat2 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('meta_requests')%]],[% END %] ];
-  var lines2 = [line21,line22,line23,line24,line25];
+  var line26 = [ [% FOREACH row IN stat2 %] ['[% date.format(row.get_column('ts'), format = '%d.%m.%Y') %]', [%row.get_column('operative')%]],[% END %] ];
+  var lines2 = [line21,line22,line23,line24,line25,line26];
   
   var plot2 = $.jqplot('chart2', lines2, {
 	  series:[
@@ -57,7 +60,8 @@
         {yaxis:'y2axis', label:'Náhledy TOC (osa vpravo)'},
         {yaxis:'y2axis', label:'Stažení TOC (osa vpravo)'},
         {yaxis:'y2axis', label:'Statické soubory (osa vpravo)'},
-        {yaxis:'y2axis', label:'Metadata (osa vpravo)'}
+        {yaxis:'y2axis', label:'Metadata (osa vpravo)'},
+        {yaxis:'y2axis', label:'Provozní (osa vpravo)'}
       ],
       axes:{
         xaxis:{ renderer:$.jqplot.DateAxisRenderer, tickOptions:{ formatString:'%b %y' } },
@@ -133,3 +137,4 @@
 
 <br/>
 [% PROCESS _footer %]
+

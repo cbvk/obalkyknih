@@ -158,6 +158,12 @@ __PACKAGE__->table("book");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 bib
+
+  data_type: 'integer'
+  is_foreign_key: 1
+  is_nullable: 1
+
 =head2 cached_rating_sum
 
   data_type: 'integer'
@@ -258,6 +264,18 @@ __PACKAGE__->table("book");
   extra: {unsigned => 1}
   is_nullable: 1
 
+=head2 edition
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
+=head2 other_relation_text
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -310,6 +328,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "toc",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
+  "bib",
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "cached_rating_sum",
   { data_type => "integer", is_nullable => 1 },
   "cached_rating_count",
@@ -352,6 +372,10 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 20 },
   "doc_type",
   { data_type => "tinyint", extra => { unsigned => 1 }, is_nullable => 1 },
+  "edition",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
+  "other_relation_text",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
 );
 
 =head1 PRIMARY KEY
@@ -381,6 +405,26 @@ __PACKAGE__->has_many(
   "DB::Result::Abuse",
   { "foreign.book" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 bib
+
+Type: belongs_to
+
+Related object: L<DB::Result::Bib>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "bib",
+  "DB::Result::Bib",
+  { id => "bib" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
 );
 
 =head2 book_relation_book_parents
@@ -779,13 +823,15 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2018-11-13 11:34:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Low/U2Nz+o+VADPQ/9nY+Q
+# Created by DBIx::Class::Schema::Loader v0.07049 @ 2019-01-03 03:04:34
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9NbpDv3EFY98zPnjmQohuw
 
 use Obalky::Media;
 use Data::Dumper;
 use DB;
 use List::Util qw( max );
+use Encode qw(decode encode);
+use Number::Convert::Roman;
 
 sub displayable_products {
 	my($book) = @_;
@@ -845,6 +891,17 @@ sub get_toc {
 	# aspon nejakou obalku, klidne obalku dila
 	# (nemelo by se to ale pouzivat na strance s vypisem knih dila)
 	return $work->get_toc; 
+}
+
+sub get_bib {
+	my($book) = @_;
+	my $bib = $book->bib;
+	return $bib if($bib);
+	my $work = $book->work;
+	return unless $work;
+	# aspon nejakou obalku, klidne obalku dila
+	# (nemelo by se to ale pouzivat na strance s vypisem knih dila)
+	return $work->get_bib; 
 }
 
 sub work_books {
@@ -1003,7 +1060,7 @@ sub get_ebook_list {
 	}
 	foreach my $product ($book->products) {
 		my $eshop = $product->eshop;
-		if($eshop->type eq 'kramerius' and $product->ispublic == 1) {
+		if(($eshop->type or '') eq 'kramerius' and ($product->ispublic or 0) == 1) {
 			push @ebook, { type => 'Digitalizovaný dokument', url => $product->product_url };
 			last;
 		}
@@ -1032,6 +1089,7 @@ sub actualize_by_product {
 	# pokud se neco zmenilo, je potreba zaznam zneplatnit a pozadat taky FE o zneplatneni
 	$invalidate = ($book->cover->id!=$product->cover->id) ? 1 : 0 if ($book->cover and $product->cover);
 	$invalidate = ($book->toc->id!=$product->toc->id) ? 1 : $invalidate if ($book->toc and $product->toc);
+	$invalidate = ($book->bib->id!=$product->bib->id) ? 1 : $invalidate if ($book->bib and $product->bib);
 	
 	my ($oldPriority,$newPriority,$oldDim,$newDim) = (0,0,0,1); #init
 	my $eshopId = $product->eshop->get_column('id');
@@ -1051,6 +1109,7 @@ sub actualize_by_product {
 		warn 'ZMENA AKTIVNI OBALKY NA ZAKLADE PRIORITY ...' if ($ENV{DEBUG});
 		$book->update({ cover => $product->cover })   if($product->cover);
 		$book->update({ toc => $product->toc })       if($product->toc);
+		$book->update({ bib => $product->bib })       if($product->bib);
 	} else {
 		warn 'AKTIVNI OBALKA BEZE ZMENY ...' if ($ENV{DEBUG});
 	}
@@ -1141,6 +1200,134 @@ sub del_review {
 	$book->recalc_review;
 	$book->invalidate;
 	return $review;
+}
+
+sub get_editions {
+	my ($book) = @_;
+	my $numconv = Number::Convert::Roman->new;
+	my $ed = {}; # hash edici
+	my $edPosibleNum = {}; # hash s vyskytem cisla
+	my $noNumPlaceholder = 9000; # cislo, ktere bude pouzito pro serazeni, pokud se nenajde v retezci zadne
+	my @relBooks;
+	
+	# seznam unikatnich book id
+	my $rel = DB->resultset('BookRelation')->search({ -or=>[{ book_parent=>$book->id }, { book_relation=>$book->id }] });
+	foreach ($rel->all) {
+		next if ($_->get_column('relation_type') != 3);
+		my $id = $_->get_column('book_parent');
+		push @relBooks, $id unless ($id == $book->id or $id ~~ @relBooks);
+		$id = $_->get_column('book_relation');
+		push @relBooks, $id unless ($id == $book->id or $id ~~ @relBooks);
+	}
+	
+	# vysledne pole edici
+	foreach (@relBooks) {
+		my $relBook = DB->resultset('Book')->find($_);
+		next unless($relBook);
+		my $edText = $relBook->get_column('edition');
+		next if (not defined $edText or $edText eq '');
+		# prevod latinskych cisel na arabske
+		my $edTextNormalizedRoman = $edText;
+		foreach my $arabicNumber (reverse 1 .. 100) {
+			next if ($arabicNumber == 10 or $arabicNumber == 5);
+			my $romanNumber = $numconv->roman($arabicNumber);
+			$edTextNormalizedRoman =~ s/$romanNumber/$arabicNumber/;
+		}
+		$edTextNormalizedRoman =~ s/X/10/; $edTextNormalizedRoman =~ s/V/5/;
+		my $edNormalized = DB->resultset('Book')->normalize_part($edTextNormalizedRoman);
+		if (defined $ed->{$edNormalized}) {
+			push @{$ed->{$edNormalized}->{'other'}}, $relBook->id;
+		} else {
+			$ed->{$edNormalized} = {
+				'book' => $relBook,
+				'text' => $edText,
+				'other' => []
+			};
+			my ($num) = $edNormalized =~ /(\d+)/;
+			# nasli jsme cislo
+			if (defined $num) {
+				$num = substr('0000'.$num, -4);
+				$edPosibleNum->{$num} = $edNormalized;
+			} else {
+				$edPosibleNum->{$noNumPlaceholder} = $edNormalized;
+				$noNumPlaceholder++;
+			}
+		}
+	}
+	
+	# serad podle vyskytu cisel v retezci
+	my @edSorted;
+	foreach (sort keys %{$edPosibleNum}) {
+		my $key = $edPosibleNum->{$_};
+		push @edSorted, $ed->{$key};
+	}
+	
+	return \@edSorted if (scalar @edSorted);
+	return undef;
+}
+
+sub get_other_relations {
+	my ($book) = @_;
+	my $numconv = Number::Convert::Roman->new;
+	my $rel = {}; # hash edici
+	my $relPosibleNum = {}; # hash s vyskytem cisla
+	my $noNumPlaceholder = 9000; # cislo, ktere bude pouzito pro serazeni, pokud se nenajde v retezci zadne
+	my @relBooks;
+	
+	# seznam unikatnych book id
+	my $resRel = DB->resultset('BookRelation')->search({ -or=>[{ book_parent=>$book->id }, { book_relation=>$book->id }] });
+	foreach ($resRel->all) {
+		next if ($_->get_column('relation_type') != 4);
+		my $id = $_->get_column('book_parent');
+		push @relBooks, $id unless ($id == $book->id or $id ~~ @relBooks);
+		$id = $_->get_column('book_relation');
+		push @relBooks, $id unless ($id == $book->id or $id ~~ @relBooks);
+	}
+	
+	# vysledne pole relaci
+	foreach (@relBooks) {
+		my $relBook = DB->resultset('Book')->find($_);
+		next unless($relBook);
+		my $edText = $relBook->get_column('other_relation_text');
+		next if (not defined $edText or $edText eq '');
+		# prevod latinskych cisel na arabske
+		my $edTextNormalizedRoman = $edText;
+		foreach my $arabicNumber (reverse 1 .. 100) {
+			next if ($arabicNumber == 10 or $arabicNumber == 5);
+			my $romanNumber = $numconv->roman($arabicNumber);
+			$edTextNormalizedRoman =~ s/$romanNumber/$arabicNumber/;
+		}
+		$edTextNormalizedRoman =~ s/X/10/; $edTextNormalizedRoman =~ s/V/5/;
+		my $relNormalized = DB->resultset('Book')->normalize_part($edTextNormalizedRoman);
+		if (defined $rel->{$relNormalized}) {
+			push @{$rel->{$relNormalized}->{'other'}}, $relBook->id;
+		} else {
+			$rel->{$relNormalized} = {
+				'book' => $relBook,
+				'text' => $edText,
+				'other' => []
+			};
+			my ($num) = $relNormalized =~ /(\d+)/;
+			# nasli jsme cislo
+			if (defined $num) {
+				$num = substr('0000'.$num, -4);
+				$relPosibleNum->{$num} = $relNormalized;
+			} else {
+				$relPosibleNum->{$noNumPlaceholder} = $relNormalized;
+				$noNumPlaceholder++;
+			}
+		}
+	}
+	
+	# serad podle vyskytu cisel v retezci
+	my @relSorted;
+	foreach (sort keys %{$relPosibleNum}) {
+		my $key = $relPosibleNum->{$_};
+		push @relSorted, $rel->{$key};
+	}
+	
+	return \@relSorted if (scalar @relSorted);
+	return undef;
 }
 
 sub get_most_recent {
@@ -1239,7 +1426,7 @@ sub enrich {
 	my $flag_get_most_recent = 0;
 	if ($child_book and !$strict_match) {
 		$flag_get_most_recent = 1; # souborny zaznam periodika vzdy
-		$flag_get_most_recent = 0 if ($child_book->part_type==1 && ($book->cover || $book->toc)); # souborny zaznam monografie pokud nema vlastni obalku
+		$flag_get_most_recent = 0 if ($child_book->part_type==1 && ($book->cover || $book->toc || $book->bib)); # souborny zaznam monografie pokud nema vlastni obalku
 	}
 	
 	# vyhledani nejnovejsiho cisla k soubornemu zaznamu, pokud je nutne
@@ -1329,7 +1516,7 @@ sub enrich {
 		$info->{cover_preview510_url}= $cover->get_preview510_url($secure);
 	}
 
-	# 2. Najdi TOC
+	# 2a. Najdi TOC
 	my $toc = $flag_get_most_recent ? $book_most_recent->get_toc : $book->get_toc;
 	if($toc) {
 		$info->{toc_pdf_url}       = $toc->get_pdf_url($secure) unless ($idf_backlink);
@@ -1341,9 +1528,22 @@ sub enrich {
 	if ($toc_own and !$flag_get_most_recent) {
 		$info->{toc_text_url}      = $toc_own->get_text_url($secure) if $toc_own->get_column('full_text');
 	}
+	
+	# 2b. Najdi BIB
+	my $bib = $flag_get_most_recent ? $book_most_recent->get_bib : $book->get_bib;
+	if($bib) {
+		$info->{bib_pdf_url}       = $bib->get_pdf_url($secure) unless ($idf_backlink);
+		$info->{bib_pdf_url}       = $idf_backlink if ($idf_backlink);
+		$info->{bib_thumbnail_url} = $bib->get_thumbnail_url($secure);
+	}
+	my $bib_own = $flag_get_most_recent ? undef : $bib;
+	$bib_own = $book->get_bib if (!$bib_own and $book->get_bib);
+	if ($bib_own and !$flag_get_most_recent) {
+		$info->{bib_text_url}      = $bib_own->get_text_url($secure) if $bib_own->get_column('full_text');
+	}
 
 	# 3. Backlink
-	if($cover) { # or $toc or $review or $neco...) { # jinak nelinkuj..
+	if($cover) {
 		$info->{backlink_url}  = $book->get_obalkyknih_url($secure) unless ($idf_backlink);
 		$info->{backlink_url}  = $idf_backlink if ($idf_backlink);
 	}
@@ -1370,7 +1570,7 @@ sub enrich {
 		} @reviews;
 	}
 	
-	# 6. Toc fulltext
+	# 6a. TOC fulltext
 	if ($params->{toc_full_text} and !$book->{_column_data}{book_range_ids} and !$flag_get_most_recent) {
 		my $toc_full_text = $book->toc->get_column('full_text') if ($book->toc);
 		$info->{toc_full_text} = $toc_full_text if (defined $toc_full_text);
@@ -1384,8 +1584,22 @@ sub enrich {
 		$info->{toc_full_text} = $range_full_text;
 	}
 	
+	# 6b. BIB fulltext
+	if ($params->{toc_full_text} and !$book->{_column_data}{book_range_ids} and !$flag_get_most_recent) {
+		my $bib_full_text = $book->bib->get_column('full_text') if ($book->bib);
+		$info->{bib_full_text} = $bib_full_text if (defined $bib_full_text);
+	}
+	# byl vyhledan rozsah; spojime TOC fulltext ze vsech vyhledanych casti
+	if ($params->{toc_full_text} and $book->{_column_data}{book_range_ids}) {
+		my $range_full_text;
+		map {
+			$range_full_text .= " ".$_->bib->get_column('full_text') if ($_->bib and $_->bib->get_column('full_text'));
+		} DB->resultset('Book')->search({ id => $book->get_column('book_range_ids') });
+		$info->{bib_full_text} = $range_full_text;
+	}
+	
 	# 7. Priznak holeho zaznamu
-	$info->{flag_bare_record} = ($cover or $toc or $r_count or (scalar @{$info->{reviews}} > 0)) ? 0 : 1;
+	$info->{flag_bare_record} = ($cover or $toc or $bib or $r_count or (scalar @{$info->{reviews}} > 0)) ? 0 : 1;
 	
 	# 8. Anotace
 	if ($params->{review}) { # $params->{review} je priznak z URL dotazu
@@ -1426,7 +1640,7 @@ sub enrich {
 	# 12. spolupracujeme s
 	$info->{cooperating_with} = 'https://www.cbdb.cz|CBDB.cz' if ($book->is_library_rating(51214));
 	
-	# 13. pocet podrizenych zaznamu s obalkou a toc
+	# 13. pocet podrizenych zaznamu s obalkou, toc a bib
 	my $succ_books_statement;
 	if (@book_range_ids) {
 		$succ_books_statement = { id => \@book_range_ids };
@@ -1434,14 +1648,16 @@ sub enrich {
 		$succ_books_statement = { id_parent => $book->id };
 	}
 	my $resSucc = DB->resultset('Book')->search($succ_books_statement, {
-		'+select' => [ \'COUNT(DISTINCT cover)', \'COUNT(DISTINCT toc)'],
-		'+as' => [ 'cover', 'toc' ]
+		'+select' => [ \'COUNT(DISTINCT cover)', \'COUNT(DISTINCT toc)', \'COUNT(DISTINCT bib)'],
+		'+as' => [ 'cover', 'toc', 'bib' ]
 	})->next;
-	my ($cnt_succ_cover, $cnt_succ_toc) = (0, 0);
+	my ($cnt_succ_cover, $cnt_succ_toc, $cnt_succ_bib) = (0, 0, 0);
 	$cnt_succ_cover = $resSucc->get_column('cover') if ($resSucc);
 	$cnt_succ_toc = $resSucc->get_column('toc') if ($resSucc);
+	$cnt_succ_bib = $resSucc->get_column('bib') if ($resSucc);
 	$info->{succ_cover_count} = $cnt_succ_cover;
 	$info->{succ_toc_count} = $cnt_succ_toc;
+	$info->{succ_bib_count} = $cnt_succ_bib;
 	
 	# 14. vazby e-book
 	my $ebook = $book->get_ebook_list;
@@ -1475,6 +1691,42 @@ sub enrich {
 				push @{$info->{oclc_other}}, $parValue;
 			}
 		}
+	}
+	
+	# 16. dalsi vydani
+	if (defined $book) {
+		my $ed = $book->get_editions();
+		my @edRes;
+		foreach my $item (@{$ed}) {
+			my $edBook = $item->{'book'};
+			my $edItem = {
+				'edition' => $item->{'text'},
+				'book_id' => $edBook->id
+			};
+			$edItem->{'ean'} = $edBook->get_column('ean13') if $edBook->get_column('ean13');
+			$edItem->{'nbn'} = $edBook->get_column('nbn') if $edBook->get_column('nbn');
+			$edItem->{'oclc'} = $edBook->get_column('oclc') if $edBook->get_column('oclc');
+			push @edRes, $edItem;
+		}
+		$info->{other_editions} = \@edRes if (@edRes);
+	}
+	
+	# 17. ostatni relace
+	if (defined $book) {
+		my $otherRel = $book->get_other_relations();
+		my @otherRelRes;
+		foreach my $item (@{$otherRel}) {
+			my $otherRelBook = $item->{'book'};
+			my $otherRelItem = {
+				'edition' => $item->{'text'},
+				'book_id' => $otherRelBook->id
+			};
+			$otherRelItem->{'ean'} = $otherRelBook->get_column('ean13') if $otherRelBook->get_column('ean13');
+			$otherRelItem->{'nbn'} = $otherRelBook->get_column('nbn') if $otherRelBook->get_column('nbn');
+			$otherRelItem->{'oclc'} = $otherRelBook->get_column('oclc') if $otherRelBook->get_column('oclc');
+			push @otherRelRes, $otherRelItem;
+		}
+		$info->{other_relations} = \@otherRelRes if (@otherRelRes);
 	}
 	
 	return $info;

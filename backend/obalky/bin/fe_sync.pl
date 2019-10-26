@@ -17,3 +17,4 @@ while (!flock(SELF, LOCK_EX|LOCK_NB)){
 }
 
 DB->resultset('FeSync')->do_sync;
+

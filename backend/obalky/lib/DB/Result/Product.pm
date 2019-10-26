@@ -140,6 +140,12 @@ __PACKAGE__->table("product");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 bib
+
+  data_type: 'integer'
+  is_foreign_key: 1
+  is_nullable: 1
+
 =head2 rating_sum
 
   data_type: 'integer'
@@ -226,6 +232,8 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "toc",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
+  "bib",
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "rating_sum",
   { data_type => "integer", is_nullable => 1 },
   "rating_count",
@@ -284,6 +292,21 @@ __PACKAGE__->add_unique_constraint("product_product_url", ["product_url"]);
 
 =head1 RELATIONS
 
+=head2 active_bib
+
+Type: might_have
+
+Related object: L<DB::Result::Bib>
+
+=cut
+
+__PACKAGE__->might_have(
+  "active_bib",
+  "DB::Result::Bib",
+  { "foreign.product" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 active_cover
 
 Type: might_have
@@ -316,17 +339,22 @@ __PACKAGE__->might_have(
 
 =head2 bib
 
-Type: might_have
+Type: belongs_to
 
 Related object: L<DB::Result::Bib>
 
 =cut
 
-__PACKAGE__->might_have(
+__PACKAGE__->belongs_to(
   "bib",
   "DB::Result::Bib",
-  { "foreign.product" => "self.id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+  { id => "bib" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
 );
 
 =head2 book
@@ -480,8 +508,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2018-11-08 18:09:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wJnm2jb7zP+wtJcFoNuUcw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2018-11-13 16:40:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5VGsdwdc0l2RRHUSebQ26g
 
 
 sub media { Obalky::Media->new(shift) }

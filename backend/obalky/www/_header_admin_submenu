@@ -5,7 +5,8 @@
 		<li[% IF admin_page=='account_user' %] class="active"[% END %]><a href="/account_user[% IF params.i %]?i=[%params.i%][% END %]">Nastavení</a></li>
 		<li[% IF admin_page=='account_stats' %] class="active"[% END %]><a href="/account_stats[% IF params.i %]?i=[%params.i%][% END %]">Statistiky</a></li>
 		<li[% IF admin_page=='settings_citace' %] class="active"[% END %]><a href="/settings_citace[% IF params.i %]?i=[%params.i%][% END %]">Citace</a></li>
-		<li[% IF admin_page=='settings_push' %] class="active"[% END %]><a href="/settings_push[% IF params.i %]?i=[%params.i%][% END %]">Push</a></li>
+		<!--<li[% IF admin_page=='settings_push' %] class="active"[% END %]><a href="/settings_push[% IF params.i %]?i=[%params.i%][% END %]">Push</a></li>-->
+		<li[% IF admin_page=='settings_doporuc' %] class="active"[% END %]><a href="/settings_doporuc[% IF params.i %]?i=[%params.i%][% END %]">Doporuč</a></li>
 	</ul>
 </div>
 <div class="cl"></div>

@@ -52,7 +52,7 @@ foreach my $eshop (DB->resultset('Eshop')->all) {
 	next unless($eshop->xmlfeed_url); # test..
 	warn "Crawluju ".$eshop->id." ".$eshop->name."\n" if($ENV{DEBUG});
 
-	my $factory = "Eshop::".$eshop->name if($eshop->name);
+	my $factory = "Eshop::".$eshop->name if($eshop->name); 
 	unless($eshop->name) {
 		$factory = "Eshop::Zbozi" if($eshop->xmlfeed_url);
 	}
@@ -85,12 +85,12 @@ foreach my $eshop (DB->resultset('Eshop')->all) {
 	store $storable, "$SESSION_DIR/$name.str" if(keys %$storable);
 
 	my $i = 0;
+warn Dumper(\@list);
 	foreach(@list) {
 		my($bibinfo,$media,$product_url,$covers_uncommited,$eans) = @$_;
 		next unless (defined $bibinfo);
 		warn $name." found ".$bibinfo->to_some_id."\n" if($DEBUG);
 		$found{$name}++;
-
 		$eshop->add_product($bibinfo,$media,$product_url,$covers_uncommited,$eans);
 		
 		$i++;
@@ -98,7 +98,7 @@ foreach my $eshop (DB->resultset('Eshop')->all) {
 	}
 	warn $name.": found ".$found{$name}."\n" if($DEBUG);
 
-	system("rm -rf $TMP_DIR-$name");
+#	system("rm -rf $TMP_DIR-$name");
 
 	open(LOG,">>utf8","/opt/obalky/www/data/crawler.csv") or die;
 	my($sec,$min,$hour,$mday,$mon,$year) = localtime(time);

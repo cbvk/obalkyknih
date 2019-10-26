@@ -9,10 +9,14 @@
 						<ul class="slides">
 [% FOREACH cover IN recent %]
 [% IF cover.book %]
-		<li><a href="/view?book_id=[%cover.book.id%]"><img src="/file/cover/[%cover.id%]/medium" width="120" height="170" alt="" /><span class="icon"></span></a></li>
+		<li><a href="/view?book_id=[%cover.book.id%]"><img
+src="/file/cover/[%cover.id%]/medium" width="120" height="170" alt=""
+/><span class="icon"></span></a></li>
 [% END %]
 [% IF cover.auth %]
-		<li><a href="/view_auth?auth_id=[%cover.auth.id%]"><img src="/file/cover/[%cover.id%]/medium" width="120" height="170" alt="" /><span class="icon"></span></a></li>
+		<li><a href="/view_auth?auth_id=[%cover.auth.id%]"><img
+src="/file/cover/[%cover.id%]/medium" width="120" height="170" alt=""
+/><span class="icon"></span></a></li>
 [% END %]
 [% END %]
 						</ul>

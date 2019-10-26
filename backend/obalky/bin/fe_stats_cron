@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo "[ CRON: Connecting FE#1 tunnel ]"
+ssh -fN root@172.30.144.14 -p 2345 -L 27017:localhost:27017
+echo "[ CRON: Fetching stats from FE#1 ]"
+perl -w /opt/obalky/bin/fe_stats_get.pl 1
+echo "[ CRON: Disconnecting FE#1 tunnel ]"
+pkill -f "27017:localhost:27017"
+
+echo "[ CRON: Connecting FE#2 tunnel ]"
+ssh -fN root@195.113.155.58 -p 2345 -L 27017:localhost:27017
+echo "[ CRON: Fetching stats from FE#2 ]"
+perl -w /opt/obalky/bin/fe_stats_get.pl 2
+echo "[ CRON: Disconnecting FE#2 tunnel ]"
+pkill -f "27017:localhost:27017"

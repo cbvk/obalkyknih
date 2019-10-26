@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      body {
+        background: #32393f;
+      }
+      #map {
+        width:2500px;
+        height: 1463px;
+        background-image: url("mapa.jpg");
+        background-size: contain;
+        background-repeat: no-repeat;
+      }
+      .cache1 {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-radius: 10px;
+        background: #f00;
+        border-color: #fcc;
+        border-width: 1px;
+        border-style: solid;
+      }
+      .cache2 {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-radius: 10px;
+        background: #f00;
+        border-color: #fcc;
+        border-width: 1px;
+        border-style: solid;
+      }
+      .junction {
+        position: absolute;
+        z-index: 1000;
+        width: 36px;
+        height: 36px;
+        border-radius: 24px;
+        border: #fff solid 2px;
+        background: #f00;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="map"></div>
+    <script src="./jquery-1.12.4.min.js" crossorigin="anonymous"></script>
+    <script src="./move.js"></script>
+    <script>
+move.select = function(selector){
+    return $(selector).get(0);
+};
+
+var h = window.innerHeight - 20,
+    w = window.innerWidth,
+    w = Math.ceil(h * (1250/732));
+
+let i = 0,
+    totalX = w + 10,
+    totalY = h + 10,
+    srv = {
+        '1': new Array(48.9904225, 14.4553572),
+        '2': new Array(49.2085611, 16.5940781)
+    },
+    sigla = {
+        'AD': new Array(50.0864564, 14.4155778), //admin
+        'FE': new Array(50.1046739, 15.8893033), //fetches
+        'XX': new Array(49.4144125, 14.6578033), //tritius
+        'CB': new Array(48.9904225, 14.4553572),
+        'BO': new Array(49.2002211, 16.6078411),
+        'AB': new Array(50.0864564, 14.4155778),
+        'PN': new Array(49.7455056, 13.3765217),
+        'NJ': new Array(49.5451072, 18.2115103),
+        'OL': new Array(49.5901953, 17.2572317),
+        'KL': new Array(50.1473356, 14.1028508),
+        'CK': new Array(50.0864564, 14.4155778),
+        'OS': new Array(49.8281800, 18.2737786),
+        'ZL': new Array(49.2266542, 17.6663339),
+        'TA': new Array(49.4144125, 14.6578033),
+        'LI': new Array(50.7699972, 15.0584492),
+        'DC': new Array(50.7821525, 14.2147814),
+        'UL': new Array(50.6604875, 14.0406928),
+        'KA': new Array(49.9041061, 18.3575461),
+        'PB': new Array(49.6898775, 14.0104253),
+        'UO': new Array(49.9738744, 16.3936106),
+        'VY': new Array(49.2774694, 16.9989744),
+        'PE': new Array(49.4313372, 15.2233572),
+        'KM': new Array(49.2978514, 17.3931164),
+        'OP': new Array(49.9386636, 17.9025700),
+        'HO': new Array(48.8576153, 17.1240233),
+        'HK': new Array(50.2092283, 15.8327683),
+        'JI': new Array(49.3961000, 15.5912447),
+        'CM': new Array(50.4604756, 13.4177856),
+        'JH': new Array(49.1440447, 15.0030078),
+        '00': new Array(49.9018839, 16.4472794),
+        'PR': new Array(49.4548381, 17.4489981),
+        'DO': new Array(49.4404919, 12.9297611),
+        'HB': new Array(49.6078494, 15.5806864),
+        'TR': new Array(49.2149228, 15.8816572),
+        'KV': new Array(50.2339389, 12.8604439),
+        'BV': new Array(48.7589686, 16.8820300),
+        'CR': new Array(49.9510922, 15.7955758),
+        'ZN': new Array(48.8554986, 16.0487975),
+        'TU': new Array(50.5610067, 15.9127036),
+        'KT': new Array(49.3955200, 13.2950550),
+        'SV': new Array(49.7559372, 16.4682914),
+        'ZR': new Array(49.5626336, 15.9392406),
+        'CV': new Array(50.4604756, 13.4177856),
+        'PI': new Array(49.3087953, 14.1475028),
+        'UH': new Array(49.0697497, 17.4596856),
+        'FM': new Array(49.6853661, 18.3483767),
+        '_R': new Array(49.4580719, 18.1422369),
+        'LN': new Array(50.3569886, 13.7966747),
+        'ST': new Array(49.2614067, 13.9023714),
+        'LT': new Array(49.8720322, 16.3105222),
+        /*'': new Array(),
+        '': new Array(),
+        '': new Array(),
+        '': new Array(),
+        '': new Array(),
+        '': new Array(),*/
+    };
+
+function coord(y,x) {
+    let minX = 12.1099394,
+        maxX = 18.8543433,
+        topX = maxX - minX,
+        minY = 48.5571733,
+        maxY = 51.0306986,
+        topY = maxY - minY;
+    // v kolkych percentach na mape sa bod nachadza
+    let pX = (x-minX)/(topX/100)/100,
+        pY = (y-minY)/(topY/100)/100;
+    // v pixeloch
+    return {
+        x: Math.ceil(pX*totalX),
+        y: Math.ceil(pY*totalY)
+    }
+}
+
+function point(i,y,x,yt,xt,f) {
+    let pCoord = coord(y,x),
+        tCoord = coord(yt,xt),
+        cls = 'cache1';
+
+    if (y==49.2085611) {
+      cls = 'cache2';
+    }
+    $('#map').append('<div class="' + cls + ' el'+ i +'" style="top:'+ (totalY-pCoord.y) +'px; left:'+ pCoord.x +'px;"></div>');
+    f(pCoord, tCoord);
+}
+
+function isEmpty(o){
+    for(var i in o){
+        if(o.hasOwnProperty(i)){
+            return false;
+        }
+    }
+    return true;
+}
+
+
+$(function () {
+
+    let pCoord2 = coord(srv[2][0], srv[2][1]);
+    let pCoord1 = coord(srv[1][0], srv[1][1]);
+    $('#map').attr('style', 'width:'+w+'px;height:'+h+'px;');
+    $('#map').append('<div class="junction" style="top:'+ (totalY-pCoord1.y-10) +'px; left:'+ (pCoord1.x-10) +'px;"></div>');
+    $('#map').append('<div class="junction" style="top:'+ (totalY-pCoord2.y-10) +'px; left:'+ (pCoord2.x-10) +'px;"></div>');
+
+    (function infloop1() {
+        console.log('********* 1 *********');
+        $.ajax({
+            url: "https://cache1.obalkyknih.cz/?livemap=true",
+            success: function(res) {
+                $('.cache1').addClass('cache1-old');
+                $('.cache1-old').remove();
+
+                if (res=='{}' || res=='null') {
+                    res = '{"PN": 3, "BO": 2, "AB": 4}';
+                }
+                console.dir(res);
+                res = JSON.parse(res);
+                for (var key in res) {
+                    var city = key.substring(0,2).toUpperCase();
+                    if (!sigla[city]) { console.log(city); continue; }
+                    var count = res[key];
+                    if (count>4) count = 4;
+                    for (var j=1; j<=count; j++) {
+                        point(i, srv[1][0], srv[1][1], sigla[city][0], sigla[city][1], function(pCoord, tCoord){
+                            move('.el'+i)
+                                .add('left', tCoord.x - pCoord.x - 10)
+                                .add('top', pCoord.y - tCoord.y - 10)
+                                .set('border-width', '10px')
+                                .set('border-radius', '30px')
+                                .duration(Math.random()*100 + 700)
+                                .delay(Math.random() * 3000)
+                                .then()
+                                    .set('opacity', 0)
+                                    .duration(400)
+                                    .pop()
+                                .end();
+                        });
+                        i++;
+                    }
+                }
+            }
+        });
+
+        setTimeout(infloop1, 4300);
+    })();
+
+
+    (function infloop2() {
+        console.log('********* 2 *********');
+        $.ajax({
+            url: "https://cache2.obalkyknih.cz/?livemap=true",
+            success: function(res) {
+                $('.cache2').addClass('cache2-old');
+                $('.cache2-old').remove();
+
+                if (res=='{}' || res=='null') {
+                    res = '{"KV": 1, "LI": 2, "VY": 4, "AB": 4, "PN": 4}';
+                }
+                console.dir(res);
+                res = JSON.parse(res);
+                for (var key in res) {
+                    var city = key.substring(0,2).toUpperCase();
+                    if (!sigla[city]) { console.log(city); continue; }
+                    var count = res[key];
+                    if (count>4) count = 4;
+                    for (var j=1; j<=count; j++) {
+                        point(i, srv[2][0], srv[2][1], sigla[city][0], sigla[city][1], function(pCoord, tCoord){
+                            move('.el'+i)
+                                .add('left', tCoord.x - pCoord.x - 10)
+                                .add('top', pCoord.y - tCoord.y - 10)
+                                .set('border-width', '10px')
+                                .set('border-radius', '30px')
+                                .duration(Math.random()*100 + 500)
+                                .delay(Math.random() * 2000)
+                                .then()
+                                    .set('opacity', 0)
+                                    .duration(400)
+                                    .pop()
+                                .end();
+                        });
+                        i++;
+                    }
+                }
+            }
+        });
+
+        setTimeout(infloop2, 3700);
+    })();
+
+});
+    </script>
+  </body>
+</html>

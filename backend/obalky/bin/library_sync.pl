@@ -51,7 +51,8 @@ sub crawl {
 		$libName = $item->{nazev};
 		$libAddress = $libCity = '';
 		
-		$codeNTK = $item->{prefix}; $codeNTK =~ s/0+$//g;
+		$codeNTK = $item->{prefix};
+		#$codeNTK =~ s/0+$//g; #pozor, toto parovalo URL na ine registracie, tie ktore mali na konci ientifikatora NTK nulu
 		$libNtkRes = DB->resultset('Knihovny')->search({ 'code' => $codeNTK });
 		if ($libNtkRes->count == 1) {
 			$libNtk = $libNtkRes->next;

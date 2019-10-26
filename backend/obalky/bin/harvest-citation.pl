@@ -40,8 +40,9 @@ foreach (@harvester_eshops) {
 my $last_week = DateTime->today()->subtract(days => 7);
 #my $books_list = ($mode ne 'all')
 #		?
+my $books_list;
 unless ($ID) {  
-	my $books_list = DB->resultset('Book')->search({
+	$books_list = DB->resultset('Book')->search({
 				part_type => { '=', undef },
 				cover => { '!=', undef },
 				citation => { '=', undef },
@@ -64,18 +65,18 @@ unless ($ID) {
 #		: DB->resultset('Book');
 } else {
 	# vyhledej jedno konkrekni ID, schvalne pomoci funkce ->search, aby se dal mohlo pouzit ->next
-	my $books_list = DB->resultset('Book')->search({ id => $ID });
+	$books_list = DB->resultset('Book')->search({ id => $ID });
 }
 
 
 my %hits; my %try; my %errors; my $hits = 0; my $cnt = 1;
 while(my $book = $books_list->next) {
-	next if ((!$book->ean13) || (!$book->nbn));
+	next if ((!$book->ean13) && (!$book->nbn));
 	my $priority;
-	if ($book->citation_source){
-		my @citation_eshop = DB->resultset('Eshop')->search({ id => $book->citation_source}) if ($book->citation_source);
-		$priority = $citation_eshop[0]->priority;
-	}
+#	if ($book->citation_source && $book->citation_source ne ''){
+#		my @citation_eshop = DB->resultset('Eshop')->search({ id => $book->citation_source}) if ($book->citation_source);
+#		$priority = $citation_eshop[0]->priority;
+#	}
 	my $bibinfo = $book->bibinfo;
 	my $time_start = [gettimeofday];
 	foreach my $factory (@eshops) {
@@ -84,7 +85,7 @@ while(my $book = $books_list->next) {
 		my $new_eshop_priority = $eshop->priority;
 		
 		#zdroj citace ma vyssi prioritu - preskocit eshop
-		next if ($priority && $priority >= $new_eshop_priority);
+#		next if ($priority && $priority >= $new_eshop_priority);
 		$eshop->update({ try_count => $eshop->try_count + 1 });
 		
 		$| = 1;
@@ -92,12 +93,14 @@ while(my $book = $books_list->next) {
 		$try{$eshop->name}++;
 		$errors{$eshop->name}++ if($@);
 		my $record = $factory_name->harvest($bibinfo);
+#warn Dumper($record);
 		
 		if ($record) {print '*'} else {print '.'}
 		$book->update({ citation_time => DateTime->now() }) unless ($record);
 		
 		next unless ($record);
 		my $citation = get_citation($record);
+warn $citation;
 		
 		warn "Adding citation \"$citation\" to ".$book->id if($ENV{DEBUG});
 		$book->update({ citation => $citation,  citation_time => DateTime->now(), citation_source => $eshop->id });		
@@ -127,7 +130,7 @@ sub get_citation{
 	my $ua = LWP::UserAgent->new();
 	
 	#komunikacia s FE
-	my $resp = $ua->post('http://cache2.obalkyknih.cz:8080/citace',$rec,'Content-type' => 'application/json;charset=utf-8',Content => encode_json($rec));
+	my $resp = $ua->post('http://cache.obalkyknih.cz:8080/citace',$rec,'Content-type' => 'application/json;charset=utf-8',Content => encode_json($rec));
 	return $resp->content;
 	
 }

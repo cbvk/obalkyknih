@@ -15,7 +15,7 @@ table {border-collapse: collapse;border-spacing: 0;}
 caption,th,td{text-align: left;}
 blockquote:before,blockquote:after,q:before,q:after{content: "";}
 blockquote, q {quotes: "" "";}
-strong{font-weight:bold}
+strong, .strong{font-weight:bold}
 em{font-style:italic;}
 img {border:0 none;}
 fieldset {clear:both;border:0 none;}
@@ -24,7 +24,9 @@ acronym {cursor:help;}
 textarea {font-size:1em;}
 blockquote, cite {margin:20px 3em 10px 0;color:#666 !important;font-style:italic;padding-left:62px;}
 .che input,.radio input {width:12px;height:12px}
-.hide {display:none;}
+.hide, .toggle-target {display:none;}
+.w75 {width: 75%;}
+
 
 html,body {height:auto;}
 body {background:#1c1c1c;}
@@ -41,6 +43,7 @@ legend {width:auto !important;border:transparent !important;}
 a{color:#0077bd;}
 a:visited{color:#376a88;}
 a:hover{color:#0091e6}
+a.btn{color:#fff !important;}
 
 h1,h2,h3,h4 {color:#0077bd !important; margin: 0 0 12px 0 !important; }
 blockquote {padding:20px 20px 5px 20px;border-left:4px solid #c4d6e3;background:#f3f7fa;margin-bottom:1.2em;}
@@ -258,8 +261,31 @@ table.qe-table a.f-icon img {background:none !important; border:0 !important; pa
 	#admin-submenu ul li.active {background-color:#E7CECE; border-radius:4px; box-shadow:0 0 10px 5px #dea5a5 inset;}
 	#admin-submenu ul li.active a {color:#444;}
 
+/* Parts table */
+ul.parts-list {list-style:none; margin-bottom:0 !important;}
+	ul.parts-list li {background:transparent !important;}
+	ul.parts-list .parts-list-toggle {cursor:pointer; margin-right:7px; color:#0077bd;}
+	ul.parts-list .level0 {padding:5px 0;}
+	ul.parts-list .level1 {padding:10px 0 5px 35px !important; border-bottom:solid 1px #e5e5e5;}
+	ul.parts-list .parts-list-thumb {margin-right:15px; min-width:27px; min-height:36px;}
+	ul.parts-list .indent {padding:10px 0 !important; border-bottom:solid 1px #e5e5e5;}
+	ul.parts-list li:last-child {border-bottom:none;}
+	ul.parts-list .parts-list-link {margin-right:15px;}
+	ul.parts-list .dim-icon {color:#ccc;}
+	#show-more-block {margin-top: 20px;}
+
+/* Text elipsis */
+.text-elipsis .fl strong {width:385px; text-overflow:ellipsis; overflow:hidden; display:block; height:1.2em; white-space:nowrap;}
+.text-elipsis-serial .fl strong {width:85%; text-overflow:ellipsis; overflow:hidden; display:block; height:1.2em; white-space:nowrap;}
+	.text-elipsis-serial .part-name-wrap {width:60%; float:left; text-overflow:ellipsis; overflow:hidden; display:block; height:1.2em; white-space:nowrap;}
+
 /* Book parts */
 .partsw-table {width:100%;}
 	.partss-table td {vertical-align:middle; padding:0px; height:36px;}
+
+/* Authors */
+#altlogin {margin:20px 0; padding: 10px 5px; border-top:#ddd solid 2px; border-bottom:#ddd solid 2px; background-color:#eee;}
+	#altlogin p {position:relative;margin-bottom:5px;}
+	#altlogin label {width:145px;left:7px;top:7px;font-style:italic;font-weight:normal;font-size:10pt;}
 
 /* end */

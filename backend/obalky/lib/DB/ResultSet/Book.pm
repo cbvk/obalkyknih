@@ -51,7 +51,6 @@ sub find_by_bibinfo {
 	my($pkg,$id,$creating) = @_;
 	my @books;
 	
-warn '---------------------';
 	$creating = 0 unless($creating);
 	$id->{part_year} = undef unless(defined $id->{part_year});
 	$id->{part_volume} = undef unless(defined $id->{part_volume});
@@ -69,7 +68,6 @@ warn '---------------------';
 	
 	# dotaz na cislo periodika, nebo cast monografie
 	if ($id->{part_no} or $id->{part_name} or $id->{part_year} or $id->{part_volume}) {
-warn "# dotaz na cislo periodika, nebo cast monografie";
 		@books = $pkg->search_book_part($id);
 		if (${@books}) {
 			map { # pro kazdy nalezeny zaznam (normalne cekame ze je jeden) zkontrolujeme, jestli ma vyplnenou kombinaci rok/rocnik
@@ -633,10 +631,14 @@ sub get_parts {
 		push @books, $pkg->search($srchQuery, { order_by => \'id DESC' } );
 	}
 	
-	my ($page_start, $page_end, $no_more_pages);
+	# strankovani vyple = o strankovani se stara controller Root
+	# toto potrebujeme kvuli vystupu vsech zaznamu casti periodika, kvuli zaskatulkovani do roku/rocnik a rozpadu ve stylu tree view
+	# pouziva se u periodik serazenych podle data a razeni + strankovani ridi controller; z teto metody ocekava pouze select vsech dat
+	return (\@books, undef) if (not $page);
 	
-	$page_start = ($page == 1) ? 0 : ((($page - 1) * 30));
-	
+	# strankovani
+	my ($page_start, $page_end, $no_more_pages);	
+	$page_start = ($page == 1) ? 0 : ((($page - 1) * 30));	
 	if (($page * 30) >= scalar @books){
 		$no_more_pages = 1;
 		$page_end = (scalar @books) - 1;

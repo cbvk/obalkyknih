@@ -28,6 +28,20 @@ function view_abuse_toc_onsubmit() {
 	}
 }
 
+function view_abuse_bib_onsubmit() {
+	var textarea = document.getElementById("abuse_bib_comment");
+	if(textarea.style.display == 'none') {
+		textarea.style.display = 'block';
+		return false;
+	} else {
+		if(textarea.value.length < 10) {
+			alert('Zadejte prosím popis chyby.');
+			return false;
+		}
+		return true;
+	}
+}
+
 /* view */
 function view_review_onsubmit() {
 	var name   = document.getElementById("review_name");

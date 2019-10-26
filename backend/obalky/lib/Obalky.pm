@@ -52,8 +52,10 @@ our $VERSION = '2.00';
 # with a external configuration file acting as an override for
 # local deployment.
 
-__PACKAGE__->config( name => 'Obalky',
+__PACKAGE__->config(
+    name => 'Obalky',
     root => __PACKAGE__->path_to('www'),
+    encoding => undef,
     'View::TT' => {
 	        TEMPLATE_EXTENSION => '.html',
 		    ENCODING     => 'utf-8',

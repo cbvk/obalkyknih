@@ -49,7 +49,7 @@ isbn_1234, ean_123, oclc_123, nbn_123, isbn1234_nbn123
 =cut
 
 
-my @keys = qw/ean13 ismn oclc nbn uuid title authors year part_year part_volume part_no part_name part_note auth_id auth_name/;
+my @keys = qw/bookid ean13 ismn oclc nbn uuid title authors year part_year part_volume part_no part_name part_note auth_id auth_name/;
 
 sub param_keys { qw/ean isbn issn ismn oclc nbn uuid title authors year/ }
 sub param_keys_part { qw/part_ean part_isbn part_issn part_ismn part_oclc part_nbn part_title part_authors part_year/ }
@@ -64,6 +64,7 @@ sub new {
 	$bibinfo->{oclc} = $object->oclc	if(defined $object->oclc);
 	$bibinfo->{nbn} = $object->nbn		if(defined $object->nbn);
 	$bibinfo->{uuid} = $object->uuid	if(ref $object eq 'DB::Result::Product' and defined $object->uuid);
+	$bibinfo->{bookid} = undef;
 
 	$bibinfo->{title} = $object->title if(defined $object->title);
 	my $authors = $object->authors;
@@ -81,6 +82,7 @@ sub new {
 		$bibinfo->{part_no_orig} = $object->part_no_orig if(defined $object->part_no_orig);
 		$bibinfo->{part_note} = $object->part_note if(defined $object->part_note);
 		$bibinfo->{part_note_orig} = $object->part_note_orig if(defined $object->part_note_orig);
+		$bibinfo->{bookid} = $object->id;
 	}
 
 	return $bibinfo;
@@ -314,7 +316,8 @@ sub new_from_params {
 		part_name_orig => $param->{part_name_orig},
 		part_note_orig => $param->{part_note_orig},
 		part_type => $param->{part_type},
-		id_parent => $param->{id_parent}
+		id_parent => $param->{id_parent},
+		bookid => $param->{bookid}
 	}, $pkg;
 }
 
@@ -433,19 +436,58 @@ sub to_xml {
 	return "\t\t<bibinfo>\n".join("",@ids)."\t\t</bibinfo>\n";
 }
 
+# identifikatory v sablone view.html
 sub identifiers {
-	my($id) = @_;
-	my @ids;
-    if($id->ean13) {
-        if($id->ean13 =~ /^97/) {
-        	push @ids, {"name"=>"ISBN","value"=>$id->to_isbn} 
-        } else {   
-        	push @ids, {"name"=>"EAN","value"=>$id->ean13};
-        }
-    }
-	push @ids, {"name"=>"OCLC Number","value"=>$id->oclc} if($id->oclc);
-	push @ids, {"name"=>"NKP-CNB","value"=>$id->nbn} if($id->nbn);
-	push @ids, {"name"=>"ISMN","value"=>$id->ismn} if($id->ismn);
+	my($bibinfo) = @_;
+	my @duplicity; # vsechny identifikatory; kvuli kontrole duplicity
+	
+	my @recs; # vsechny zaznamy s identifikatory
+	push @recs, $bibinfo; # tento book
+	# ostatni product params
+	if (defined $bibinfo->{bookid}) {
+		$res = DB->resultset('ProductParams')->search({ book=>$bibinfo->{bookid} });
+		foreach my $rec ($res->all) {
+			my $newBibinfo = Obalky::BibInfo->new_from_params({
+				ean13 => $rec->ean13,
+				nbn => $rec->nbn,
+				oclc => $rec->oclc
+			}, undef);
+			push @recs, $newBibinfo;
+			my $newBibinfo2 = Obalky::BibInfo->new_from_params({
+				ean13 => $rec->ean13,
+				nbn => $rec->nbn,
+				oclc => $rec->oclc
+			}, undef);
+			push @recs, $newBibinfo2;
+		}
+	}
+	
+	my @ids; # vysledne pole identifikatoru
+	foreach my $i (0..3) {
+		foreach my $id (@recs) {
+		    if ($i==0 and $id->ean13 and not $id->ean13 ~~ @duplicity) {
+		        if($id->ean13 =~ /^97/) {
+		        	push @ids, {"name"=>"ISBN","value"=>$id->to_isbn};
+		        } else {
+		        	push @ids, {"name"=>"EAN","value"=>$id->ean13};
+		        }
+		        push @duplicity, $id->ean13;
+		    }
+			if ($i==1 and $id->nbn and not $id->nbn ~~ @duplicity) {
+				push @ids, {"name"=>"NKP-CNB","value"=>$id->nbn};
+				push @duplicity, $id->nbn;
+			}
+			if ($i==2 and $id->ismn and not $id->ismn ~~ @duplicity) {
+				push @ids, {"name"=>"ISMN","value"=>$id->ismn} if($id->ismn);
+				push @duplicity, $id->ismn;
+			}
+			if ($i==3 and  $id->oclc and not $id->oclc ~~ @duplicity) {
+				push @ids, {"name"=>"OCLC Number","value"=>$id->oclc};
+				push @duplicity, $id->oclc;
+			}
+		}
+	}
+	push @ids, {"name"=>"OKCZID","value"=>$bibinfo->{bookid}} if(defined $bibinfo->{bookid});
 	return \@ids;
 }
 

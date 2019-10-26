@@ -24,8 +24,9 @@ die "\nusage: DEBUG=100 $0 [continue|period 2018-10-10 2018-10-20]\n\n"
 		unless($mode);
 my $DEBUG = $ENV{DEBUG};
 
-my $TMP_DIR = "/tmp/crawler"; 
-system("rm -rf $TMP_DIR"); mkdir($TMP_DIR);
+# toto je pouze prefix adresare, pro kazdy zdroj se nasledne
+# doplni napr. na /tmp/crawler-Kramerius_MZK
+my $TMP_DIR = "/tmp/crawler";
 
 my $SESSION_DIR = "/opt/obalky/.crawler";
 mkdir($SESSION_DIR);
@@ -70,7 +71,8 @@ foreach my $eshop (@eshops) {
 		$to = $to_default;
 	}
 	# priprav tmp dir jenom pro tento eshop, at si navzajem neprepisuji jpg
-	system("rm -rf $TMP_DIR-$name"); mkdir "$TMP_DIR-$name" or die;
+	#system("rm -rf $TMP_DIR-$name");
+	#mkdir "$TMP_DIR-$name" or die;
 	warn "$SESSION_DIR/$KRAMERIUS_LOGFILE" if ($DEBUG);
 	
 	warn "Crawling $name from $from to $to\n" if($DEBUG);
@@ -100,7 +102,7 @@ foreach my $eshop (@eshops) {
 	}
 	warn $name.": found ".$found{$name}."\n" if($DEBUG);
 	
-	system("rm -rf $TMP_DIR-$name");
+#debug	system("rm -rf $TMP_DIR-$name");
 	
 	if ($mode ne 'period') {
 		$storable->{$eshop_id}->{from} = $from;
@@ -114,7 +116,6 @@ foreach my $eshop (@eshops) {
 					$year+1900,$mon+1,$mday,$hour,$min);
 	print LOG "$now\t$name\t$from\t$to\t".$found{$name}."\n";
 	close(LOG);
-die; #debug
 }
 
 sub check_eshops{
@@ -189,3 +190,4 @@ $emailContent
 EOF
 	close(MUTT);
 }
+

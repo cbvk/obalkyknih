@@ -73,6 +73,9 @@ foreach my $eshop (@eshops) {
 #			}		
 #			elsif (!$book->citation){
 				$citation = get_citation($rec, $cnt);
+print "\n\n";
+#warn Dumper($rec);
+warn $citation;
 #			}
 		}
 		
@@ -95,12 +98,12 @@ foreach my $eshop (@eshops) {
 	}			
 	warn 'citace #'.$cnt;
 	
-	open(LOG,">>utf8","/opt/obalky/www/data/crawler.csv") or die;
+#	open(LOG,">>utf8","/opt/obalky/www/data/crawler.csv") or die;
 	my($sec,$min,$hour,$mday,$mon,$year) = localtime(time);
 	my $now = sprintf("%04d-%02d-%02dT%02d:%02d",
 					$year+1900,$mon+1,$mday,$hour,$min);
-	print LOG "$now\t$name\t$from\t$to\t".$found{$name}."\n";
-	close(LOG);
+#	print LOG "$now\t$name\t$from\t$to\t".$found{$name}."\n";
+#	close(LOG);
 }
 
 
@@ -113,6 +116,7 @@ sub get_citation{
 	#komunikacia s FE - treba upravit adresu
 	#my $resp = $ua->post('http://192.168.122.1:1339/citace',$rec,'Content-type' => 'application/json;charset=utf-8',Content => encode_json($rec));
 	my $resp;
+#	$resp = $ua->post('http://172.30.144.14:3000/citace',$rec,'Content-type' => 'application/json;charset=utf-8',Content => encode_json($rec));
 	if ($cnt % 2 == 0) {
 		$resp = $ua->post('http://172.30.144.14:8080/citace',$rec,'Content-type' => 'application/json;charset=utf-8',Content => encode_json($rec));
 	} else {

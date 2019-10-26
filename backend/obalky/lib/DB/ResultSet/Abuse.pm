@@ -11,7 +11,7 @@ use Data::Dumper;
 use locale;
 
 sub abuse {
-	my($pkg,$book,$cover,$toc,$client_ip,$referer,$note) = @_;
+	my($pkg,$book,$cover,$toc,$bib,$client_ip,$referer,$note) = @_;
 	if($book and $cover and $book->cover and 
 		($book->cover->id eq $cover->id)) {
 		$book->update({ cover => undef }); # odlinkuj obalku
@@ -20,11 +20,16 @@ sub abuse {
 		($book->toc->id eq $toc->id)) {
 		$book->update({ toc => undef }); # odlinkuj toc
 	}
+	if($book and $bib and $book->bib and 
+		($book->bib->id eq $bib->id)) {
+		$book->update({ bib => undef }); # odlinkuj bib
+	}
 	my $abuse = $pkg->create({
 		client_ip => $client_ip,
 		referer => $referer,
 		cover => $cover,
 		toc => $toc,
+		bib => $bib,
 		book => $book,
 		note => $note
 	});

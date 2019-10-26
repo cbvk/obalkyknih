@@ -10,7 +10,8 @@ use Data::Dumper;
 use Obalky::BibInfo;
 use warnings;
 use strict;
-use POSIX qw/ceil/;
+use POSIX qw(ceil);
+use URI::Encode qw(uri_encode);
 use Switch;
 use JSON;
 use File::Path;
@@ -325,7 +326,7 @@ print "  UUID: $PID";
 sub get_response {
 	my($from,$to,$method) = @_;
 	$method = "map" if ($method eq 'maprecord');
-	$query_url = $baseURL . "api/v5.0/search?q=fedora.model:$method%20AND%20modified_date:[".$from."T00:00:00Z%20TO%20".$to."T23:59:59Z]&fl=PID&wt=xml&start=$start";
+	$query_url = $baseURL . "api/v5.0/search?q=fedora.model:$method%20AND%20modified_date:%5B".$from."Z%20TO%20".$to."Z%5D&fl=PID&wt=xml&start=$start";
 	warn "URL: $query_url" if ($ENV{DEBUG} && $ENV{DEBUG} eq 2);
 	$ua = LWP::UserAgent->new;
 	$ua->timeout(60);

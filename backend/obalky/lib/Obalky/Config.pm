@@ -22,6 +22,7 @@ our $FRAME_IMG = $WWW_DIR."/img/frame.gif";
 our $FILEBLOB_DIR = "/opt/store/fileblob_export";
 our $PREVIEW510_DIR = "/opt/store/fileblob_preview510";
 our $TOC_DIR = "/opt/toc_export";
+our $BIB_DIR = "/opt/bib_export";
 
 our $RECAPTCHA_SECRET = '6LdFDxgTAAAAAIBauakFDUUq7hI5qbGiWACci-YU';
 our $RECAPTCHA_SITEKEY = '6LdFDxgTAAAAAHQKFJBlrT351_ALAeQbq62dQLj6';

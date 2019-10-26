@@ -28,7 +28,7 @@ Tuto knihu, nebo autora ještě nemáme v databázi!
 		[% IF recent_cover %]
 		<div style="clear: both" /><br/>
 		[% END %]
-		
+
 	<div style="clear: both" />
 	<form onsubmit="return view_abuse_onsubmit();" method="post">
 		<textarea name=note id=abuse_comment style="display: none"></textarea>
@@ -49,10 +49,13 @@ Tuto knihu, nebo autora ještě nemáme v databázi!
 
 		<input name=report class="button" type="submit" 
 			value=" Ohlásit chybnou foto ">
+		
+		<p style="margin-top: 7px;">Nahlásit porušení duševního vlastnictví, nebo práva na ochranu soukromí.</p>
 	</form>
+	
 	[% ELSE %] 
 	<a href="//obalkyknih.cz/obalkyknih-autority?nameos=[% nameos %]&dborndie=[% dborndie %]&source=OKCZ" target="_blank" title="Pošlete nám podobiznu"><img style="border: 1px solid black;"
-	src="http://servis.obalkyknih.cz//img/noname-posli.png" title="podobizna"></a>
+	src="https://servis.obalkyknih.cz//img/noname-posli.png" title="podobizna"></a>
 	[% END %]
 
   </td>
@@ -99,6 +102,15 @@ Tuto knihu, nebo autora ještě nemáme v databázi!
 		<div style="float:right; margin-right:20px;">
 			<input type="submit" style="text-transform:uppercase;" class="button" value=" Poslat " name="auth_upload" id="auth_search">
 		</div>
+		<div style="clear:both"></div>
+	</form>
+	[% ELSE %]
+	<form method="POST" action="/login" enctype="multipart/form-data" id="altlogin">
+		<p class="strong">Pro přidání, nebo úpravu fotografie autora se prosím přihlaste:</p>
+		<p><label for="login_mail">E-mailová adresa:</label><input type="text" value="" id="login_mail" name="email"/></p>
+		<p><label for="login_pass">Heslo:</label><input type="password" value="" id="login_pass" name="password"/>
+		<input type="submit" class="button" value="Přihlásit" /></p>
+		<input type="hidden" name="backurl" value="[% USE url('/cgi-bin/foo.pl') %]" />
 		<div style="clear:both"></div>
 	</form>
 	[% END %]

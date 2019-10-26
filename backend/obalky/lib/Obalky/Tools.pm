@@ -114,58 +114,118 @@ sub cmdCronTocOcr {
 # perl -wC -I/opt/obalky/lib -MObalky::Tools -e Obalky::Tools::cmdCronTocOcrNkp
 sub cmdCronTocOcrNkp {
 	my $Toc = DB->resultset('Toc') or die;
+	my $Bib = DB->resultset('Bib') or die;
 	my $feSync = 0;
 	foreach my $in (glob("$OCR_DIR_OUTPUT_NKP/*")) {
-		my($tocId,$unused,$suffix) = ($in =~ /\/(\d+)(\.\d+)?\.?(\w*)$/);
-		my $toc = $Toc->find($tocId);
-		# zaznam uz neni v DB, podezrele, ale neni
-		# presunout do adresare se sirotky
-		unless ($toc) {
-			move($in, "$OCR_DIR_ORPHAN_NKP/$tocId.$suffix");
-			warn "!!! ORPHAN... $tocId.$suffix";
-			_do_log("!!! ORPHAN... $tocId.$suffix");
+		my($prefix,$fileId,$unused,$suffix) = ($in =~ /\/(bib){0,1}(\d+)(\.\d+)?\.?(\w*)$/);
+		$prefix = '' unless($prefix);
+		
+		unless($prefix eq 'bib') {
+			my $tocId = $fileId;
+			my $toc = $Toc->find($tocId);
+			# zaznam uz neni v DB, podezrele, ale neni
+			# presunout do adresare se sirotky
+			unless ($toc) {
+				move($in, "$OCR_DIR_ORPHAN_NKP/$tocId.$suffix");
+				warn "!!! ORPHAN... $tocId.$suffix";
+				_do_log("!!! ORPHAN... $tocId.$suffix");
+			}
+			# ochrana pred nulovym obsahem souboru
+			unless (-s $in) {
+				unlink $in;
+				warn "!!! EMPTY... $tocId.$suffix";
+				_do_log("!!! EMPTY... $tocId.$suffix");
+				next;
+			}
+			# PDF
+			if ($suffix eq 'pdf') {
+				my $out = "$OCR_DIR_OUTPUT_NKP/$tocId.pdf";
+				my $content = Obalky::Tools->slurp($in);
+				$toc->update({ pdf_file => undef });
+				warn "Updating TOC PDF $tocId, ".length($content)." bytes\n";
+				_do_log("Updating TOC PDF $tocId, ".length($content)." bytes");
+				# PDF files are grouped in dir
+				my $dirGroupName = int($tocId/10000+1)*10000;
+				mkdir($Obalky::Config::TOC_DIR.'/'.$dirGroupName) unless (-d $Obalky::Config::TOC_DIR.'/'.$dirGroupName);
+				# place PDF onto file system
+				my $tocFile = $Obalky::Config::TOC_DIR.'/'.$dirGroupName.'/'.$tocId.'.pdf';
+				open(OUTFILE, ">".$tocFile);
+				print OUTFILE $content;
+				close(OUTFILE);
+				# change owner and access rights
+				system('chown obalky:obalky '.$tocFile);
+				system('chmod 644 '.$tocFile);
+				# metadata changed; do FE sync
+				DB->resultset('FeSync')->book_sync_remove($toc->product->book->id) if (not $feSync and $toc->product);
+				$feSync = 0;
+				unlink $in; # done
+			}
+			# FULLTEXT
+			if ($suffix eq 'txt') {
+				my $outTxt = "$OCR_DIR_OUTPUT_NKP/$tocId.txt";
+				my $text = decode('cp1250', `cat $in`);
+				$toc->update({ full_text => $text });
+				warn "Updating FULLTEXT $tocId, text ".length($text)." chars\n";
+				_do_log("Updating FULLTEXT $tocId, text ".length($text)." chars");
+				# metadata changed; do FE sync
+				DB->resultset('FeSync')->book_sync_remove($toc->product->book->id) if ($toc->product);
+				$feSync = 1;
+				unlink $in; # done
+			}
 		}
-		# ochrana pred nulovym obsahem souboru
-		unless (-s $in) {
-			unlink $in;
-			warn "!!! EMPTY... $tocId.$suffix";
-			_do_log("!!! EMPTY... $tocId.$suffix");
-			next;
-		}
-		# PDF
-		if ($suffix eq 'pdf') {
-			my $out = "$OCR_DIR_OUTPUT_NKP/$tocId.pdf";
-			my $content = Obalky::Tools->slurp($in);
-			$toc->update({ pdf_file => undef });
-			warn "Updating PDF $tocId, ".length($content)." bytes\n";
-			_do_log("Updating PDF $tocId, ".length($content)." bytes");
-			# PDF files are grouped in dir
-			my $dirGroupName = int($tocId/10000+1)*10000;
-			mkdir($Obalky::Config::TOC_DIR.'/'.$dirGroupName) unless (-d $Obalky::Config::TOC_DIR.'/'.$dirGroupName);
-			# place PDF onto file system
-			my $tocFile = $Obalky::Config::TOC_DIR.'/'.$dirGroupName.'/'.$tocId.'.pdf';
-			open(OUTFILE, ">".$tocFile);
-			print OUTFILE $content;
-			close(OUTFILE);
-			# change owner and access rights
-			system('chown obalky:obalky '.$tocFile);
-			system('chmod 644 '.$tocFile);
-			# metadata changed; do FE sync
-			DB->resultset('FeSync')->book_sync_remove($toc->book->id) unless ($feSync);
-			$feSync = 0;
-			unlink $in; # done
-		}
-		# FULLTEXT
-		if ($suffix eq 'txt') {
-			my $outTxt = "$OCR_DIR_OUTPUT_NKP/$tocId.txt";
-			my $text = decode('cp1250', `cat $in`);
-			$toc->update({ full_text => $text });
-			warn "Updating FULLTEXT $tocId, text ".length($text)." chars\n";
-			_do_log("Updating FULLTEXT $tocId, text ".length($text)." chars");
-			# metadata changed; do FE sync
-			DB->resultset('FeSync')->book_sync_remove($toc->book->id);
-			$feSync = 1;
-			unlink $in; # done
+		
+		if($prefix eq 'bib') {
+			my $bibId = $fileId;
+			my $bib = $Bib->find($bibId);
+			# zaznam uz neni v DB, podezrele, ale neni
+			# presunout do adresare se sirotky
+			unless ($bib) {
+				move($in, "$OCR_DIR_ORPHAN_NKP/bib$bibId.$suffix");
+				warn "!!! ORPHAN... BIB $bibId.$suffix";
+				_do_log("!!! ORPHAN... BIB $bibId.$suffix");
+			}
+			# ochrana pred nulovym obsahem souboru
+			unless (-s $in) {
+				unlink $in;
+				warn "!!! EMPTY... BIB $bibId.$suffix";
+				_do_log("!!! EMPTY... BIB $bibId.$suffix");
+				next;
+			}
+			# PDF
+			if ($suffix eq 'pdf') {
+				my $out = "$OCR_DIR_OUTPUT_NKP/bib$bibId.pdf";
+				my $content = Obalky::Tools->slurp($in);
+				$bib->update({ pdf_file => undef });
+				warn "Updating BIB PDF $bibId, ".length($content)." bytes\n";
+				_do_log("Updating BIB PDF $bibId, ".length($content)." bytes");
+				# PDF files are grouped in dir
+				my $dirGroupName = int($bibId/10000+1)*10000;
+				mkdir($Obalky::Config::BIB_DIR.'/'.$dirGroupName) unless (-d $Obalky::Config::BIB_DIR.'/'.$dirGroupName);
+				# place PDF onto file system
+				my $bibFile = $Obalky::Config::BIB_DIR.'/'.$dirGroupName.'/'.$bibId.'.pdf';
+				open(OUTFILE, ">".$bibFile);
+				print OUTFILE $content;
+				close(OUTFILE);
+				# change owner and access rights
+				system('chown obalky:obalky '.$bibFile);
+				system('chmod 644 '.$bibFile);
+				# metadata changed; do FE sync
+				DB->resultset('FeSync')->book_sync_remove($bib->product->book->id) if (not $feSync and $bib->product);
+				$feSync = 0;
+				unlink $in; # done
+			}
+			# FULLTEXT
+			if ($suffix eq 'txt') {
+				my $outTxt = "$OCR_DIR_OUTPUT_NKP/bib$bibId.txt";
+				my $text = decode('cp1250', `cat $in`);
+				$bib->update({ full_text => $text });
+				warn "Updating BIB FULLTEXT $bibId, text ".length($text)." chars\n";
+				_do_log("Updating BIB FULLTEXT $bibId, text ".length($text)." chars");
+				# metadata changed; do FE sync
+				DB->resultset('FeSync')->book_sync_remove($bib->product->book->id) if ($bib->product);
+				$feSync = 1;
+				unlink $in; # done
+			}
 		}
 	}
 }
@@ -173,43 +233,8 @@ sub cmdCronTocOcrNkp {
 sub _do_log {
     my($msg) = @_;
     open(LOG,">>utf8","/opt/obalky/log/ocr_nkp.log");
-    print LOG localtime." ".$msg."\n";
+    print LOG localtime()." ".$msg."\n";
     close(LOG);
 }
-
-
-#sub is_ocr_done {
-#	my($pkg
-#}
-
-
-#use MD5;
-#
-#sub compute_md5 {
-#	my($pkg,$filename) = @_;
-#	my $ctx = new MD5; $ctx->reset();
-#	open(FILE,$filenam) or die;
-#	$ctx->addfile(FILE);
-#	close(FILE);
-#	return $ctx->hexdigest();
-#}
-
-#use Cache::Memcached::XS;
-#
-#my $mem = new Cache::Memcached {
-#	'servers' => [ "127.0.0.1:11211" ]
-#	'compress_threshold' => 10_000,
-#	'debug' => 0,
-#};
-#
-#sub cover_cache_get {
-#	my($id) = @_;
-#	return $mem->get($id->to_string);
-#}
-#
-#sub cover_cache_store {
-#	my($id,$cover) = @_;
-#	$mem->set($id->to_string,$cover->id);
-#}
 
 1;

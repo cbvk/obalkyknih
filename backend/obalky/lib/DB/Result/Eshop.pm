@@ -113,6 +113,13 @@ __PACKAGE__->table("eshop");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 process_bib
+
+  data_type: 'tinyint'
+  default_value: 1
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =head2 process_annotation
 
   data_type: 'tinyint'
@@ -308,6 +315,13 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_nullable => 0,
   },
+  "process_bib",
+  {
+    data_type => "tinyint",
+    default_value => 1,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
   "process_annotation",
   {
     data_type => "tinyint",
@@ -485,8 +499,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-08-08 11:51:52
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:KrPnJeYZK+fYskx1sUIhpA
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2018-11-13 16:40:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:M9msW7saNYGa99Xf2Vjeag
 
 
 use Data::Dumper;

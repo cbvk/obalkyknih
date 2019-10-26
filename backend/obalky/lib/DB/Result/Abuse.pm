@@ -63,6 +63,12 @@ __PACKAGE__->table("abuse");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 bib
+
+  data_type: 'integer'
+  is_foreign_key: 1
+  is_nullable: 1
+
 =head2 auth
 
   data_type: 'varchar'
@@ -123,6 +129,8 @@ __PACKAGE__->add_columns(
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "toc",
   { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
+  "bib",
+  { data_type => "integer", is_foreign_key => 1, is_nullable => 1 },
   "auth",
   { data_type => "varchar", is_foreign_key => 1, is_nullable => 1, size => 50 },
   "book",
@@ -170,6 +178,26 @@ __PACKAGE__->belongs_to(
   "auth",
   "DB::Result::Auth",
   { id => "auth" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "RESTRICT",
+    on_update     => "RESTRICT",
+  },
+);
+
+=head2 bib
+
+Type: belongs_to
+
+Related object: L<DB::Result::Bib>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "bib",
+  "DB::Result::Bib",
+  { id => "bib" },
   {
     is_deferrable => 1,
     join_type     => "LEFT",
@@ -239,8 +267,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2016-09-07 12:22:04
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:WWJFmKgL0DiLJcidpsCEZw
+# Created by DBIx::Class::Schema::Loader v0.07039 @ 2018-11-13 16:40:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+EV4fB0IwNNsU0oJ66mP4w
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

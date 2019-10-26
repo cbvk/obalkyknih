@@ -24,7 +24,7 @@
 	[% END %]
 
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0" />
-	<link rel="stylesheet" media="screen,projection,tv" href="skin/style.css" type="text/css" />
+	<link rel="stylesheet" media="screen,projection,tv" href="skin/style.css?v=4" type="text/css" />
 	<!--[if lte IE 9]><link rel="stylesheet" media="screen,projection,tv" href="skin/style-IE.css" type="text/css" /><![endif]-->
 	<!--[if lte IE 7]><link rel="stylesheet" media="screen,projection,tv" href="skin/style-IE7.css" type="text/css" /><![endif]-->
 	<link rel="stylesheet" media="print" href="skin/print.css" type="text/css" />
@@ -48,8 +48,8 @@
 	<script type="text/javascript" src="/js/jquery.dataTables.min.js"></script>
 	<script type="text/javascript" src="/js/dataTables.bootstrap.min.js"></script>
 	<script type="text/javascript" src="/js/bootstrap.min.js"></script>
-	<script type="text/javascript" src="/js/script.js"></script>
-	<script type="text/javascript" src="/js/system.js"></script>
+	<script type="text/javascript" src="/js/script.js?v=4"></script>
+	<script type="text/javascript" src="/js/system.js?v=4"></script>
 </head>
 <body class="homepage">
 
@@ -57,13 +57,13 @@
 
 
 	<div id="head"><div class="in">
-		<a href="/" id="logo"><img src="skin/img/logo_obalkyknih.cz.png" alt="Obálky knih" /></a>
+		<a href="/" id="logo"><img src="skin/img/logo_obalkyknih.cz.png" alt="Obálky knih"/></a>
 		<ul id="menu">
 			<li class="menu_home [% IF menu == 'index' %]active[% END %]"><a 
 				href="/"><span></span>Úvod</a></li>
 			<li class="menu_upload [% IF menu == 'upload' %]active[% END %]"><a href="/upload"><span></span>Přidat obálku</a></li>
 			<li class="menu_api [% IF menu == 'doc' %]active[% END %]"><a
-				href="/doc/Dokumentace_API_OKCZ_3.1.pdf"><span></span>API a dokumentace</a></li>
+				href="https://docs.google.com/document/d/1b2iw31p5Izs0cHyDmErETQSp4KppBVm05BBCkiw67kI/"><span></span>API a dokumentace</a></li>
 			<li class="menu_about [% IF menu == 'about' %]active[% END %]"><a 
 				href="/about"><span></span>O projektu</a></li>
 		</ul>

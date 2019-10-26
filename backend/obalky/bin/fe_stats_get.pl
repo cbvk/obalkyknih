@@ -19,6 +19,7 @@ my @allowedRows = qw/timeout_count etag_match etag_toc_pdf_match etag_toc_thumbn
 		    cover_api_requests cover_fetches cover_notfound toc_thumbnail_requests
 		    toc_thumbnail_api_requests toc_thumbnail_fetches toc_thumbnail_notfound
 		    toc_pdf_requests toc_pdf_api_requests toc_pdf_notfound meta_removes
+		    apiruntime_requests unbound_requests operative_requests
 		    cover_removes toc_thumbnail_removes timestamp uptime
 		    meta_count cover_count logs_count/;
 

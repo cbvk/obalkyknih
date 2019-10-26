@@ -11,6 +11,7 @@ use DateTime::Format::ISO8601;
 use Data::Dumper;
 use Encode;
 use JSON;
+use utf8;
 
 use Obalky::Tools;
 
@@ -533,7 +534,6 @@ sub _do_import {
 		}
  
 		my $bibinfo_aggr = Obalky::BibInfo->new_from_params($bibinfo_params);
-#warn Dumper($bibinfo_params);
 
  		my @other_part_eans;
 		if ($c->req->param('part_other_isbn') && $bibinfo_aggr->{ean13}){
@@ -579,8 +579,6 @@ sub _do_import {
 		$bibinfo_params->{part_type} = 2 if ($part_type eq "serial"); # periodikum
 		$bibinfo_params->{id_parent} = $book_aggr->id;
 		$bibinfo_params = DB->resultset('Book')->normalize_bibinfo($bibinfo_params);
-#warn 'BIBINFO po normalizaci' if($ENV{DEBUG});
-#warn Dumper($bibinfo_params) if($ENV{DEBUG});
 	}
 
 	# bibinfo skenovaneho zaznamu
@@ -608,19 +606,16 @@ sub _do_import {
 	# my $user = $c->user ? "".$c->user : $c->req->param('login');
 	open(USER,">","$dir/user"); print USER $user; close(USER);
 
-	# nahrej soubory - obalku a stranky obsahu
-	# $c->param upload files, cover_tmp, contents_tmp
-	# 'cover', 'toc_page_1'.. ?
-	# my $uploads = $c->request->uploads;
-	# $c->request->uploads->{field}
-
     $self->_do_log("uploading cover");
 	$self->_upload_file($c,"cover","$dir/cover") if($c->req->param('cover'));
 
     $self->_do_log("cover done, uploading meta");
 	$self->_upload_file($c,"meta","$dir/meta") if($c->req->param('meta'));
 
-	# ze stranek TOC vytvor PDF a prozen ho OCR
+
+	### START: TOC
+	
+	# ze stranek TOC vytvor PDF a prozen jej OCR
     $self->_do_log("meta done, uploading toc");
 	if($c->req->param('toc')) {
 		$self->_upload_file($c,"toc","$dir/toc_big.pdf");
@@ -641,7 +636,6 @@ sub _do_import {
 	}
     $self->_do_log("done TOC uploading to $dir");
 
-#	my $first = $c->req->param('toc_page_0001') || '';
 	if(-f "$dir/toc_page_0001") {
 		open(F,"<bytes","$dir/toc_page_0001");
 		my $header = <F>; # nemame jmeno souboru, urcime z hlavicky
@@ -651,8 +645,6 @@ sub _do_import {
 			system("pdftk $dir/toc_page_* cat output $dir/toc.pdf");
 		} else {
 		   	$self->_do_log("toc.pdf: merging with gm convert");
-			#system("$CONVERT_BIN -density 150 $dir/toc_page_* -resize '50%' ".
-			#		"-compress jpeg $dir/toc.pdf");
 			system("$CONVERT_BIN -density 72 $dir/toc_page_* -compress jpeg $dir/toc.pdf");
 		}
 	} else {
@@ -660,8 +652,55 @@ sub _do_import {
 		system("cp $dir/toc_big.pdf $dir/toc.pdf");
 	}
 
-   	$self->_do_log("gm convert is done");
+   	$self->_do_log("TOC gm convert is done");
 	# die "Konstrukce PDF z $toc_dir se nezdarila" unless(-s $toc_file);
+	
+	### END: TOC
+	
+	
+	### START: BIB
+	
+	# ze stranek BIB vytvor PDF a prozen jej OCR
+    $self->_do_log("meta done, uploading bib");
+	if($c->req->param('bib')) {
+		$self->_upload_file($c,"bib","$dir/bib_big.pdf");
+		if($c->req->param('bib_sha1hex')) {
+			my $bibContent = Obalky::Tools->slurp("$dir/bib_orig.pdf");
+			die "bib file corrupted\n" if(sha1_hex($bibContent) ne 
+										  $c->req->param('bib_sha1hex'));
+		}
+	}
+    $self->_do_log("bib done");
+
+	# nebo BIB PDF zkonstruuj ze stranek
+	for(my $page=1;;$page++) {
+        last unless($c->req->param("bib_page_$page"));
+        $self->_do_log("uploading bib page $page");
+		$self->_upload_file($c,"bib_page_$page",sprintf("$dir/bib_page_%04d",
+                                $page));
+	}
+    $self->_do_log("done BIB uploading to $dir");
+
+	if(-f "$dir/bib_page_0001") {
+		open(F,"<bytes","$dir/bib_page_0001");
+		my $header = <F>; # nemame jmeno souboru, urcime z hlavicky
+		close(F);
+		if($header =~ /^\%PDF/) {
+		   	$self->_do_log("bib.pdf: merging PDF with pdftk");
+			system("pdftk $dir/bib_page_* cat output $dir/bib.pdf");
+		} else {
+		   	$self->_do_log("bib.pdf: merging with gm convert");
+			system("$CONVERT_BIN -density 72 $dir/bib_page_* -compress jpeg $dir/bib.pdf");
+		}
+	} else {
+	   	$self->_do_log("bib.pdf: using original PDF");
+		system("cp $dir/bib_big.pdf $dir/bib.pdf");
+	}
+
+   	$self->_do_log("BIB gm convert is done");
+	
+	### END: BIB
+
 
 	# URL vede k nam 
 	my $product_url = "http://obalkyknih.cz/import/$today/$seq";
@@ -678,12 +717,15 @@ sub _do_import {
 		$info->{toc_firstpage} = "$dir/toc_page_0001" 
 						if(-s "$dir/toc_page_0001");
 	}
-
+	if(-s "$dir/bib.pdf") {
+		$info->{bibpdf_tmpfile} = "$dir/bib.pdf";
+		$info->{bib_firstpage} = "$dir/bib_page_0001" 
+						if(-s "$dir/bib_page_0001");
+	}
+	
     $self->_do_log("calling Obalky::Media->new_from_info(".Dumper($info).")");
 	my $media = Obalky::Media->new_from_info($info);
 
-# cover_url cover_tmpfile tocpdf_url tocpdf_tmpfile toctext 
-# price_vat price_cur review_html review_impact review_rating
 
 	# pro upload se pouziva "ObalkyKnih Upload" Eshop
     $self->_do_log("calling ...->get_upload_shop");
@@ -701,7 +743,9 @@ sub _do_import {
 	$ocrFlag = 0 unless(defined $ocrFlag);
     $self->_do_log("ocrFlag $ocrFlag");
 	if((not $ocrFlag or (($ocrFlag ne 'no') and 
-			($ocrFlag ne 'false') and ($ocrFlag ne '0')))) {
+			($ocrFlag ne 'false') and ($ocrFlag ne '0'))))
+	{
+		# TOC
 		my $tocId = $product->toc ? $product->toc->id : undef;
     	$self->_do_log("ocrFlag, tocId=".($tocId||"undef"));
 		if($tocId) {
@@ -710,6 +754,19 @@ sub _do_import {
 			} else { # vice souboru - vytvor slozku
 				mkdir "$OCR_DIR_INPUT/$tocId";
 				system("cp $dir/toc_page_* $OCR_DIR_INPUT/$tocId");
+			}
+		}
+		
+		# BIB
+		my $bibId = $product->bib ? $product->bib->id : undef;
+		$self->_do_log("ocrFlag, bibId=".($bibId||"undef"));
+		if($bibId) {
+			$bibId = 'bib_' + $bibId;
+			if(-f "$dir/bib.pdf") { # na vstupu je PDF - prekopiruj PDF
+				system("cp $dir/bib.pdf $OCR_DIR_INPUT/bib$bibId.pdf");
+			} else { # vice souboru - vytvor slozku
+				mkdir "$OCR_DIR_INPUT/$bibId";
+				system("cp $dir/bib_page_* $OCR_DIR_INPUT/$bibId");
 			}
 		}
 	}
@@ -853,6 +910,21 @@ sub get_settings_citace : Local {
 	$c->response->body( to_json({ 'count'=>$resSettings->count, 'settings'=>\@settings }) );
 }
 
+# vola okczd.obalkyknih.cz pro ziskani URL OAI setu anonymizovanych transakci 
+sub get_settings_trans : Local {
+	my($self,$c) = @_;
+	my @settings;
+	my $resSettings = DB->resultset('LibrarySettingsDoporuc')->search({ 'is_enabled' => 1 },{
+		join => 'library',
+		'+select' => 'library.code',
+		'+as' => 'sigla'});
+	foreach ($resSettings->all) {
+		push @settings, { 'sigla'=>$_->get_column('sigla'), 'url'=>$_->url_oai_trans };
+	}
+	$c->response->content_type("text/plain");
+	$c->response->body( to_json({ 'count'=>$resSettings->count, 'settings'=>\@settings }) );
+}
+
 # vola frontend pro nacteni vsech prav (pri startu instance FE serveru)
 sub get_perms : Local {
 	my($self,$c) = @_;
@@ -980,6 +1052,9 @@ sub compare_book {
 	# dopln toc
 	$diff->{'toc'} = $book_slave->get_column('toc') if ($book_slave->get_column('toc') and not $book_master->get_column('toc'));
 	
+	# dopln bib
+	$diff->{'bib'} = $book_slave->get_column('bib') if ($book_slave->get_column('bib') and not $book_master->get_column('bib'));
+	
 	# anotacia
 	$diff->{'review'} = $book_slave->get_column('review') if ($book_slave->get_column('review') and not $book_master->get_column('review'));
 	
@@ -1018,6 +1093,9 @@ sub merge_book {
 	# toc
 	$book_master->update({ toc => $diff->{'toc'} }) if ($diff->{'toc'});
 	
+	# bib
+	$book_master->update({ bib => $diff->{'bib'} }) if ($diff->{'bib'});
+	
 	# anotacia
 	$book_master->update({ review => $diff->{'review'} }) if ($diff->{'review'});
 	
@@ -1047,6 +1125,7 @@ sub merge_book {
  	$sth = $dbh->prepare("DELETE FROM product WHERE book = $id_slave"); $sth->execute();
  	$sth = $dbh->prepare("DELETE FROM cover WHERE book = $id_slave"); $sth->execute();
  	$sth = $dbh->prepare("DELETE FROM toc WHERE book = $id_slave"); $sth->execute();
+ 	$sth = $dbh->prepare("DELETE FROM bib WHERE book = $id_slave"); $sth->execute();
  	$sth = $dbh->prepare("DELETE FROM review WHERE book = $id_slave"); $sth->execute();
  	$sth = $dbh->prepare("DELETE FROM tip WHERE book1 = $id_slave"); $sth->execute();
  	$sth = $dbh->prepare("DELETE FROM tip WHERE book2 = $id_slave"); $sth->execute();

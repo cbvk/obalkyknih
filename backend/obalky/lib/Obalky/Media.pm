@@ -15,8 +15,8 @@ our $REVIEW_REVIEW     = 1;
 our $REVIEW_VOTE       = 8;
 our $REVIEW_COMMENT    = 9;
 
-my @keys = qw/cover_url cover_tmpfile tocpdf_url tocpdf_tmpfile toctext 
-			  toc_firstpage
+my @keys = qw/cover_url cover_tmpfile tocpdf_url tocpdf_tmpfile toctext bibpdf_url bibpdf_tmpfile bibtext
+			  toc_firstpage bib_firstpage
 			  price_vat price_max price_cur
 			  rating_count rating_value
 			  review_html review_impact review_rating review_library reviews_list
@@ -187,20 +187,22 @@ sub save_to {
 	
 	my $book = $product->book;
 	
-	my ($process_cover,$process_toc,$process_annotation,$process_rating,$process_review) = (1,1,1,1,1);
+	my ($process_cover,$process_toc,$process_bib,$process_annotation,$process_rating,$process_review) = (1,1,1,1,1);
 	$process_cover = 0 if ($product->eshop->get_column('process_cover') == 0);
 	$process_toc = 0 if ($product->eshop->get_column('process_toc') == 0);
+	$process_bib = 0 if ($product->eshop->get_column('process_bib') == 0);
 	$process_annotation = 0 if ($product->eshop->get_column('process_annotation') == 0);
 	$process_rating = 0 if ($product->eshop->get_column('process_rating') == 0);
 	$process_review = 0 if ($product->eshop->get_column('process_review') == 0);
 	
 	# nevkladej obalku a obsah z Krameria, pokud uz zaznam obalku/obsah obsahuje
 	# pravdepodobne to bude to same a taky kvuli zaplneni db a storage (9.8.2018)
-	if ($product->eshop->type eq 'kramerius') {
+	if ($product->eshop->type eq 'kramerius' and $product->eshop->id != 7096) {
 		my $neigProducts = DB->resultset('Product')->search({ book => $book->id });
 		foreach ($neigProducts->all) {
 			$process_cover = 0 if ($_->get_column('cover'));
 			$process_toc = 0 if ($_->get_column('toc'));
+			$process_bib = 0 if ($_->get_column('bib'));
 		}
 	}
 	
@@ -307,7 +309,7 @@ sub save_to {
 		}
 	}
 
-	# 2. TOC
+	# 2a. TOC
 	if ($process_toc) {
 		my $toc_text = $media->{toctext};
 		my $toc_url  = $media->{tocpdf_url};
@@ -330,6 +332,34 @@ sub save_to {
 			$book->update({ toc => $toc });
 			
 			# vyvolej synchronizacni udalost pri kazdem uploadu TOC
+			if (!$feSynced) {
+				DB->resultset('FeSync')->book_sync_remove($book->id);
+			}
+		}
+	}
+	
+	# 2b. BIB
+	if ($process_bib) {
+		my $bib_text = $media->{bibtext};
+		my $bib_url  = $media->{bibpdf_url};
+		my $bib_tmp  = $media->{bibpdf_tmpfile};
+		my $bib_firstpage = $media->{bib_firstpage}; # toto je hack
+		warn "save_to: bib_firstpage=$bib_firstpage\n" if ($bib_firstpage);
+		if($bib_text or $bib_url or $bib_tmp) {
+			$bib = DB->resultset('Bib')->find_or_create(
+				{ product => $product },{ key => 'bib_product' });
+			if($bib_url or $bib_tmp) {
+				my $content = $bib_tmp ? 
+					Obalky::Tools->slurp($bib_tmp) : Obalky::Tools->wget($bib_url);
+				$bib->set_pdf($bib_url,$content,$bib_tmp,$bib_firstpage);
+			}
+			if($bib_text) {
+				$bib->update({ full_text => $bib_text });
+			}
+			$product->update({ bib => $bib });
+			$book->update({ bib => $bib });
+			
+			# vyvolej synchronizacni udalost pri kazdem uploadu BIB
 			if (!$feSynced) {
 				DB->resultset('FeSync')->book_sync_remove($book->id);
 			}

@@ -113,11 +113,15 @@ sub process_shopitem {
 	
 	# MULTIPLE EANS (Zbozi.cz)
 	my @eans; my @params;
-=Kvuli datum z eshopu zakomentovane
-	if (($item->{eans} and ref $item->{eans}->{ean} eq 'ARRAY') or ($item->{EANS} and ref $item->{EANS}->{EAN} eq 'ARRAY')) {
+	# povolene pouze pro MKP
+	if ($eshop->id eq 113) {
+	if (($item->{eans} and ref $item->{eans}->{ean} eq 'ARRAY') or 
+	    ($item->{EANS} and ref $item->{EANS}->{EAN} eq 'ARRAY') or
+	    ($item->{ISBN} and ref $item->{ISBN} eq 'ARRAY')) {
 		my @xml_eans;
 		@xml_eans = @{$item->{eans}->{ean}} if ($item->{eans}); # parametry malymi pismeny
 		@xml_eans = @{$item->{EANS}->{EAN}} if ($item->{EANS}); # parametry velkymi pismeny
+		@xml_eans = @{$item->{ISBN}} if ($item->{ISBN} and ref $item->{ISBN} eq 'ARRAY'); # parametry vyjmenovany jako vicenasobne ISBN
 		foreach my $ean_tmp (@xml_eans) {
 			
 			$ean_tmp = Obalky::BibInfo->parse_code($ean_tmp);
@@ -131,7 +135,8 @@ sub process_shopitem {
 			}
 		}
 	}
-=cut
+	} # povolene pouze pro MKP
+
 	#toto sposobuje, ze sa na koniec pola parametrov pripojila polozka obsahujuca opet cele pole parametrov
 	#push @params, { 'ean13'=>$item->{eans}->{ean}, 'nbn'=>undef, 'oclc'=>undef } if ($item->{eans} and $item->{eans}->{ean} ne '');
 	#push @params, { 'ean13'=>$item->{EANS}->{EAN}, 'nbn'=>undef, 'oclc'=>undef } if ($item->{EANS} and $item->{EANS}->{EAN} ne '');
@@ -380,6 +385,7 @@ sub crawl {
 			my @params = @{$book}[4];
 			
 			# rozmnozit, kniha ma vice EAN (vydani)
+=takto uz ne, mame product_param
 			if (@params) {
 				push @books, $book;
 				foreach my $itemEan (@{$params[0]}) {
@@ -417,8 +423,9 @@ sub crawl {
 			}
 			
 			else {
+=cut
 				push @books, $book; # kniha nema dalsie EAN (vydani)
-			}
+#			}
 		}
 		last unless($demo--);
 		

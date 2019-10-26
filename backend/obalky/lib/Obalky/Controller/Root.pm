@@ -14,6 +14,7 @@ use utf8;
 use Business::ISBN;
 use Business::ISSN;
 use Captcha::reCAPTCHA::V2;
+use JSON;
 
 
 #use encoding 'latin-2';
@@ -92,6 +93,7 @@ sub abuse : Local {
 			my $book  = $abuse->book;
 			my $cover = $abuse->cover;
 			my $toc = $abuse->toc;
+			my $bib = $abuse->bib;
 			if($book and $cover) {
 				warn "Reverting ".$cover->id." in book ".$book->id."\n";
 				$book->update({ cover => $cover });
@@ -99,6 +101,10 @@ sub abuse : Local {
 			if($book and $toc) {
 				warn "Reverting ".$toc->id." in book ".$book->id."\n";
 				$book->update({ toc => $toc });
+			}
+			if($book and $bib) {
+				warn "Reverting ".$bib->id." in book ".$book->id."\n";
+				$book->update({ bib => $bib });
 			}
 			DB->resultset('Abuse')->search({ id => $id })->delete_all;
 			
@@ -176,6 +182,8 @@ sub file : Local {
 		$object = DB->resultset('Cover')->find($id);
 	} elsif($table eq 'toc') {
 		$object = DB->resultset('Toc')->find($id);
+	} elsif($table eq 'bib') {
+		$object = DB->resultset('Bib')->find($id);
 	} else {
 		die "File source $table not defined";
 	}
@@ -342,6 +350,67 @@ sub settings_citace : Local {
     }
     
     $c->stash->{admin_page} = 'settings_citace';
+    $c->stash->{signed} = $signed;
+	$c->stash->{library} = $library;
+	$c->stash->{is_admin} = $c->req->param('i') ? 1 : 0;
+	$c->stash->{library_admin} = $library_admin;
+	$c->stash->{params} = $c->req->params;
+}
+
+sub settings_doporuc : Local {
+	my($self,$c) = @_;
+    my $signed = $c->user ? 1 : 0;
+    unless ($signed) {
+    	#uzivatelsky ucet jen pro prihlasene uzivatele
+    	$c->res->redirect("index");
+    	return;
+    }
+    unless ($c->user->get('flag_library_admin')) {
+    	#presmeruj na uzivatelsky ucet ne-spravce knihovny
+		$c->res->redirect("/account_user");
+		return;
+	}
+    
+    my $username = $c->user->get_column('login');
+    my $resAdminUser = DB->resultset('User')->search({ 'login' => $username, 'is_admin' => 1 });
+    my $isAdmin = 0;
+    if ($resAdminUser->count() == 1) {
+    	my $adminUser = $resAdminUser->next;
+    	$isAdmin = 1 if ($adminUser->get_column('login') eq $username);
+    }
+    if ($isAdmin && !$c->req->param('i')) {
+    	#spravce ma k dispozici spravu vsech knihoven
+    	$c->res->redirect("admin_library");
+    	return;
+    }
+    
+    my $library_admin = $c->user->get_column('flag_library_admin');
+    
+    my $id = $c->user->get_column('library');
+    $id = $c->req->param('i') if ($isAdmin);
+    my $library = $signed ? DB->resultset('Library')->find($id) : 0;
+    
+    if ($library) {
+    	# Pridej nastaveni
+	    if($c->req->param('new')) {
+			eval { my $res = DB->resultset('LibrarySettingsDoporuc')->add_settings($c->req->params, $library) };
+			$c->stash->{error} = $@ if($@);
+		}
+		# Edituj nastaveni
+	    if($c->req->param('e')) {
+			eval { my $res = DB->resultset('LibrarySettingsDoporuc')->edit_settings($c->req->param('e'), $c->req->params, $library) };
+			$c->stash->{error} = $@ if($@);
+		}
+    	# Odstran nastaveni
+	    if($c->req->param('d')) {
+			eval { my $res = DB->resultset('LibrarySettingsDoporuc')->remove_settings($c->req->param('d'), $library) };
+			$c->stash->{error} = $@ if($@);
+		} 
+		# Vypis nastaveni
+    	$c->stash->{settings} = DB->resultset('LibrarySettingsDoporuc')->find({ library=>$id });
+    }
+    
+    $c->stash->{admin_page} = 'settings_doporuc';
     $c->stash->{signed} = $signed;
 	$c->stash->{library} = $library;
 	$c->stash->{is_admin} = $c->req->param('i') ? 1 : 0;
@@ -831,14 +900,15 @@ sub view : Local {
 	
 	my $referer = $c->req->param('referer') || $c->req->referer;
 	if($c->req->param('report')) {
-		my ($cover, $toc);
+		my ($cover, $toc, $bib);
 		$cover = DB->resultset('Cover')->find($c->req->param("cover")) if ($c->req->param("cover"));
 		$toc = DB->resultset('Toc')->find($c->req->param("toc")) if ($c->req->param("toc"));
+		$bib = DB->resultset('Bib')->find($c->req->param("bib")) if ($c->req->param("bib"));
 		my $note = $c->req->param('note');
 		my $spamQuestion = $c->req->param('spamQuestion');
 		
 		my $book = DB->resultset('Book')->find($c->req->param('book'));
-		my $abuse = DB->resultset('Abuse')->abuse($book,$cover,$toc,$c->req->address,$referer,$note) if ($spamQuestion eq 23);
+		my $abuse = DB->resultset('Abuse')->abuse($book,$cover,$toc,$bib,$c->req->address,$referer,$note) if ($spamQuestion eq 23);
 		
 		$c->stash->{error} = "Děkujeme za nahlášení, chybnou obálku se pokusíme co nejdřív opravit." if($abuse);
 	}
@@ -881,6 +951,8 @@ sub view : Local {
 		$change->update({ cover => $cover_id }) if($cover_id);
 		my $toc_id   = $c->req->param('set_toc');
 		$change->update({ toc => $toc_id }) if($toc_id);
+		my $bib_id   = $c->req->param('set_bib');
+		$change->update({ bib => $bib_id }) if($bib_id);
 		
 		# synchronizuj s frontend
 		DB->resultset('FeSync')->book_sync_remove($change->id);
@@ -957,8 +1029,11 @@ sub view : Local {
 	my $idf = $c->req->param('idf');
 	@idf = split(',', $idf) if ($idf);
 	
+	# ziskej periodika, nebo vicesvazky
 	my $parts_page = $c->req->param('page') || 1;
-	my ($parts, $no_more_pages) = DB->resultset('Book')->get_parts($book, $sort_by, \@idf, $parts_page);
+	my $parts_page_to_search_for = $parts_page;
+	$parts_page_to_search_for = undef if ($sort_by eq 'date');
+	my ($parts, $no_more_pages) = DB->resultset('Book')->get_parts($book, $sort_by, \@idf, $parts_page_to_search_for);
 	
 	my @parts = @{$parts} if ($parts);
 	if (@parts) {
@@ -969,8 +1044,114 @@ sub view : Local {
 		$c->stash->{recent_book_id} = $book_recent->id if ($book_recent);
 		$c->stash->{recent_cover} = $book_recent->cover if ($book_recent and $book_recent->cover);
 		$c->stash->{recent_toc} = $book_recent->toc if ($book_recent and $book_recent->toc);
+		$c->stash->{recent_bib} = $book_recent->bib if ($book_recent and $book_recent->bib);
 	}
-	$c->stash->{parts_page} = $parts_page;
+	
+	# typ zaznamu (periodikum, monografie)
+	my $part_type;
+	foreach my $part (@parts) {
+		$part_type = $part->get_column('part_type');
+		last;
+	}
+	$no_more_pages = 1 if ($part_type and $part_type == 1);
+	$c->stash->{part_type} = $part_type;
+	
+	# vytvorime mapovani rok->rocnik a rocnik->rok
+	# pozdeji pouzijeme pro doplneni jednoho z udaju na misto kde chybi
+	my ($tmpPartsVolMap,$tmpPartsYearMap) = (undef,undef);
+	foreach my $part (@parts) {
+		my $partVol = $part->get_column('part_volume');
+		my $partYear = $part->get_column('part_year');
+		if ($partVol and $partYear) {
+			$tmpPartsVolMap->{$partVol} = $partYear unless($tmpPartsVolMap->{$partVol});
+			$tmpPartsYearMap->{$partYear} = $partVol unless($tmpPartsYearMap->{$partYear});
+		}
+	}
+	# osetreni chybejiciho rocniku
+	my ($knownYear,$knownVol) = (undef,undef);
+	foreach my $part (@parts) {
+		my $partVol = $part->get_column('part_volume');
+		my $partYear = $part->get_column('part_year');
+		if ($partVol and $partYear) {
+			$knownVol = $partVol;
+			$knownYear = $partYear;
+			last;
+		}
+	}
+	# vytvoreni seznamu pro periodika
+	if ($part_type and $part_type eq '2' and $sort_by eq 'date') {
+		my $partsList = {};
+		foreach my $part (@parts) {
+			# vstup z DB
+			my $partVol = $part->get_column('part_volume');
+			my $partYear = $part->get_column('part_year');
+			my $partNo = $part->get_column('part_no') or $part->get_column('part_name');
+			# pokud nemame, doplnime z namapovanych
+			$partVol = $tmpPartsYearMap->{$partYear} if ($partYear and not $partVol and $tmpPartsYearMap->{$partYear});
+			$partYear = $tmpPartsVolMap->{$partVol} if ($partVol and not $partYear and $tmpPartsVolMap->{$partVol});
+			# osetreni
+			if (not $partVol and $partYear and $knownVol and $knownYear) {
+				$partVol = int($knownVol)-int($knownYear-$partYear)-1;
+			}
+			$partVol = '' unless($partVol);
+			$partYear = '' unless($partYear);
+			# pokud je cislo, dopln nuly aby bylo pozdeji spravne serazeno
+			$partVol = substr('00000000'.$partVol,-8) if ($partVol and $partVol!~ /\D/);
+			$partYear = substr('00000000'.$partYear,-8) if ($partYear and $partYear!~ /\D/);
+			if ($partNo =~ /^\d+$/) {
+				# cislo periodika
+				$partNo = substr('00000'.$partNo,-5).'000'
+			}
+			elsif ($partNo =~ /^[\d,]+$/) {
+				# rozsah periodik
+				my $zeroRepeat = 5 - index($partNo,',');
+				$partNo =~ s/,//g;
+				$partNo = substr(('0' x $zeroRepeat) . $partNo . '000' ,0,8);
+			}
+			#warn Dumper($partVol . ' > ' . $partYear . ' > ' . $partNo); #debug problemov s razenim periodik na strance souborneho zaznamu
+			# objekt se kterym bude pracovat viewer
+			$partsList->{$partVol} = {} unless ($partsList->{$partVol});
+			$partsList->{$partVol}->{$partYear} = {} unless ($partsList->{$partVol}->{$partYear});
+			$partsList->{$partVol}->{$partYear}->{$partNo} = $part;
+			my $partVolNumeric = $partVol;
+			$partVolNumeric = int($partVolNumeric) if ($partVol ne '');
+			$partsList->{$partVol}->{'text'} = ($part->get_column('part_volume') or $partVolNumeric) unless ($partsList->{$partVol}->{'text'});
+			$partsList->{$partVol}->{$partYear}->{'text'} = $part->get_column('part_year') unless ($partsList->{$partVol}->{$partYear}->{'text'});
+		}
+		# serazeni
+		my @partsTreeDataRoot;
+		foreach my $keyVol (reverse sort keys %{$partsList}) {
+			my $tmp1List = $partsList->{$keyVol};
+			foreach my $keyYear (reverse sort keys %{$tmp1List}) {
+				next if ($keyYear eq 'text');
+				my $tmp2List = $tmp1List->{$keyYear};
+				my @partsTreeDataLevel2;
+				foreach my $keyPartNo (reverse sort keys %{$tmp2List}) {
+					next if ($keyPartNo eq 'text');
+					push @partsTreeDataLevel2, $partsList->{$keyVol}->{$keyYear}->{$keyPartNo} if ($partsList->{$keyVol} and $partsList->{$keyVol}->{$keyYear} and $partsList->{$keyVol}->{$keyYear}->{$keyPartNo});
+				}
+				push @partsTreeDataRoot, {
+					'vol' => $partsList->{$keyVol}->{'text'},
+					'year' => $partsList->{$keyVol}->{$keyYear}->{'text'},
+					'nodes' => \@partsTreeDataLevel2
+				};
+			}
+		}
+		# strankovani
+		my $pageSize = 15;
+		my $lastPage = (scalar @partsTreeDataRoot) / $pageSize;
+		my @partsTreeDataPaged;
+		my ($i,$j)=(-1,0);
+		foreach my $partItem (@partsTreeDataRoot) {
+			$i++;
+			$j++ if (not $i % $pageSize);
+			next if ($j ne $parts_page);
+			push @partsTreeDataPaged, $partItem;
+		}
+		$no_more_pages = 1 if (int($parts_page+0.99) >= $lastPage);
+		$c->stash->{tree_view_list} = \@partsTreeDataPaged;
+	}
+	
 	$c->stash->{no_more_pages} = $no_more_pages;
 	$c->stash->{sort_by} = $sort_by;
 	
@@ -1106,7 +1287,9 @@ sub view : Local {
 	$c->stash->{seznam_main_image} = ($books[0] and $books[0]->cover) ? 
 		$books[0]->cover->get_cover_url : undef;
 	$c->stash->{search_value} = $search_value;
-	$c->stash->{books_other} = [ DB->resultset('ProductParams')->search({ book => $book->id, ean13 => { '!=' => undef } })->all ] if ($book); 
+	$c->stash->{books_other} = [ DB->resultset('ProductParams')->search({ book => $book->id, ean13 => { '!=' => undef } })->all ] if ($book);
+	$c->stash->{books_editions} = $book->get_editions() if (defined $book);
+	$c->stash->{book_other_relations} = $book->get_other_relations() if (defined $book); 
 
 	my $ip = $c->req->address; $ip =~ s/\.\d+$/.../;
 	$c->stash->{visitor_blurred_ip} = $ip;

@@ -145,8 +145,8 @@ sub create_from_file {
 			foreach ($resAuthCover->all) { $_->update({ cover => undef }); }
 			my $resAuthSource = DB->resultset('AuthSource')->search({ cover => $cover_source->id });
 			foreach ($resAuthSource->all) { $_->update({ cover => undef }); }
-			my $resAuthSource = DB->resultset('Abuse')->search({ cover => $cover_source->id });
-			foreach ($resAuthSource->all) { $_->update({ cover => undef }); }
+			my $resAuthAuse = DB->resultset('Abuse')->search({ cover => $cover_source->id });
+			foreach ($resAuthAuse->all) { $_->update({ cover => undef }); }
 			$cover_source->delete;
 		}
 		

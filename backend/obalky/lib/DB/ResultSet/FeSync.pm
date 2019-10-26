@@ -263,11 +263,13 @@ sub book_sync_remove {
 		} if (defined $metadata);
 		
 		my $idCover = $book->get_column('cover');
-		my $cover = DB->resultset('Cover')->find($idCover);
-		if ($cover) {
-			my $idOrig = $cover->get_column('file_orig');
-			my $dirGroupName = int($idOrig/100000+1)*100000;
-			unlink($Obalky::Config::PREVIEW510_DIR . '/' . $dirGroupName . '/' . $idOrig . '.png');
+		if ($idCover) {
+			my $cover = DB->resultset('Cover')->find($idCover);
+			if ($cover) {
+				my $idOrig = $cover->get_column('file_orig');
+				my $dirGroupName = int($idOrig/100000+1)*100000;
+				unlink($Obalky::Config::PREVIEW510_DIR . '/' . $dirGroupName . '/' . $idOrig . '.png');
+			}
 		}
 	} else {
 		$sync_params->{book_id} = $id;

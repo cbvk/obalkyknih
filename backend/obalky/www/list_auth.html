@@ -48,11 +48,11 @@
 		[% END %] 
 	</td>
 	<td style="width: 50px; padding: 10px 15px; border-top: #ddd solid 1px;"> 
-		<a href="http://www.obalkyknih.cz/view_auth?auth_id=[% auth.id %]">detail</a> 
+		<a href="/view_auth?auth_id=[% auth.id %]">detail</a> 
 	</td>
 	<td style="padding: 10px; border-top: #ddd solid 1px;">
 		<h2 style="position:relative; top:-5px;">
-			<a href="http://www.obalkyknih.cz/view_auth?auth_id=[% auth.id %]" style="text-decoration: none;">[% auth.auth_name %]</a>
+			<a href="/view_auth?auth_id=[% auth.id %]" style="text-decoration: none;">[% auth.auth_name %]</a>
 			&nbsp; <span style="font-size:0.7em;">[% auth.auth_date %]</span>
 		</h2>
 		[% IF auth.auth_activity or auth.auth_occupation %]<span style="position: relative; top:-6px; padding-right: 20px;">[% END %]

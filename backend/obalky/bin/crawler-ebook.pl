@@ -28,7 +28,6 @@ use strict;
 MARC::Charset->ignore_errors(1);
 MARC::Charset->assume_encoding('UTF-8');
 
-
 my($mode,$force_from,$force_to) = @ARGV;
 die "\nusage: DEBUG=100 $0 [today|period 2008-10-10 2008-10-20]\n\n"
 		unless($mode);
@@ -65,6 +64,9 @@ foreach my $eshop (@eshops) {
 	# trida, ktera se o tento eshop stara..
 	next if($ENV{OBALKY_ESHOP} and $eshop->id ne $ENV{OBALKY_ESHOP});
 	warn "Crawluju ".$eshop->id." ".$eshop->name."\n" if($DEBUG);
+	
+	my $TMP_DIR = "/tmp/crawler-".$eshop->name;
+	system("rm -rf $TMP_DIR"); mkdir($TMP_DIR);
 
 	my $factory = "Eshop::".$eshop->name if($eshop->name); 
 	my $name = $eshop->name || $eshop->id; # nase jednoznacne id eshopu
@@ -93,17 +95,10 @@ foreach my $eshop (@eshops) {
 			my ($ext) = $rec =~ /.*\.(.*)/;
 			push (@productExts, $ext);
 		}
-		my $product = DB->resultset('Product')->search({ product_url => $product_url })->next;
-		# v DB uz existuje
-		if ($product) {
-			warn "Existing product ".$product->book->id if  ($DEBUG == 2);
-		}
-		# zalozit zaznam produktu a knihy
-		else {
-			$product = $eshop->add_product($bibinfo,$media,$product_url);
-			$product->book->update({ doc_type => 3 }); # eshop
-			warn "New product  ".$product->book->id if($DEBUG == 2);
-		}
+		
+		my $product = $eshop->add_product($bibinfo,$media,$product_url);
+		$product->book->update({ doc_type => 3 });
+		
 		#znovu sa pokusit o spojenie ak zlyhalo
 		$conn = connect_via_zoom($addr, $port, $dbname) if (!$conn);
 		
@@ -120,7 +115,8 @@ foreach my $eshop (@eshops) {
 					$year+1900,$mon+1,$mday,$hour,$min);
 	print LOG "$now\t$name\t$from\t$to\t".$found{$name}."\n";
 	close(LOG);
-}		
+#	system("rm -rf $TMP_DIR");
+}
 
 # aktualizuje zoznam koncoviek 
 sub add_params_types{

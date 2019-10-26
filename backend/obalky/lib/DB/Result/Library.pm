@@ -222,6 +222,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 library_settings_doporucs
+
+Type: has_many
+
+Related object: L<DB::Result::LibrarySettingsDoporuc>
+
+=cut
+
+__PACKAGE__->has_many(
+  "library_settings_doporucs",
+  "DB::Result::LibrarySettingsDoporuc",
+  { "foreign.library" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 library_settings_pushes
 
 Type: has_many
@@ -313,8 +328,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07039 @ 2017-01-02 14:46:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4kZr2yJphjwOyHnElW88xQ
+# Created by DBIx::Class::Schema::Loader v0.07049 @ 2018-12-31 14:46:34
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9ZWq/HhNrA9PBt9OVbOnlw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

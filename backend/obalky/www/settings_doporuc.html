@@ -1,0 +1,69 @@
+[% PROCESS _header_tovarna %]
+[% PROCESS _header_blue %]
+[% PROCESS _header_main %]
+
+[% PROCESS _errors %]
+
+[% IF signed %]
+
+[% PROCESS _header_admin_submenu %]
+
+<p />
+
+[% IF library %]
+	<p>
+	Pod Vašim účtem spravujete knihovnu <strong>[%library.code%]</strong>
+	</p>
+	<br />
+
+	[% IF library.flag_active == 0 %]
+		<h2>Váše knihovna zatím není aktivní.</h2>
+		<br />
+		<h3>
+			Prosím vyčkejte na aktivaci správcem systému.<br />
+			O aktivaci budete informováni prostřednictvím emailu.
+		</h3>
+	[% ELSE %]
+		<p style="padding:10px" />
+		<form action="/settings_doporuc?[% IF !settings %]new=1[% ELSE %]e=[%settings.id%][% END %][% IF params.i %]&i=[% params.i %][% END %]" method="post" id="[% IF !settings %]new[% ELSE %]edit[%settings.id%][% END %]-settings">
+		<fieldset>
+			<legend>Nastavení sběru dat transakcí</legend>
+			<p>
+				Pro sběr dat transakcí čtenářů, pro účel doporučování literatury na základě výpůjček čtenářů, je potřebné nastavit adresu OAI setu.<br/>
+				<a target="_blank" href="https://github.com/cbvk/obalkyknih/wiki/Doporu%C4%8Dov%C3%A1n%C3%AD-literatury#Registrace_sbru_dat_pro_ely_doporuen_na_zklad_vpjek_tene">Format dat OAI PMH s prikladem odpovedi.</a>
+			</p>
+			<p>
+				<label for="settings_url">URL:</label>
+				<input type="text" name="url_oai_trans" value="[% settings.url_oai_trans %]" id="settings_url" placeholder="https://" />
+			</p>
+			<p>
+				<input type="checkbox" name="is_enabled" id="is_enabled" [% IF settings.is_enabled %]checked="checked" [% END %]/>
+				<label for="is_enabled" class="label-wide">Sběr dat transakcí povolen</label>
+			</p>
+			<p>
+				<input type="submit" name="[% IF !settings %]new[% ELSE %]edit[% END %]-settings" value="  Uložit nastavení  " id="settings-submit" />
+				[% IF settings %]
+					<input type="submit" name="delete-settings" value="  Smazat oprávnění  " id="settings-delete" formaction="/settings_doporuc?d=[%settings.id%][% IF params.i %]&i=[% params.i %][% END %]"/>
+				[% END %]
+			</p>
+		</fieldset>
+		</form>
+		
+	[% END %]
+	
+[% ELSE %]
+<p>
+Pod Vašim účtem nespravujete žádnou knihovnu
+</p>
+[% END %]
+	
+<p style="padding: 20px" />
+	
+[% ELSE %]
+
+[% PROCESS _form_signin %]
+
+[% END %]
+
+[% PROCESS _footer_tovarna %]
+
