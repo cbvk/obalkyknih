@@ -24,8 +24,8 @@ our $PREVIEW510_DIR = "/opt/store/fileblob_preview510";
 our $TOC_DIR = "/opt/toc_export";
 our $BIB_DIR = "/opt/bib_export";
 
-our $RECAPTCHA_SECRET = '6LdFDxgTAAAAAIBauakFDUUq7hI5qbGiWACci-YU';
-our $RECAPTCHA_SITEKEY = '6LdFDxgTAAAAAHQKFJBlrT351_ALAeQbq62dQLj6';
+our $RECAPTCHA_SECRET = '';
+our $RECAPTCHA_SITEKEY = '';
 
 our $ICON_WIDTH = 54;
 our $ICON_HEIGHT = 68;
