@@ -1,0 +1,4 @@
+#!/bin/bash
+cd /home/obalky/okczd/
+source venv/bin/activate
+python server.py --port=8082
