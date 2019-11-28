@@ -3,6 +3,12 @@ import os
 import redis
 from pymongo import MongoClient
 
+################################################################################
+#
+#   Nacita mapovanie zo suboru rules.tx a ulozi ich do Mongo
+#
+################################################################################
+
 
 def save_rules_mongo():
     rules = {}
@@ -24,6 +30,12 @@ def save_rules_mongo():
     db = client["okczd"]
     dbMap = db["map"]
     dbMap.insert_one(rules)
+
+################################################################################
+#
+#   Nacita mapovanie zo suboru rules.tx a ulozi ich do Redis
+#
+################################################################################
 
 
 def save_rules_redis():
