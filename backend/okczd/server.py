@@ -8,7 +8,7 @@ from aiohttp import web
 
 from settings import priority
 from views import index
-from worker import recommederWorker
+from worker import recommederWorker, recommederKonsWorker
 
 ################################################################################
 #   INICIALIZACIA
@@ -20,7 +20,7 @@ db = client["okczd"]
 dbMarc = db["marc"]
 
 # redis
-r = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+r = redis.StrictRedis(host='localhost', port=6380, db=0, decode_responses=True)
 
 # podporne funkcie
 def toEan (str):
@@ -79,7 +79,7 @@ async def handleApiBook(request):
         dtStart = datetime.datetime.now()
 
     # pozadovane identifikatory
-    ean13 = nbn = oclc = user = sigla = None
+    ean13 = nbn = oclc = user = sigla = kons = None
     if 'nbn' in query:
         nbn = query['nbn']
     if 'isbn' in query:
@@ -90,6 +90,8 @@ async def handleApiBook(request):
         user = query['user']
     if 'sigla' in query:
         sigla = query['sigla']
+    if 'kons' in query:
+        kons = query['kons']
     if 'multi' in query:
         multi = json.loads(query['multi'])
         if 'nbn' in multi: nbn = multi['nbn']
@@ -97,9 +99,10 @@ async def handleApiBook(request):
         if 'oclc' in multi: oclc = multi['oclc']
         if 'user' in multi: user = multi['user']
         if 'sigla' in multi: sigla = multi['sigla']
+        if 'kons' in multi: kons = multi['kons']
 
     # err:400 neni identifikator
-    if not ean13 and not nbn and not oclc and not user:
+    if not ean13 and not nbn and not oclc and not user and not kons:
         raise web.HTTPBadRequest(text='Book identifier is required')
 
     ############################################################################
@@ -149,7 +152,7 @@ async def handleApiBook(request):
     # ODPORUC PODLA HISTORIE VYPOZICIEK
     ############################################################################
 
-    elif user and sigla:
+    elif user and sigla and not kons:
         user = sigla.upper() + '|' + user
         print(user)
         # hladanie zaznamov knihy poslednych vypoziciek
@@ -166,6 +169,8 @@ async def handleApiBook(request):
             return web.Response(text='[]')
 
         for bookT001 in listUserBooks:
+            # TODO ma to takto byt, lebo podla mna sa zakazdym prepise posledny recommendations a teda na konci
+            #  zostane len odporucanie podla poslednej knihy v listUserBooks - Hagara
             print('book: '+bookT001)
             recommendations = recommederWorker(dbMarc, r, rec, debug, bookT001)
             books = recommendations['books']
@@ -174,6 +179,28 @@ async def handleApiBook(request):
             bookMarcType = recommendations['bookMarcType']
             print('booksSorted: '+str(len(booksSorted)))
 
+    ############################################################################
+    # ODPORUC PODLA PREDMETOVEHO VYHLADAVANIA
+    ############################################################################
+
+    elif kons:
+        print(kons)
+        listUserBooks = []
+        if user:
+            user = sigla.upper() + '|' + user
+            print(user)
+            # hladanie zaznamov knihy poslednych vypoziciek
+            resUserBooks = r.hget('user:book', user)
+            if not resUserBooks:
+                if debug: print('DEBUG > http:200 uzivatel neexistuje')
+                return web.Response(text='[]')
+
+            listUserBooks = resUserBooks.split('#')
+
+        recommendations = recommederKonsWorker(dbMarc, r, rec, debug, kons, listUserBooks)
+        books = recommendations['books']
+        booksSorted = recommendations['booksSorted']
+        print('booksSorted: ' + str(len(booksSorted)))
 
     ############################################################################
     # PREKLOPIT NAJDENE KNIHY NA VYSTUP
@@ -183,6 +210,82 @@ async def handleApiBook(request):
     booksOut = []
     usedAllready = {}
     booksLQ = [] # zoznam knih, ktore nebudu mat zhodu klucovych slov (sluzi pre pozdejsie doplnenie do prilis kratkeho vysledneho zoznamu)
+
+    if kons:
+        for bookTmp in booksSorted:
+            j += 1
+            if j > 500: break  # ochrana pred dlhou odozvou
+            book = bookTmp[0]
+            if book[0] == 'z': continue  # vyrad zrusene zaznamy
+
+            bookOutMarc = dbMarc.find_one({'fields.001': book})
+            haveAnyId = 0
+
+            # ISBN
+            t020X = [x for x in bookOutMarc['fields'] if '020' in x]
+            if t020X:
+                sub = t020X[0]['020']['subfields']
+                t020aX = [x for x in sub if 'a' in x]
+                if t020aX:
+                    val = t020aX[0]['a']
+                    if val not in usedAllready and ean13 != toEan(val):
+                        books[book]['isbn'] = val
+                        usedAllready[val] = 1
+                        haveAnyId = 1
+
+            # NBN
+            t015X = [x for x in bookOutMarc['fields'] if '015' in x]
+            if t015X:
+                sub = t015X[0]['015']['subfields']
+                t015aX = [x for x in sub if 'a' in x]
+                if t015aX:
+                    val = t015aX[0]['a']
+                    if val not in usedAllready and nbn != val:
+                        books[book]['nbn'] = val
+                        usedAllready[val] = 1
+                        haveAnyId = 1
+
+            # OCLC
+            t035X = [x for x in bookOutMarc['fields'] if '035' in x]
+            if t035X:
+                sub = t035X[0]['035']['subfields']
+                t035aX = [x for x in sub if 'a' in x]
+                if t035aX:
+                    val = t035aX[0]['a']
+                    if val not in usedAllready and oclc != cleanOclc(val):
+                        books[book]['oclc'] = val
+                        usedAllready[val] = 1
+                        haveAnyId = 1
+
+            # bereme iba dokumenty s identifikatorom
+            if not haveAnyId: continue
+
+            # Titul
+            t245X = [x for x in bookOutMarc['fields'] if '245' in x]
+            if t245X:
+                sub = t245X[0]['245']['subfields']
+                t245aX = [x for x in sub if 'a' in x]
+                if t245aX:
+                    books[book]['title'] = t245aX[0]['a']
+                t245bX = [x for x in sub if 'b' in x]
+                if t245bX:
+                    books[book]['title'] += ' ' + t245bX[0]['b']
+                t245cX = [x for x in sub if 'c' in x]
+                if t245cX:
+                    books[book]['title'] += ' ' + t245cX[0]['c']
+
+            booksOut.append(books[book])
+            if i > 50: break
+            i += 1
+
+        if debug:
+            dtFinish = datetime.datetime.now()
+            diff = dtFinish - dtStart
+            rec['log'].append(str(diff.microseconds / 1000) + 'ms [ DONE ]')
+            booksOut.append(rec['log'])
+
+        return web.Response(content_type='application/json', text=json.dumps(booksOut))
+
     for bookTmp in booksSorted:
         j += 1
         if j>500: break # ochrana pred dlhou odozvou
