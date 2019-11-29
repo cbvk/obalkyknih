@@ -1,6 +1,7 @@
 import datetime, math
 from collections import OrderedDict
 
+import redis
 from aiohttp import web
 from settings import priority
 
@@ -462,7 +463,6 @@ def recommederWorker(dbMarc, r, rec, debug, bookT001):
 
 
 def recommederKonsWorker(dbMarc, r, rec, debug, kons, excludeBooks):
-
     groups = []
     # vytvorenie zoznamu skupin konspektu
     for mdt in kons:
@@ -480,6 +480,8 @@ def recommederKonsWorker(dbMarc, r, rec, debug, kons, excludeBooks):
     T001x = []
     for group in groups:
         resBooks = r.hget('auth:072:group', group)
+        if resBooks is None:
+            continue
         T001x.extend(resBooks.split('#'))
 
     # odstranenie duplicit
@@ -495,15 +497,19 @@ def recommederKonsWorker(dbMarc, r, rec, debug, kons, excludeBooks):
     popularity = {}
     for T001 in T001x:
         pop = r.hget('book:pop', T001)
-        popularity[T001] = int(pop)
+        if pop is None:
+            popularity[T001] = 0
+        else:
+            popularity[T001] = int(pop)
 
     booksSorted = sorted(popularity.items(), key=lambda kv: kv[1], reverse=True)
 
     books = {}
 
-    for book in booksSorted:
-        books[book] = { 't001': book, 'score': booksSorted[book], 'log': [] }
-        if debug: books[book]['log'].append('+' + str(booksSorted[book]))
+    for bookTmp in booksSorted:
+        book = bookTmp[0]
+        books[book] = {'t001': book, 'score': bookTmp[1], 'log': [] }
+        if debug: books[book]['log'].append('+' + str(bookTmp[1]))
     return {'booksSorted': booksSorted, 'books': books}
 
 ############################################################################

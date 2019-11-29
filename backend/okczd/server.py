@@ -274,9 +274,16 @@ async def handleApiBook(request):
                 if t245cX:
                     books[book]['title'] += ' ' + t245cX[0]['c']
 
+            books[book]['id'] = str(bookOutMarc['_id'])
+            if not debug:
+                del books[book]['log']
+                del books[book]['score']
+                del books[book]['t001']
+
             booksOut.append(books[book])
-            if i > 50: break
             i += 1
+            if i >= 50: break
+
 
         if debug:
             dtFinish = datetime.datetime.now()
