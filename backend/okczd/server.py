@@ -169,8 +169,6 @@ async def handleApiBook(request):
             return web.Response(text='[]')
 
         for bookT001 in listUserBooks:
-            # TODO ma to takto byt, lebo podla mna sa zakazdym prepise posledny recommendations a teda na konci
-            #  zostane len odporucanie podla poslednej knihy v listUserBooks - Hagara
             print('book: '+bookT001)
             recommendations = recommederWorker(dbMarc, r, rec, debug, bookT001)
             books = recommendations['books']
