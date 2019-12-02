@@ -197,7 +197,7 @@ async def handleApiBook(request):
 
             listUserBooks = resUserBooks.split('#')
 
-        recommendations = recommederKonsWorker(dbMarc, r, rec, debug, kons, listUserBooks)
+        recommendations = recommederKonsWorker(r, debug, kons, listUserBooks)
         books = recommendations['books']
         booksSorted = recommendations['booksSorted']
         print('booksSorted: ' + str(len(booksSorted)))

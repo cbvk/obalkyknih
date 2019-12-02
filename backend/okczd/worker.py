@@ -462,7 +462,7 @@ def recommederWorker(dbMarc, r, rec, debug, bookT001):
     return { 'booksSorted': booksSorted, 'books': books, 'bookKeywords': bookKeywords, 'bookMarcType': bookMarcType }
 
 
-def recommederKonsWorker(dbMarc, r, rec, debug, kons, excludeBooks):
+def recommederKonsWorker(r, debug, kons, excludeBooks):
     groups = []
     # vytvorenie zoznamu skupin konspektu
     for mdt in kons:
