@@ -5,7 +5,9 @@ from pymongo import MongoClient
 
 ################################################################################
 #
-#   Nacita mapovanie zo suboru rules.tx a ulozi ich do Mongo
+#   Nacita mapovanie zo suboru rules.txt a ulozi ich do Mongo alebo do Redis
+#   Aktualne sa pouziva iba ulozenie mapovania do Redisu
+#   Pri zmene Konspektu treba rules.txt updatovat
 #
 ################################################################################
 
@@ -30,12 +32,6 @@ def save_rules_mongo():
     db = client["okczd"]
     dbMap = db["map"]
     dbMap.insert_one(rules)
-
-################################################################################
-#
-#   Nacita mapovanie zo suboru rules.tx a ulozi ich do Redis
-#
-################################################################################
 
 
 def save_rules_redis():
