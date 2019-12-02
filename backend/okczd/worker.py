@@ -1,4 +1,8 @@
 import datetime, math
+from collections import OrderedDict
+
+import redis
+from aiohttp import web
 from settings import priority
 
 
@@ -458,6 +462,55 @@ def recommederWorker(dbMarc, r, rec, debug, bookT001):
     return { 'booksSorted': booksSorted, 'books': books, 'bookKeywords': bookKeywords, 'bookMarcType': bookMarcType }
 
 
+def recommederKonsWorker(r, debug, kons, excludeBooks):
+    groups = []
+    # vytvorenie zoznamu skupin konspektu
+    for mdt in kons:
+        if mdt.startswith('k'):
+            mapped = r.hget('kons:map', mdt)
+            mapped = mapped.split('#')
+            groups.extend(mapped)
+        else:
+            groups.append(mdt)
+
+    # odstranenie duplicit
+    groups = set(groups)
+    groups = list(groups)
+
+    T001x = []
+    for group in groups:
+        resBooks = r.hget('auth:072:group', group)
+        if resBooks is None:
+            continue
+        T001x.extend(resBooks.split('#'))
+
+    # odstranenie duplicit
+    T001x = set(T001x)
+    T001x = list(T001x)
+
+    # odfiltrovanie knih ktore citatel uz cital
+    for book in excludeBooks:
+        if book in T001x:
+            T001x.remove(book)
+
+    # urcenie popularity knihy
+    popularity = {}
+    for T001 in T001x:
+        pop = r.hget('book:pop', T001)
+        if pop is None:
+            popularity[T001] = 0
+        else:
+            popularity[T001] = int(pop)
+
+    booksSorted = sorted(popularity.items(), key=lambda kv: kv[1], reverse=True)
+
+    books = {}
+
+    for bookTmp in booksSorted:
+        book = bookTmp[0]
+        books[book] = {'t001': book, 'score': bookTmp[1], 'log': [] }
+        if debug: books[book]['log'].append('+' + str(bookTmp[1]))
+    return {'booksSorted': booksSorted, 'books': books}
 
 ############################################################################
 # POMOCNE FUNKCIE

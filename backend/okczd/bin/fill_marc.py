@@ -1,3 +1,4 @@
+import logging
 import sys, json, math, colorama, redis, re
 
 from pprint import pprint
@@ -100,6 +101,13 @@ jobList = [
         'tag': '651',
         'subtags': [
             { 'subtag': '7', 'key': 'auth:651:code' }
+        ]
+    },
+    {
+        'name': 'TAG 072',
+        'tag': '072',
+        'subtags': [
+            {'subtag': 'a', 'key': 'auth:072:group'}
         ]
     }
 ]

@@ -1,0 +1,620 @@
+200    $$ak1$$b1$$c1 Antropologie, etnografie
+200    $$a304$$b2$$c304 Kulturní politika
+200    $$a316.7$$b2$$c316.7 Sociologie kultury. Kulturní život
+200    $$a39$$b2$$c39 Kulturní antropologie. Etnologie. Etnografie
+200    $$a391$$b2$$c391 Oděv, móda, ozdoby
+200    $$a392$$b2$$c392 Zvyky, mravy, obyčeje v soukromém životě
+200    $$a393$$b2$$c393 Smrt. Pohřby. Obyčeje při úmrtí
+200    $$a394$$b2$$c394 Veřejný a společenský život. Každodenní život
+200    $$a395$$b2$$c395 Společenské chování. Etiketa
+200    $$a398$$b2$$c398 Folklor. Lidové tradice
+200    $$a572$$b2$$c572 Fyzická antropologie
+200    $$a599.89$$b2$$c599.89 Hominidae. Hominidi - lidé
+200    $$ak2$$b1$$c2 Biologické vědy
+200    $$a502$$b2$$c502 Životní prostředí a jeho ochrana
+200    $$a504$$b2$$c504 Znečištění a poškození životního prostředí
+200    $$a57$$b2$$c57 Obecná biologie
+200    $$a57/59$$b2$$c57/59 Biologické vědy
+200    $$a574$$b2$$c574 Obecná ekologie
+200    $$a575$$b2$$c575 Obecná genetika. Obecná cytogenetika. Evoluce
+200    $$a576$$b2$$c576 Buněčná biologie. Cytologie
+200    $$a577$$b2$$c577 Biochemie. Molekulární biologie. Biofyzika
+200    $$a578$$b2$$c578 Virologie
+200    $$a579$$b2$$c579 Mikrobiologie
+200    $$a58$$b2$$c58 Botanika
+200    $$a581$$b2$$c581 Obecná botanika
+200    $$a59$$b2$$c59 Zoologie
+200    $$a591$$b2$$c591 Obecná zoologie
+200    $$a60$$b2$$c60 Biotechnologie. Genetické inženýrství
+200    $$ak3$$b1$$c3 Divadlo, film, tanec
+200    $$a791$$b2$$c791 Film. Cirkus. Lidová zábava
+200    $$a791/793$$b2$$c791/793 Divadlo, film, tanec (obecně)
+200    $$a792$$b2$$c792 Divadlo. Divadelní představení
+200    $$a793.3$$b2$$c793.3 Pohybové umění. Tanec
+200    $$a793.8$$b2$$c793.8 Zábavná magie
+200    $$ak4$$b1$$c4 Ekonomické vědy, obchod
+200    $$a003.05$$b2$$c003.05 Psaní a stenografie
+200    $$a005$$b2$$c005 Management. Řízení
+200    $$a005.91/.92$$b2$$c005.91/.92 Vedení úřadu (kanceláře). Spisová služba
+200    $$a005.91:82-6$$b2$$c005.91:82-6 Úřední korespondence
+200    $$a311$$b2$$c311 Statistika
+200    $$a33$$b2$$c33 Ekonomie
+200    $$a330.5+338$$b2$$c330.5+338 Národní hospodářství a hospodářská politika
+200    $$a330.8$$b2$$c330.8 Ekonomické teorie, doktríny, směry
+200    $$a331$$b2$$c331 Práce
+200    $$a332$$b2$$c332 Regionální ekonomie, regionální ekonomika
+200    $$a334$$b2$$c334 Formy organizace a spolupráce v ekonomice
+200    $$a336.1/.5$$b2$$c336.1/.5 Veřejné finance
+200    $$a336.7$$b2$$c336.7 Finance
+200    $$a338.3/.4$$b2$$c338.3/.4 Hospodářská a výrobní odvětví
+200    $$a339$$b2$$c339 Obchod
+200    $$a339.3$$b2$$c339.3 Vnitřní obchod
+200    $$a339.5$$b2$$c339.5 Zahraniční obchod. Mezinárodní obchod
+200    $$a339.7/.9$$b2$$c339.7/.9 Světová ekonomika a mezinárodní finance
+200    $$a368$$b2$$c368 Pojišťovnictví
+200    $$a654$$b2$$c654 Telekomunikace a dálkové řízení
+200    $$a656$$b2$$c656 Doprava
+200    $$a656.1/.5$$b2$$c656.1/.5 Pozemní doprava
+200    $$a656.2$$b2$$c656.2 Železniční doprava
+200    $$a656.6/.7$$b2$$c656.6/.7 Vodní a letecká doprava
+200    $$a656.62$$b2$$c656.62 Říční doprava
+200    $$a656.8$$b2$$c656.8 Poštovní služby a správa
+200    $$a657$$b2$$c657 Účetnictví
+200    $$a658$$b2$$c658 Řízení a správa podniku
+200    $$a659$$b2$$c659 Reklama. Public relations. Média
+200    $$ak5$$b1$$c5 Filozofie a náboženství
+200    $$a101$$b2$$c101 Filozofie
+200    $$a11$$b2$$c11 Metafyzika
+200    $$a122/129$$b2$$c122/129 Speciální metafyzika
+200    $$a13$$b2$$c13 Filozofie ducha
+200    $$a14$$b2$$c14 Filozofické systémy a hlediska
+200    $$a14(100)"04/14"$$b2$$c14(100)"04/14" Středověká filozofie
+200    $$a14(100-11)$$b2$$c14(100-11) Orientální filozofie
+200    $$a14(100-15)"15/20"$$b2$$c14(100-15)"15/20" Moderní západní filozofie
+200    $$a14(3)$$b2$$c14(3) Antická, starověká filozofie
+200    $$a16$$b2$$c16 Logika
+200    $$a165$$b2$$c165 Teorie poznání. Epistemologie
+200    $$a17$$b2$$c17 Etika. Morální filozofie
+200    $$a2$$b2$$c2 Náboženství
+200    $$a2-1$$b2$$c2-1 Přirozená teologie. Náboženská filozofie
+200    $$a2-23/-27$$b2$$c2-23/-27 Bible. Biblistika
+200    $$a2-74$$b2$$c2-74 Náboženské právo. Církevní právo
+200    $$a21$$b2$$c21 Prehistorická a primitivní náboženství
+200    $$a22/24$$b2$$c22/24 Náboženství Dálného východu. Indická náboženství. Hinduismus. Buddhismus
+200    $$a25$$b2$$c25 Náboženství, mytologie, kulty
+200    $$a26$$b2$$c26 Judaismus
+200    $$a27$$b2$$c27 Křesťanství. Křesťanská církev všeobecně. Eklesiologie
+200    $$a27-1/-2$$b2$$c27-1/-2 Křesťanská teologie. Dogmatická teologie
+200    $$a27-4$$b2$$c27-4 Praktická teologie. Morální teologie
+200    $$a27-46/-48$$b2$$c27-46/-48 Pastorální teologie
+200    $$a27-5$$b2$$c27-5 Liturgie. Křesťanské umění a symbolika. Duchovní život
+200    $$a27-78$$b2$$c27-78 Křesťanská sdružení, spolky a organizace. Řeholní řády
+200    $$a27-9$$b2$$c27-9 Dějiny křesťanské církve
+200    $$a271/279$$b2$$c271/279 Křesťanské církve, sekty, denominace
+200    $$a28$$b2$$c28 Islám
+200    $$a29$$b2$$c29 Moderní duchovní hnutí
+200    $$ak6$$b1$$c6 Fyzika a příbuzné vědy
+200    $$a006$$b$$c006 Metrologie. Standardizace
+200    $$a006.95$$b$$c006.95 Chronologie
+200    $$a5$$b$$c5 Přírodní vědy. Matematické vědy
+200    $$a52$$b$$c52 Astronomie
+200    $$a520$$b$$c520 Astronomické přístroje a metody
+200    $$a521$$b$$c521 Teoretická astronomie. Nebeská mechanika
+200    $$a523.3$$b$$c523.3 Země
+200    $$a523/524$$b$$c523/524 Sluneční soustava. Hvězdy. Vesmír
+200    $$a53$$b$$c53 Fyzika
+200    $$a531$$b$$c531 Obecná mechanika. Mechanika pevných a tuhých těles
+200    $$a532$$b$$c532 Mechanika tekutin obecně. Mechanika kapalin
+200    $$a533$$b$$c533 Mechanika plynů. Aeromechanika. Fyzika plazmatu
+200    $$a534$$b$$c534 Mechanické kmity. Akustika
+200    $$a535$$b$$c535 Optika
+200    $$a536$$b$$c536 Teplo. Termodynamika
+200    $$a537$$b$$c537 Elektřina
+200    $$a537.6/.8$$b$$c537.6/.8 Magnetismus. Elektromagnetismus
+200    $$a539$$b$$c539 Fyzikální stavba hmoty. Jaderná fyzika. Molekulární fyzika
+200    $$ak7$$b1$$c7 Geografie. Geologie. Vědy o Zemi
+200    $$a528$$b2$$c528 Geodezie. Kartografie
+200    $$a549$$b2$$c549 Mineralogie
+200    $$a55$$b2$$c55 Vědy o Zemi. Geologické vědy
+200    $$a550$$b2$$c550 Geofyzika. Geochemie. Geobiologie. Užitá geologie
+200    $$a551$$b2$$c551 Geologie. Meteorologie. Klimatologie
+200    $$a552$$b2$$c552 Petrologie
+200    $$a553$$b2$$c553 Ložisková geologie
+200    $$a556$$b2$$c556 Hydrologie
+200    $$a56$$b2$$c56 Paleontologie
+200    $$a91$$b2$$c91 Geografie jako věda. Výzkum. Cestování
+200    $$a911$$b2$$c911 Obecná geografie. Systematická geografie
+200    $$a912$$b2$$c912 Mapy. Atlasy. Glóby
+200    $$a912:904$$b2$$c912:904 Staré mapy
+200    $$a912:51$$b2$$c912:51 Matematická geografie
+200    $$a913$$b2$$c913 Regionální geografie
+200    $$a913(3)$$b2$$c913(3) Geografie starověkého světa
+200    $$a913(4)$$b2$$c913(4) Geografie Evropy, reálie, cestování
+200    $$a913(437)$$b2$$c913(437) Geografie Česka a Slovenska, reálie, cestování
+200    $$a913(5)$$b2$$c913(5) Geografie Asie, reálie, cestování
+200    $$a913(6)$$b2$$c913(6) Geografie Afriky, reálie, cestování
+200    $$a913(7)$$b2$$c913(7) Geografie Severní Ameriky, reálie, cestování
+200    $$a913(8)$$b2$$c913(8) Geografie Jižní Ameriky, reálie, cestování
+200    $$a913(9)$$b2$$c913(9) Geografie Oceánie, polárních oblastí, Austrálie, atd.
+200    $$a913:94$$b2$$c913:94 Historická geografie
+200    $$ak8$$b1$$c8 Historie a pomocné historické vědy. Biografické studie
+200    $$a9$$b2$$c9 Geografie. Biografické studie. Dějiny
+200    $$a902$$b2$$c902 Archeologie
+200    $$a903$$b2$$c903 Pravěk
+200    $$a904$$b2$$c904 Kulturní památky historického období obecně
+200    $$a908$$b2$$c908 Studium oblastí a lokalit obecně
+200    $$a908(437)$$b2$$c908(437) Vlastivěda Česka a Slovenska
+200    $$a929$$b2$$c929 Biografie
+200    $$a929.5/.9$$b2$$c929.5/.9 Genealogie. Heraldika. Šlechta. Vlajky
+200    $$a93/94$$b2$$c93/94 Dějiny (obecně)
+200    $$a930$$b2$$c930 Historická věda. Pomocné vědy historické. Archivnictví
+200    $$a930.85$$b2$$c930.85 Dějiny civilizace. Kulturní dějiny
+200    $$a94(100)$$b2$$c94(100) Světové dějiny
+200    $$a94(100)"04/..."$$b2$$c94(100)"04/..." Dějiny středověku a novověku (obecně)
+200    $$a94(3)$$b2$$c94(3) Dějiny zemí starověkého světa
+200    $$a94(4)$$b2$$c94(4) Dějiny Evropy
+200    $$a94(41)$$b2$$c94(41) Dějiny britských ostrovů
+200    $$a94(420/429)$$b2$$c94(420/429) Dějiny Anglie a Walesu
+200    $$a94(430/439)$$b2$$c94(430/439) Dějiny zemí střední Evropy
+200    $$a94(437)$$b2$$c94(437) Dějiny Česka a Slovenska
+200    $$a94(44/449.49)$$b2$$c94(44/449.49) Dějiny Francie a Monaka
+200    $$a94(450/458.2)$$b2$$c94(450/458.2) Dějiny Itálie a italských ostrovů, San Marina, Vatikánu a Malty
+200    $$a94(46)$$b2$$c94(46) Dějiny států a území na Pyrenejském poloostrově
+200    $$a94(47)$$b2$$c94(47) Dějiny zemí východní Evropy
+200    $$a94(48)$$b2$$c94(48) Dějiny skandinávských zemí
+200    $$a94(491.1/494.9)$$b2$$c94(491.1/494.9) Dějiny ostatních evropských států
+200    $$a94(495/498)$$b2$$c94(495/498) Dějiny států a území na Balkánském poloostrově
+200    $$a94(5)$$b2$$c94(5) Dějiny Asie. Orient
+200    $$a94(510/519)$$b2$$c94(510/519) Dějiny Číny, Mongolska a Koreje
+200    $$a94(520)$$b2$$c94(520) Dějiny Japonska
+200    $$a94(53)$$b2$$c94(53) Dějiny států a území na Arabském poloostrově
+200    $$a94(54)$$b2$$c94(54) Dějiny států indického subkontinentu
+200    $$a94(55)$$b2$$c94(55) Dějiny Íránu
+200    $$a94(560/569.5)$$b2$$c94(560/569.5) Dějiny států západní Asie. Blízký východ
+200    $$a94(574/575.4)$$b2$$c94(574/575.4) Dějiny států Střední Asie
+200    $$a94(581)$$b2$$c94(581) Dějiny Afghánistánu
+200    $$a94(59)$$b2$$c94(59) Dějiny států jihovýchodní Asie
+200    $$a94(6)$$b2$$c94(6) Dějiny Afriky
+200    $$a94(61)$$b2$$c94(61) Dějiny Tunisu a Libye
+200    $$a94(62)$$b2$$c94(62) Dějiny Egypta a Súdánu
+200    $$a94(63)$$b2$$c94(63) Dějiny Etiopie a Eritreje
+200    $$a94(64)$$b2$$c94(64) Dějiny států a území severozápadní Afriky a přilehlých ostrovů
+200    $$a94(65)$$b2$$c94(65) Dějiny Alžírska
+200    $$a94(66/67)$$b2$$c94(66/67) Dějiny Afriky na jih od Sahary a států/území západní Afriky a přilehlých ostrovů
+200    $$a94(671/679)$$b2$$c94(671/679) Dějiny států a území střední Afriky a přilehlých ostrovů. Rovníková Afrika
+200    $$a94(680/689.7)$$b2$$c94(680/689.7) Dějiny států a území jižní Afriky
+200    $$a94(69)$$b2$$c94(69) Dějiny afrických ostrovů v Indickém a jižním Atlantském oceánu
+200    $$a94(7)$$b2$$c94(7) Dějiny Severní a Střední Ameriky
+200    $$a94(71)$$b2$$c94(71) Dějiny Kanady
+200    $$a94(72)$$b2$$c94(72) Dějiny Střední Ameriky a Karibské oblasti
+200    $$a94(73)$$b2$$c94(73) Dějiny Spojených států amerických
+200    $$a94(734)$$b2$$c94(734) Dějiny severovýchodních států USA
+200    $$a94(735)$$b2$$c94(735) Dějiny jihovýchodních států USA
+200    $$a94(736)$$b2$$c94(736) Dějiny států jižní části středních USA
+200    $$a94(737)$$b2$$c94(737) Dějiny států severní části středních USA
+200    $$a94(738)$$b2$$c94(738) Dějiny západních států USA
+200    $$a94(739)$$b2$$c94(739) Dějiny států na tichomořském pobřeží USA
+200    $$a94(8)$$b2$$c94(8) Dějiny Jižní Ameriky. Latinská Amerika
+200    $$a94(81)$$b2$$c94(81) Dějiny Brazílie
+200    $$a94(82)$$b2$$c94(82) Dějiny Argentiny
+200    $$a94(83)$$b2$$c94(83) Dějiny Chile
+200    $$a94(84)$$b2$$c94(84) Dějiny Bolívie
+200    $$a94(85)$$b2$$c94(85) Dějiny Peru
+200    $$a94(861/866)$$b2$$c94(861/866) Dějiny Kolumbie a Ekvádoru
+200    $$a94(87)$$b2$$c94(87) Dějiny Venezuely
+200    $$a94(88)$$b2$$c94(88) Dějiny Guayany a Surinamu
+200    $$a94(892/899)$$b2$$c94(892/899) Dějiny Paraguaye a Uruguaye
+200    $$a94(9)$$b2$$c94(9) Dějiny Oceánie, Austrálie, Arktidy a Antarktidy
+200    $$a94(931)$$b2$$c94(931) Dějiny Nového Zélandu
+200    $$a94(932/935)$$b2$$c94(932/935) Dějiny států a oblastí Melanésie
+200    $$a94(94)$$b2$$c94(94) Dějiny Austrálie
+200    $$a94(954)$$b2$$c94(954) Dějiny Papuy-Nové Guiney
+200    $$a94(961/968)$$b2$$c94(961/968) Dějiny států a oblastí Polynésie a Mikronésie
+200    $$a94(97)$$b2$$c94(97) Ostrovy Tichého oceánu
+200    $$a94(98/99)$$b2$$c94(98/99) Dějiny území Arktidy a Antarktidy
+200    $$ak9$$b1$$c9 Hudba
+200    $$a78$$b2$$c78 Hudba
+200    $$a78.01$$b2$$c78.01 Muzikologie. Dějiny hudby
+200    $$a78.011.26$$b2$$c78.011.26 Populární hudba. Populární písně. Populární taneční hudba
+200    $$a78.03$$b2$$c78.03 Hudební styly, vlivy, školy
+200    $$a780.6$$b2$$c780.6 Hudební nástroje a příslušenství
+200    $$a78.07$$b2$$c78.07 Hudebníci, skladatelé a jiná hudební povolání
+200    $$a781$$b2$$c781 Hudební teorie
+200    $$a782$$b2$$c782 Divadelní hudba. Opera, opereta, muzikál
+200    $$a783$$b2$$c783 Církevní hudba. Duchovní hudba. Náboženská hudba
+200    $$a784$$b2$$c784 Vokální hudba
+200    $$a785$$b2$$c785 Instrumentální hudba. Symfonická hudba. Hudba pro více nástrojů
+200    $$a786$$b2$$c786 Hudba pro klávesové nástroje
+200    $$a786/789$$b2$$c786/789 Hudba pro jednotlivé nástroje
+200    $$a787$$b2$$c787 Hudba pro strunné a smyčcové nástroje
+200    $$a788$$b2$$c788 Hudba pro dechové nástroje
+200    $$a789$$b2$$c789 Hudba pro bicí nástroje
+200    $$ak10$$b1$$c10 Chemie. Krystalografie. Mineralogické vědy
+200    $$a54$$b2$$c54 Chemie. Mineralogické vědy
+200    $$a542$$b2$$c542 Praktická laboratorní chemie. Preparativní a experimentální chemie
+200    $$a543$$b2$$c543 Analytická chemie
+200    $$a544$$b2$$c544 Fyzikální chemie
+200    $$a546$$b2$$c546 Anorganická chemie
+200    $$a547$$b2$$c547 Organická chemie
+200    $$a548$$b2$$c548 Krystalografie
+200    $$ak11$$b1$$c11 Jazyk, lingvistika, literární věda
+200    $$a003$$b2$$c003 Systémy psaní a písma. Sémiotika (obecně)
+200    $$a80$$b2$$c80 Filologie
+200    $$a808$$b2$$c808 Literární styl. Literární činnost a technika. Efektivní využívání jazyka. Spisovatelská činnost
+200    $$a81$$b2$$c81 Lingvistika. Jazyky
+200    $$a811.1/.8$$b2$$c811.1/.8 Různé jazyky
+200    $$a811.11$$b2$$c811.11 Germánské jazyky
+200    $$a811.111$$b2$$c811.111 Angličtina
+200    $$a811.111.8$$b2$$c811.111.8 Jazyky pidgin a kreolské jazyky
+200    $$a811.112$$b2$$c811.112 Západogermánské jazyky
+200    $$a811.112.2$$b2$$c811.112.2 Němčina
+200    $$a811.113$$b2$$c811.113 Severogermánské jazyky
+200    $$a811.124$$b2$$c811.124 Latina
+200    $$a811.13$$b2$$c811.13 Románské jazyky
+200    $$a811.131$$b2$$c811.131 Italo-románské jazyky
+200    $$a811.133$$b2$$c811.133 Galsko-románské jazyky
+200    $$a811.133.1$$b2$$c811.133.1 Francouzština
+200    $$a811.134$$b2$$c811.134 Iberorománské jazyky
+200    $$a811.135$$b2$$c811.135 Balkánské románské jazyky
+200    $$a811.14$$b2$$c811.14 Řečtina
+200    $$a811.16$$b2$$c811.16 Slovanské jazyky
+200    $$a811.161$$b2$$c811.161 Východoslovanské jazyky
+200    $$a811.161.1$$b2$$c811.161.1 Ruština
+200    $$a811.162$$b2$$c811.162 Západoslovanské jazyky
+200    $$a811.162.3$$b2$$c811.162.3 Čeština
+200    $$a811.163$$b2$$c811.163 Jihoslovanské jazyky
+200    $$a811.17$$b2$$c811.17 Baltské jazyky
+200    $$a811.18$$b2$$c811.18 Albánština
+200    $$a811.21/.22$$b2$$c811.21/.22 Indoíránské jazyky
+200    $$a811.34$$b2$$c811.34 Vymřelé jazyky neznámé klasifikace
+200    $$a811.35$$b2$$c811.35 Kavkazské jazyky
+200    $$a811.41$$b2$$c811.41 Afroasijské (hamitosemitské) jazyky
+200    $$a811.51$$b2$$c811.51 Uraloaltajské jazyky
+200    $$a811.58$$b2$$c811.58 Čínské jazyky
+200    $$a811.9$$b2$$c811.9 Umělé jazyky
+200    $$a82$$b2$$c82 Literatura. Literární život
+200    $$a82-1/-8$$b2$$c82-1/-8 Literatura různých forem a žánrů (o ní)
+200    $$a82-31/-34$$b2$$c82-31/-34 Milostná, dobrodružná, fantastická próza (o ní)
+200    $$a82-9$$b2$$c82-9 Literární kritika, věcná literatura a různé další žánry
+200    $$a82-93$$b2$$c82-93 Literatura pro děti a mládež (o ní)
+200    $$a82-97$$b2$$c82-97 Náboženská literatura. Duchovní literatura (o ní)
+200    $$a82.0$$b2$$c82.0 Literatura (teorie)
+200    $$a821.09$$b2$$c821.09 Literatura v různých jazycích (o ní)
+200    $$a821.11.09$$b2$$c821.11.09 Germánské literatury (o nich)
+200    $$a821.111(73).09$$b2$$c821.111(73).09 Americká literatura (o ní)
+200    $$a821.111.09$$b2$$c821.111.09 Anglická literatura, anglicky psaná (o ní)
+200    $$a821.112.2.09$$b2$$c821.112.2.09 Německá literatura, německy psaná (o ní)
+200    $$a821.124.09$$b2$$c821.124.09 Latinská literatura, latinsky psaná (o ní)
+200    $$a821.13.09$$b2$$c821.13.09 Románské literatury (o nich)
+200    $$a821.131.1.09$$b2$$c821.131.1.09 Italská literatura (o ní)
+200    $$a821.133.1.09$$b2$$c821.133.1.09 Francouzská literatura, francouzsky psaná (o ní)
+200    $$a821.134.2.09$$b2$$c821.134.2.09 Španělská literatura, španělsky psaná (o ní)
+200    $$a821.134.3.09$$b2$$c821.134.3.09 Portugalská literatura, portugalsky psaná (o ní)
+200    $$a821.14.09$$b2$$c821.14.09 Řecká literatura (středověká, novodobá) (o ní)
+200    $$a821.14'02.09$$b2$$c821.14'02.09 Řecká antická literatura (o ní)
+200    $$a821.16.09$$b2$$c821.16.09 Slovanské literatury (o nich)
+200    $$a821.161.1.09$$b2$$c821.161.1.09 Ruská literatura (o ní)
+200    $$a821.162.1.09$$b2$$c821.162.1.09 Polská literatura (o ní)
+200    $$a821.162.3.09$$b2$$c821.162.3.09 Česká literatura (o ní)
+200    $$a821.162.4.09$$b2$$c821.162.4.09 Slovenská literatura (o ní)
+200    $$a821.163.09$$b2$$c821.163.09 Jihoslovanské literatury (o nich)
+200    $$a821.161.09$$b2$$c821.161.09 Východoslovanské literatury (o nich)
+200    $$a821.162.09$$b2$$c821.162.09 Západoslovanské literatury (o nich)
+200    $$a821.163.1.09$$b2$$c821.163.1.09 Staroslověnská literatura (o ní)
+200    $$a821.17.09$$b2$$c821.17.09 Baltské literatury (o nich)
+200    $$a821.41.09$$b2$$c821.41.09 Afroasijské (hamitosemitské) literatury (o nich)
+200    $$a821.432.09$$b2$$c821.432.09 Nigerokonžské literatury (o nich)
+200    $$a821.51.09$$b2$$c821.51.09 Uraloaltajské literatury (o nich)
+200    $$a821.521.09$$b2$$c821.521.09 Japonská literatura (o ní)
+200    $$a821.531.09$$b2$$c821.531.09 Korejská literatura (o ní)
+200    $$a821.58.09$$b2$$c821.58.09 Sino-tibetské literatury (o nich)
+200    $$a821.62.09$$b2$$c821.62.09 Austronéské literatury (o nich)
+200    $$a821.81/.82.09$$b2$$c821.81/.82.09 Literatury severoamerických Indiánů (o nich)
+200    $$a821.873.09$$b2$$c821.873.09 Literatury andsko-rovníkových jazyků (o nich)
+200    $$a82:03$$b2$$c82:03 Literární slovníky, encyklopedie. Konkordance
+200    $$a82:05$$b2$$c82:05 Literární revue, časopisy
+200    $$a82:06$$b2$$c82:06 Literární organizace, soutěže
+200    $$a82:37$$b2$$c82:37 Literární výchovné programy
+200    $$ak12$$b1$$c12 Knihovnictví, informatika, všeobecné, referenční literatura
+200    $$a00$$b2$$c00 Věda. Všeobecnosti. Základy vědy a kultury. Vědecká práce
+200    $$a01$$b2$$c01 Bibliografie. Katalogy
+200    $$a02$$b2$$c02 Knihovnictví. Informatika
+200    $$a021$$b2$$c021 Funkce, význam a využívání knihoven
+200    $$a022$$b2$$c022 Budovy, areály a zařízení knihoven
+200    $$a023$$b2$$c023 Řízení knihoven
+200    $$a024$$b2$$c024 Služby knihoven
+200    $$a025$$b2$$c025 Organizace knihoven a knihovních fondů
+200    $$a025.3/.4$$b2$$c025.3/.4 Katalogizace. Selekční jazyky
+200    $$a026$$b2$$c026 Odborné/speciální knihovny
+200    $$a026/027$$b2$$c026/027 Knihovny
+200    $$a027$$b2$$c027 Univerzální knihovny. Veřejné knihovny. Soukromé knihovny
+200    $$a028$$b2$$c028 Čtení. Četba
+200    $$a030$$b2$$c030 Všeobecná příručková díla
+200    $$a050$$b2$$c050 Seriálové publikace. Periodika
+200    $$a06$$b2$$c06 Organizace všeobecné povahy
+200    $$a069$$b2$$c069 Muzea. Muzeologie. Muzejnictví. Výstavy
+200    $$a070$$b2$$c070 Noviny. Tisk. Žurnalistika
+200    $$a08$$b2$$c08 Souborná díla
+200    $$a09$$b2$$c09 Rukopisy, prvotisky, staré tisky. Vzácná a pozoruhodná díla
+200    $$a093$$b2$$c093 Prvotisky
+200    $$a094$$b2$$c094 Staré tisky
+200    $$a094.5$$b2$$c094.5 Tisky (19. století)
+200    $$a095/096$$b2$$c095/096 Vzácná díla
+200    $$a316.77$$b2$$c316.77 Informační věda
+200    $$a655$$b2$$c655 Polygrafie. Vydavatelství a knižní obchod
+200    $$ak13$$b1$$c13 Matematika
+200    $$a51$$b2$$c51 Matematika
+200    $$a510$$b2$$c510 Obecné úvahy o matematice
+200    $$a511$$b2$$c511 Teorie čísel
+200    $$a511.1$$b2$$c511.1 Aritmetika
+200    $$a512$$b2$$c512 Algebra
+200    $$a514$$b2$$c514 Geometrie
+200    $$a515.1$$b2$$c515.1 Topologie
+200    $$a517$$b2$$c517 Matematická analýza
+200    $$a519.1/.8$$b2$$c519.1/.8 Kombinatorika. Teorie grafů. Matematická statistika. Operační výzkum. Matematické modelování
+200    $$ak14$$b1$$c14 Lékařství
+200    $$a61$$b2$$c61 Lékařské vědy. Lékařství
+200    $$a611$$b2$$c611 Anatomie člověka a srovnávací anatomie
+200    $$a612$$b2$$c612 Fyziologie člověka a srovnávací fyziologie
+200    $$a613$$b2$$c613 Hygiena. Lidské zdraví
+200    $$a614$$b2$$c614 Veřejné zdraví a hygiena
+200    $$a614.8$$b2$$c614.8 Úrazy a jejich prevence
+200    $$a614.84$$b2$$c614.84 Požáry. Ochrana před požáry
+200    $$a615$$b2$$c615 Farmacie. Farmakologie
+200    $$a615.8$$b2$$c615.8 Fyzioterapie. Psychoterapie. Alternativní lékařství
+200    $$a616$$b2$$c616 Patologie. Klinická medicína
+200    $$a616-053.2$$b2$$c616-053.2 Pediatrie
+200    $$a616-053.9$$b2$$c616-053.9 Geriatrie
+200    $$a616-092$$b2$$c616-092 Experimentální medicína
+200    $$a616.31$$b2$$c616.31 Stomatologie
+200    $$a616.89$$b2$$c616.89 Psychiatrie
+200    $$a617$$b2$$c617 Ortopedie. Chirurgie. Oftalmologie
+200    $$a618$$b2$$c618 Gynekologie. Porodnictví
+200    $$ak15$$b1$$c15 Politické vědy (Politologie, politika, veřejná správa, vojenství)
+200    $$a32$$b2$$c32 Politika
+200    $$a321$$b2$$c321 Politologie
+200    $$a322$$b2$$c322 Politika a náboženství. Vztahy mezi církví a státem
+200    $$a323$$b2$$c323 Vnitropolitický vývoj, politický život
+200    $$a324$$b2$$c324 Volby, volební kampaně, referenda
+200    $$a325$$b2$$c325 Mezinárodní migrace, exil, kolonizace
+200    $$a327$$b2$$c327 Mezinárodní vztahy, světová politika
+200    $$a328$$b2$$c328 Zastupitelské orgány. Vlády. Politické systémy jednotlivých zemí
+200    $$a329$$b2$$c329 Politické strany a hnutí
+200    $$a35$$b2$$c35 Veřejná správa
+200    $$a35.07$$b2$$c35.07 Organizace a řízení veřejné správy
+200    $$a351$$b2$$c351 Úkoly veřejné správy, správní opatření, legislativa
+200    $$a352/354$$b2$$c352/354 Stupně místní, oblastní a ústřední správy
+200    $$a355/359$$b2$$c355/359 Vojenství. Obrana země. Ozbrojené síly
+200    $$a356$$b2$$c356 Vojenská služba. Pěchota
+200    $$a357$$b2$$c357 Motorizované jednotky. Jezdectvo
+200    $$a358$$b2$$c358 Vojenské letectvo. Dělostřelectvo. Ženijní jednotky. Technické služby armády. Chemické vojsko
+200    $$a359$$b2$$c359 Vojenské námořnictvo a loďstvo
+200    $$ak16$$b1$$c16 Právo
+200    $$a34$$b2$$c34 Právo
+200    $$a341$$b2$$c341 Mezinárodní právo
+200    $$a342$$b2$$c342 Ústavní právo. Správní právo
+200    $$a342.53$$b2$$c342.53 Zákonodárství
+200    $$a343$$b2$$c343 Trestní právo
+200    $$a343.9$$b2$$c343.9 Kriminalistika
+200    $$a344$$b2$$c344 Vojenské trestní právo
+200    $$a346$$b2$$c346 Hospodářské právo
+200    $$a347$$b2$$c347 Soukromé právo
+200    $$a347.7$$b2$$c347.7 Obchodní právo. Finanční právo. Právo průmyslového vlastnictví. Patentové právo. Autorské právo
+200    $$a347.9$$b2$$c347.9 Občanské soudní řízení. Soudnictví
+200    $$a349$$b2$$c349 Pracovní, sociální, stavební právo. Právo životního prostředí
+200    $$ak17$$b1$$c17 Psychologie
+200    $$a133$$b2$$c133 Ezoterismus. Okultismus
+200    $$a159.9$$b2$$c159.9 Psychologie
+200    $$a159.92$$b2$$c159.92 Vývojová psychologie. Individuální psychologie
+200    $$a159.929$$b2$$c159.929 Srovnávací psychologie
+200    $$a159.93/.94$$b2$$c159.93/.94 Senzorické a motorické funkce. Emoce. Vůle
+200    $$a159.95$$b2$$c159.95 Vyšší duševní procesy
+200    $$a159.96$$b2$$c159.96 Zvláštní duševní stavy a procesy. Hlubinná psychologie
+200    $$a159.97$$b2$$c159.97 Psychopatologie
+200    $$a159.98$$b2$$c159.98 Aplikovaná psychologie
+200    $$ak18$$b1$$c18 Sociologie
+200    $$a061.2$$b2$$c061.2 Nevládní organizace a kooperace
+200    $$a3$$b2$$c3 Společenské vědy
+200    $$a308$$b2$$c308 Sociografie
+200    $$a314$$b2$$c314 Demografie. Populace
+200    $$a316$$b2$$c316 Sociologie
+200    $$a316.3$$b2$$c316.3 Globální společnosti. Sociální struktura. Sociální skupiny
+200    $$a316.33$$b2$$c316.33 Ekonomická sociologie. Sociologie institucí, lidských sídel a komunit
+200    $$a316.4$$b2$$c316.4 Sociální procesy
+200    $$a316.4/.7$$b2$$c316.4/.7 Sociální interakce. Sociální komunikace
+200    $$a316.36$$b2$$c316.36 Manželství a rodina. Sexuální vztahy
+200    $$a326$$b2$$c326 Otroctví
+200    $$a343.8$$b2$$c343.8 Vězeňství
+200    $$a343.97$$b2$$c343.97 Kriminologie
+200    $$a36$$b2$$c36 Zajištění duševních a materiálních potřeb
+200    $$a364$$b2$$c364 Sociální problémy vyžadující podporu a pomoc. Sociální zabezpečení
+200    $$a364-1/-7$$b2$$c364-1/-7 Druhy sociální pomoci a služeb
+200    $$a364.3$$b2$$c364.3 Sociální pojištění. Zdravotní pojištění. Důchody
+200    $$a365$$b2$$c365 Požadavky na bydlení a jejich uspokojování
+200    $$a366$$b2$$c366 Ochrana spotřebitele. Chování spotřebitele
+200    $$a649$$b2$$c649 Domácí péče o děti, nemocné a hosty
+200    $$ak19$$b1$$c19 Technika, technologie, inženýrství
+200    $$a62$$b2$$c62 Technika všeobecně
+200    $$a620.1/.2$$b2$$c620.1/.2 Nauka o materiálu
+200    $$a620.9$$b2$$c620.9 Energetika
+200    $$a621$$b2$$c621 Strojírenství
+200    $$a621.039$$b2$$c621.039 Jaderná technika
+200    $$a621.3$$b2$$c621.3 Elektrotechnika
+200    $$a621.38$$b2$$c621.38 Elektronika
+200    $$a621.39$$b2$$c621.39 Sdělovací technika
+200    $$a622$$b2$$c622 Hornictví
+200    $$a623$$b2$$c623 Vojenská technika
+200    $$a624$$b2$$c624 Stavební inženýrství
+200    $$a625$$b2$$c625 Pozemní komunikace. Železniční stavitelství
+200    $$a626/627$$b2$$c626/627 Vodní stavitelství. Vodní hospodářství
+200    $$a628$$b2$$c628 Sanitární technika. Vodárenství. Odpadové hospodářství. Světelná technika
+200    $$a629$$b2$$c629 Dopravní prostředky
+200    $$a629.056.2$$b2$$c629.056.2 Astronomická navigace
+200    $$a64$$b2$$c64 Domácí hospodářství
+200    $$a640.4$$b2$$c640.4 Hotelnictví. Stravování
+200    $$a641$$b2$$c641 Kuchařství. Potraviny. Vařená jídla
+200    $$a642$$b2$$c642 Číšnictví. Servírování
+200    $$a643$$b2$$c643 Byt. Místnosti. Vybavení bytu
+200    $$a644$$b2$$c644 Bytové zařízení (sanitární)
+200    $$a645$$b2$$c645 Nábytek
+200    $$a646$$b2$$c646 Odívání. Péče o tělo
+200    $$a64-051$$b2$$c64-051 Domácí personál
+200    $$a648$$b2$$c648 Praní. Čištění
+200    $$a66$$b2$$c66 Chemický průmysl. Chemická technologie
+200    $$a661$$b2$$c661 Chemikálie
+200    $$a662$$b2$$c662 Výbušniny. Paliva
+200    $$a663$$b2$$c663 Průmysl nápojů. Kvasný průmysl. Průmysl pochutin
+200    $$a664$$b2$$c664 Potravinářský průmysl
+200    $$a665$$b2$$c665 Oleje. Tuky. Vosky. Pojiva. Pryskyřice
+200    $$a666$$b2$$c666 Sklářství. Keramika. Cement
+200    $$a667$$b2$$c667 Průmysl barviv
+200    $$a669$$b2$$c669 Metalurgie
+200    $$a67/68$$b2$$c67/68 Řemesla. Různá odvětví průmyslu
+200    $$a671$$b2$$c671 Předměty z drahých kovů
+200    $$a672$$b2$$c672 Předměty ze železa a oceli
+200    $$a673$$b2$$c673 Předměty z neželezných kovů
+200    $$a674$$b2$$c674 Dřevo. Dřevařský průmysl
+200    $$a675$$b2$$c675 Kožedělný průmysl
+200    $$a676$$b2$$c676 Papírenský průmysl
+200    $$a677$$b2$$c677 Textilní průmysl
+200    $$a678$$b2$$c678 Průmysl makromolekulárních látek. Gumárenský průmysl. Průmysl plastů
+200    $$a679$$b2$$c679 Výroba kabelů, provazů a lan. Průmysl kamene
+200    $$a681$$b2$$c681 Přesná mechanika a přístroje
+200    $$a681.5$$b2$$c681.5 Automatizační a řídicí technika
+200    $$a682$$b2$$c682 Kovářství
+200    $$a683$$b2$$c683 Železářství. Zámečnictví. Topná zařízení
+200    $$a684$$b2$$c684 Nábytkářský průmysl
+200    $$a685$$b2$$c685 Zpracování kůže. Obuvnictví
+200    $$a686$$b2$$c686 Knihařství. Sklenářství. Kancelářské potřeby
+200    $$a687$$b2$$c687 Oděvní průmysl. Kosmetika. Kadeřnictví. Péče o vzhled
+200    $$a688$$b2$$c688 Dekorační předměty. Hračky. Galanterie
+200    $$a69$$b2$$c69 Stavebnictví
+200    $$a691$$b2$$c691 Stavební hmoty
+200    $$a692$$b2$$c692 Konstrukční prvky a části staveb
+200    $$a693$$b2$$c693 Zednické práce
+200    $$a694$$b2$$c694 Dřevěné stavby. Tesařství. Truhlářství
+200    $$a696$$b2$$c696 Instalace v budovách
+200    $$a697$$b2$$c697 Vytápění, větrání, klimatizace
+200    $$a698$$b2$$c698 Dokončovací práce
+200    $$a699.8$$b2$$c699.8 Ochrana budov
+200    $$ak20$$b1$$c20 Tělesná výchova a sport. Rekreace
+200    $$a613.7$$b2$$c613.7 Zdraví a hygiena volného času, rekreace a spánku
+200    $$a79$$b2$$c79 Rekreace. Volný čas. Zábava. Hry. Sport
+200    $$a793$$b2$$c793 Společenská zábava
+200    $$a794$$b2$$c794 Deskové a stolní hry, logické hry, hry zručnosti
+200    $$a794.9$$b2$$c794.9 Hry závislé na náhodě
+200    $$a796$$b2$$c796 Sport. Hry. Tělesná cvičení
+200    $$a797$$b2$$c797 Vodní sporty. Letecké sporty
+200    $$a798$$b2$$c798 Jezdectví. Sporty se zvířaty
+200    $$a799$$b2$$c799 Sportovní rybolov. Lovecký sport. Sportovní střelba
+200    $$ak21$$b1$$c21 Umění, architektura
+200    $$a7.01/.09$$b2$$c7.01/.09 Umění
+200    $$a71$$b2$$c71 Územní plánování. Urbanismus. Památková péče
+200    $$a72$$b2$$c72 Architektura
+200    $$a72/76$$b2$$c72/76 Výtvarné umění
+200    $$a73$$b2$$c73 Sochařství, keramika, porcelán, umělecké zpracování kovů
+200    $$a74$$b2$$c74 Kresba. Umělecká řemesla
+200    $$a75$$b2$$c75 Malířství
+200    $$a76$$b2$$c76 Grafické umění. Grafika
+200    $$a77$$b2$$c77 Fotografie. Fotografické postupy
+200    $$ak22$$b1$$c22 Výchova a vzdělávání
+200    $$a37$$b2$$c37 Výchova a vzdělávání
+200    $$a37.014$$b2$$c37.014 Vzdělávací a výchovná politika
+200    $$a37.016$$b2$$c37.016 Učební osnovy. Vyučovací předměty. Učebnice
+200    $$a37.09$$b2$$c37.09 Organizace výuky a vzdělávání
+200    $$a373.2/.3$$b2$$c373.2/.3 Předškolní a primární výchova a vzdělávání
+200    $$a373.5$$b2$$c373.5 Střední školy
+200    $$a374$$b2$$c374 Výchova a vzdělávání dospělých. Mimoškolní výchova a vzdělávání
+200    $$a376$$b2$$c376 Výchova a vzdělávání zvláštních skupin osob
+200    $$a377$$b2$$c377 Odborné vzdělávání
+200    $$a378$$b2$$c378 Vysoké školy
+200    $$ak23$$b1$$c23 Výpočetní technika
+200    $$a004$$b2$$c004 Počítačová věda. Výpočetní technika. Informační technologie
+200    $$a004.2$$b2$$c004.2 Počítačová architektura
+200    $$a004.3$$b2$$c004.3 Počítače. Hardware
+200    $$a004.4/.6$$b2$$c004.4/.6 Programování. Software
+200    $$a004.7$$b2$$c004.7 Počítačové sítě
+200    $$a004.8$$b2$$c004.8 Umělá inteligence
+200    $$a004.9$$b2$$c004.9 Speciální počítačové metody. Počítačová grafika
+200    $$a007$$b2$$c007 Teorie systémů. Automatické systémy. Informační systémy. Kybernetika
+200    $$ak24$$b1$$c24 Zemědělství
+200    $$a63$$b2$$c63 Zemědělství a příbuzné oblasti vědy a techniky
+200    $$a630$$b2$$c630 Lesnictví
+200    $$a631$$b2$$c631 Zemědělství. Pedologie. Agrotechnika. Agroekologie
+200    $$a632$$b2$$c632 Ochrana rostlin. Fytopatologie
+200    $$a633$$b2$$c633 Rostlinná výroba
+200    $$a634$$b2$$c634 Ovocnářství
+200    $$a635$$b2$$c635 Zahrádkářství
+200    $$a636$$b2$$c636 Chov zvířat. Živočišná výroba
+200    $$a636.09$$b2$$c636.09 Veterinární lékařství
+200    $$a637$$b2$$c637 Živočišné produkty
+200    $$a638$$b2$$c638 Včelařství
+200    $$a639.1$$b2$$c639.1 Myslivost
+200    $$a639.2/.6$$b2$$c639.2/.6 Rybářství
+200    $$a712$$b2$$c712 Plánování krajiny. Parky. Zahrady
+200    $$ak25$$b1$$c25 Beletrie
+200    $$a821-1/-8$$b2$$c821-1/-8 Literatura různých forem a žánrů
+200    $$a821-97$$b2$$c821-97 Náboženská literatura. Duchovní literatura
+200    $$a821-31/-34$$b2$$c821-31/-34 Milostná, dobrodružná, fantastická próza
+200    $$a821$$b2$$c821 Literatura v různých jazycích
+200    $$a821.11$$b2$$c821.11 Germánské literatury
+200    $$a821.111$$b2$$c821.111 Anglická literatura, anglicky psaná
+200    $$a821.111(73)$$b2$$c821.111(73) Americká literatura
+200    $$a821.111(73)-1$$b2$$c821.111(73)-1 Americká poezie
+200    $$a821.111(73)-2$$b2$$c821.111(73)-2 Americké drama
+200    $$a821.111(73)-3$$b2$$c821.111(73)-3 Americká próza
+200    $$a821.111-1$$b2$$c821.111-1 Anglická poezie, anglicky psaná
+200    $$a821.111-2$$b2$$c821.111-2 Anglické drama, anglicky psané
+200    $$a821.111-3$$b2$$c821.111-3 Anglická próza, anglicky psaná
+200    $$a821.112.2$$b2$$c821.112.2 Německá literatura, německy psaná
+200    $$a821.112.2-1$$b2$$c821.112.2-1 Německá poezie, německy psaná
+200    $$a821.112.2-2$$b2$$c821.112.2-2 Německé drama, německy psané
+200    $$a821.112.2-3$$b2$$c821.112.2-3 Německá próza, německy psaná
+200    $$a821.124$$b2$$c821.124 Latinská literatura, latinsky psaná
+200    $$a821.124-1$$b2$$c821.124-1 Latinská poezie, latinsky psaná
+200    $$a821.124-2$$b2$$c821.124-2 Latinské drama, latinsky psané
+200    $$a821.124-3$$b2$$c821.124-3 Latinská próza, latinsky psaná
+200    $$a821.13$$b2$$c821.13 Románské literatury
+200    $$a821.131.1$$b2$$c821.131.1 Italská literatura
+200    $$a821.131.1-1$$b2$$c821.131.1-1 Italská poezie
+200    $$a821.131.1-2$$b2$$c821.131.1-2 Italské drama
+200    $$a821.131.1-3$$b2$$c821.131.1-3 Italská próza
+200    $$a821.133.1$$b2$$c821.133.1 Francouzská literatura, francouzsky psaná
+200    $$a821.133.1-1$$b2$$c821.133.1-1 Francouzská poezie, francouzsky psaná
+200    $$a821.133.1-2$$b2$$c821.133.1-2 Francouzské drama, francouzsky psané
+200    $$a821.134.2$$b2$$c821.134.2 Španělská literatura, španělsky psaná
+200    $$a821.134.2-1$$b2$$c821.134.2-1 Španělská poezie, španělsky psaná
+200    $$a821.134.2-2$$b2$$c821.134.2-2 Španělské drama, španělsky psané
+200    $$a821.134.2-3$$b2$$c821.134.2-3 Španělská próza, španělsky psaná
+200    $$a821.133.1-3$$b2$$c821.133.1-3 Francouzská próza, francouzsky psaná
+200    $$a821.134.3$$b2$$c821.134.3 Portugalská literatura, portugalsky psaná
+200    $$a821.14'02$$b2$$c821.14'02 Řecká antická literatura
+200    $$a821.14$$b2$$c821.14 Řecká literatura (středověká, novodobá)
+200    $$a821.14'02-1$$b2$$c821.14'02-1 Řecká antická poezie
+200    $$a821.14'02-2$$b2$$c821.14'02-2 Řecké antické drama
+200    $$a821.14'02-3$$b2$$c821.14'02-3 Řecká antická próza
+200    $$a821.16$$b2$$c821.16 Slovanské literatury
+200    $$a821.161$$b2$$c821.161 Východoslovanské literatury
+200    $$a821.162$$b2$$c821.162 Západoslovanské literatury
+200    $$a821.161.1$$b2$$c821.161.1 Ruská literatura
+200    $$a821.162.1$$b2$$c821.162.1 Polská literatura
+200    $$a821.162.3$$b2$$c821.162.3 Česká literatura
+200    $$a821.162.3-1$$b2$$c821.162.3-1 Česká poezie
+200    $$a821.162.3-2$$b2$$c821.162.3-2 České drama
+200    $$a821.162.3-3$$b2$$c821.162.3-3 Česká próza
+200    $$a821.162.4$$b2$$c821.162.4 Slovenská literatura
+200    $$a821.163$$b2$$c821.163 Jihoslovanské literatury
+200    $$a821.163.1$$b2$$c821.163.1 Staroslověnská literatura
+200    $$a821.17$$b2$$c821.17 Baltské literatury
+200    $$a821.41$$b2$$c821.41 Afroasijské (hamitosemitské) literatury
+200    $$a821.432$$b2$$c821.432 Nigerokonžské literatury
+200    $$a821.51$$b2$$c821.51 Uraloaltajské literatury
+200    $$a821.521$$b2$$c821.521 Japonská literatura
+200    $$a821.531$$b2$$c821.531 Korejská literatura
+200    $$a821.58$$b2$$c821.58 Sino-tibetské literatury
+200    $$a821.62$$b2$$c821.62 Austronéské literatury
+200    $$a821.81/.82$$b2$$c821.81/.82 Literatury severoamerických Indiánů
+200    $$a821.873$$b2$$c821.873 Literatury andsko-rovníkových jazyků
+200    $$ak26$$b1$$c26 Literatura pro děti a mládež
+200    $$a821-93$$b2$$c821-93 Literatura pro děti a mládež (beletrie)
+200    $$a0/9-053.2$$b2$$c0/9-053.2 Literatura pro děti a mládež (naučná)
