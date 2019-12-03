@@ -5,112 +5,14 @@ from pprint import pprint
 from pymongo import MongoClient
 from colorama import Fore, Back, Style
 from threading import Thread
+from mapping import jobList
 
 
 ################################################################################
 #   INICIALIZACIA
 ################################################################################
 
-jobList = [
-    {
-        'name': 'IDENTIFIKATORY ZAZNAMU'
-    },
-    {
-        'name': 'TAG 100',
-        'tag': '100',
-        'subtags': [
-            { 'subtag': '7', 'key': 'auth:100:code' },
-            { 'subtag': 'a', 'key': 'auth:100:name' }
-        ]
-    },
-    {
-        'name': 'TAG 110',
-        'tag': '110',
-        'subtags': [
-            { 'subtag': '7', 'key': 'auth:110:code' },
-            { 'subtag': 'a', 'key': 'auth:110:name' }
-        ]
-    },
-    {
-        'name': 'TAG 700',
-        'tag': '700',
-        'subtags': [
-            { 'subtag': '7', 'key': 'auth:700:code' },
-            { 'subtag': 'a', 'key': 'auth:700:name' }
-        ]
-    },
-    {
-        'name': 'TAG 710',
-        'tag': '710',
-        'subtags': [
-            { 'subtag': '7', 'key': 'auth:710:code' },
-            { 'subtag': 'a', 'key': 'auth:710:name' }
-        ]
-    },
-    {
-        'name': 'TAG 080',
-        'tag': '080',
-        'subtags': [
-            { 'subtag': 'a', 'key': 'mdt:080:code' }
-        ]
-    },
-    {
-        'name': 'TAG 600',
-        'tag': '600',
-        'subtags': [
-            { 'subtag': '7', 'key': 'auth:600:code' }
-        ]
-    },
-    {
-        'name': 'TAG 610',
-        'tag': '610',
-        'subtags': [
-            { 'subtag': '7', 'key': 'auth:610:code' }
-        ]
-    },
-    {
-        'name': 'TAG 611',
-        'tag': '611',
-        'subtags': [
-            { 'subtag': '7', 'key': 'auth:611:code' }
-        ]
-    },
-    {
-        'name': 'TAG 630',
-        'tag': '630',
-        'subtags': [
-            { 'subtag': '7', 'key': 'auth:630:code' }
-        ]
-    },
-    {
-        'name': 'TAG 648',
-        'tag': '648',
-        'subtags': [
-            { 'subtag': '7', 'key': 'auth:648:code' }
-        ]
-    },
-    {
-        'name': 'TAG 650',
-        'tag': '650',
-        'subtags': [
-            { 'subtag': '7', 'key': 'auth:650:code' }
-        ]
-    },
-    {
-        'name': 'TAG 651',
-        'tag': '651',
-        'subtags': [
-            { 'subtag': '7', 'key': 'auth:651:code' }
-        ]
-    },
-    {
-        'name': 'TAG 072',
-        'tag': '072',
-        'subtags': [
-            {'subtag': 'a', 'key': 'auth:072:group'}
-        ]
-    }
-]
+
 
 
 ################################################################################
