@@ -277,6 +277,7 @@ async def handleApiBook(request):
                 del books[book]['log']
                 del books[book]['score']
                 del books[book]['t001']
+                del books[book]['all']
 
             booksOut.append(books[book])
             i += 1
@@ -420,6 +421,7 @@ async def handleApiBook(request):
             del books[book]['log']
             del books[book]['score']
             del books[book]['t001']
+            del books[book]['all']
 
         # vylucit knihy, ktore nemaju aspon jedno rovnake klucove slovo
         if i > 2 and not keywordMatch:
