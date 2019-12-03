@@ -22,6 +22,7 @@ dbMarc = db["marc"]
 # redis
 r = redis.StrictRedis(host='localhost', port=6380, db=0, decode_responses=True)
 
+
 # podporne funkcie
 def toEan (str):
     str = str.upper()
@@ -109,8 +110,6 @@ async def handleApiBook(request):
     # ODPORUC PODLA JEDNEJ KNIHY
     ############################################################################
 
-    print(user)
-    print(sigla)
     if nbn or ean13 or oclc:
         # hladanie zaznamu knihy
         # 1) NBN
@@ -129,7 +128,6 @@ async def handleApiBook(request):
             bookT001 = r.hget('id:oclc', oclc)
             if debug: rec['log'].append('redis id:oclc')
 
-        print(bookT001)
         # http:200 zaznam knihy sa nenasiel
         if not bookT001:
             if debug: print('DEBUG > http:200 zaznam knihy sa nenasiel')
@@ -138,6 +136,7 @@ async def handleApiBook(request):
         if debug:
             diff = datetime.datetime.now() - dtStart
             rec['log'].append(str(diff.microseconds/1000) + 'ms redis biblio record found ' + bookT001)
+            print(bookT001)
 
         bookT001x = bookT001.split('#')
         for bookT001 in bookT001x:
@@ -146,6 +145,7 @@ async def handleApiBook(request):
             booksSorted = recommendations['booksSorted']
             bookKeywords = recommendations['bookKeywords']
             bookMarcType = recommendations['bookMarcType']
+            break
 
 
     ############################################################################
