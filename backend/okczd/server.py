@@ -70,6 +70,7 @@ def cleanOclc (code):
 ################################################################################
 
 async def handleApiBook(request):
+    print(request)
     query = request.rel_url.query
     rec = {} # vystup
     debug = 0
@@ -168,14 +169,14 @@ async def handleApiBook(request):
             if debug: print('DEBUG > http:200 uzivatel nema vypozicanu ziadnu knihu')
             return web.Response(text='[]')
 
-        for bookT001 in listUserBooks:
-            print('book: '+bookT001)
-            recommendations = recommederWorker(dbMarc, r, rec, debug, bookT001)
-            books = recommendations['books']
-            booksSorted = recommendations['booksSorted']
-            bookKeywords = recommendations['bookKeywords']
-            bookMarcType = recommendations['bookMarcType']
-            print('booksSorted: '+str(len(booksSorted)))
+        listUserBooks = '#'.join(listUserBooks)
+
+        recommendations = recommederWorker(dbMarc, r, rec, debug, listUserBooks)
+        books = recommendations['books']
+        booksSorted = recommendations['booksSorted']
+        bookKeywords = recommendations['bookKeywords']
+        bookMarcType = recommendations['bookMarcType']
+        print('booksSorted: '+str(len(booksSorted)))
 
     ############################################################################
     # ODPORUC PODLA PREDMETOVEHO VYHLADAVANIA
@@ -355,7 +356,7 @@ async def handleApiBook(request):
                 books[book]['title'] += ' ' + t245cX[0]['c']
 
         # bereme iba dokumenty rovnakeho typu
-        if bookOutMarc['leader'][6:8] != bookMarcType: continue
+        if bookOutMarc[0]['leader'][6:8] != bookMarcType: continue
 
         # vylucit knihy, ktore nemaju aspon jedno rovnake klucove slovo
         keywordMatch = 0

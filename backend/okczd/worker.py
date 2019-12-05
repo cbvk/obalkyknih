@@ -10,130 +10,132 @@ def recommederWorker(dbMarc, r, rec, debug, bookT001):
     dtStart = datetime.datetime.now()
     books = {}
 
-    # najdi zaznam knihy v mongodb
     bookT001X = bookT001.split('#')
-    bookT001 = bookT001X[0]
-    bookMarc = dbMarc.find_one({'fields.001': bookT001})
+    bookMarcType = []
+    for bookT001 in bookT001X:
+        print(bookT001)
+        # najdi zaznam knihy v mongodb
+        bookMarc = dbMarc.find_one({'fields.001': bookT001})
 
-    if debug:
-        diff = datetime.datetime.now() - dtStart
-        rec['log'].append(
-            str(diff.microseconds / 1000) + 'ms dbMarc.find_one({ \'fields.001\': \'' + bookT001 + '\' })')
+        if debug:
+            diff = datetime.datetime.now() - dtStart
+            rec['log'].append(
+                str(diff.microseconds / 1000) + 'ms dbMarc.find_one({ \'fields.001\': \'' + bookT001 + '\' })')
 
-    # http:200 zaznam knihy sa nenasiel aj ked je v redisDB nacachovany; toto by sa nemalo stat
-    if not bookMarc:
-        if debug: print('DEBUG > no res { \'fields.001\': \'' + bookT001 + '\' }')
-        return web.Response(text='[]')
+        # http:200 zaznam knihy sa nenasiel aj ked je v redisDB nacachovany; toto by sa nemalo stat
+        if not bookMarc:
+            if debug: print('DEBUG > no res { \'fields.001\': \'' + bookT001 + '\' }')
+            return web.Response(text='[]')
 
-    # typ bibiliografickeho zaznamu
-    # Navesti 06- Typ zaznamu
-    # Navesti 07- Bibliograficka uroven
-    bookMarcType = bookMarc['leader'][6:8]
+        # typ bibiliografickeho zaznamu
+        # Navesti 06- Typ zaznamu
+        # Navesti 07- Bibliograficka uroven
+        bookMarcType.append(bookMarc['leader'][6:8])
 
-    ############################################################################
-    # CACHE MARC ZAZNAMU
-    # Ulohou je vybrat data co nas zaujimaju z marc zaznamu a vlozit do objektu
-    ############################################################################
+        ############################################################################
+        # CACHE MARC ZAZNAMU
+        # Ulohou je vybrat data co nas zaujimaju z marc zaznamu a vlozit do objektu
+        ############################################################################
 
-    if debug:
-        diff = datetime.datetime.now() - dtStart
-        rec['log'].append(str(diff.microseconds / 1000) + 'ms [ START ] CACHE MARC ZAZNAMU')
+        if debug:
+            diff = datetime.datetime.now() - dtStart
+            rec['log'].append(str(diff.microseconds / 1000) + 'ms [ START ] CACHE MARC ZAZNAMU')
 
-    bookTag = {}
+        bookTag = {}
 
-    for job in jobList:
-        if job['name'] == 'IDENTIFIKATORY ZAZNAMU':
-            continue
-        tag = job['tag']
-        fieldX = [x for x in bookMarc['fields'] if tag in x]
-        if fieldX:
-            for subtag in job['subtags']:
-                bookField = []
-                i = 0
-                for field in fieldX:
-                    sub = field[tag]['subfields']
-                    subfieldX = [x for x in sub if subtag['subtag'] in x]
-                    if subfieldX:
-                        j = 0
-                        for subfield in subfieldX:
-                            foundSubfield = subfield[subtag['subtag']]
-                            if foundSubfield:
-                                bookField.append(foundSubfield)
-                            if subtag['number'] != 'all' and j >= subtag['number']:
-                                break
-                            j += 1
-                    i += 1
-                    if job['number'] != 'all' and i >= job['number']:
-                        break
-                if bookField:
-                    bookTag[subtag['key']] = bookField
-
-            if job.get('priority', None) is not None and job['priority'] != 'all':
-                priorityTag = job['priority']
-                priorityKey = None
+        for job in jobList:
+            if job['name'] == 'IDENTIFIKATORY ZAZNAMU':
+                continue
+            tag = job['tag']
+            fieldX = [x for x in bookMarc['fields'] if tag in x]
+            if fieldX:
                 for subtag in job['subtags']:
-                    if subtag['subtag'] == priorityTag:
-                        priorityKey = subtag['key']
-                        break
-                if priorityKey:
-                    if bookTag.get(priorityKey, None) is not None:
-                        for subtag in job['subtags']:
-                            if subtag['key'] != priorityKey:
-                                del bookTag[subtag['key']]
+                    bookField = []
+                    i = 0
+                    for field in fieldX:
+                        sub = field[tag]['subfields']
+                        subfieldX = [x for x in sub if subtag['subtag'] in x]
+                        if subfieldX:
+                            j = 0
+                            for subfield in subfieldX:
+                                foundSubfield = subfield[subtag['subtag']]
+                                if foundSubfield:
+                                    bookField.append(foundSubfield)
+                                if subtag['number'] != 'all' and j >= subtag['number']:
+                                    break
+                                j += 1
+                        i += 1
+                        if job['number'] != 'all' and i >= job['number']:
+                            break
+                    if bookField:
+                        bookTag[subtag['key']] = bookField
 
-    if debug:
-        diff = datetime.datetime.now() - dtStart
-        rec['log'].append(str(diff.microseconds / 1000) + 'ms [ END ] CACHE MARC ZAZNAMU')
+                if job.get('priority', None) is not None and job['priority'] != 'all':
+                    priorityTag = job['priority']
+                    priorityKey = None
+                    for subtag in job['subtags']:
+                        if subtag['subtag'] == priorityTag:
+                            priorityKey = subtag['key']
+                            break
+                    if priorityKey:
+                        if bookTag.get(priorityKey, None) is not None:
+                            for subtag in job['subtags']:
+                                if subtag['key'] != priorityKey:
+                                    del bookTag[subtag['key']]
 
-    ############################################################################
-    # TA ISTA KNIHA PODLA IDENTIFIKATORA
-    ############################################################################
+        if debug:
+            diff = datetime.datetime.now() - dtStart
+            rec['log'].append(str(diff.microseconds / 1000) + 'ms [ END ] CACHE MARC ZAZNAMU')
 
-    if debug:
-        diff = datetime.datetime.now() - dtStart
-        rec['log'].append(str(diff.microseconds / 1000) + 'ms [ START ] TA SAMA KNIHA')
+        ############################################################################
+        # TA ISTA KNIHA PODLA IDENTIFIKATORA
+        ############################################################################
 
-    ###
-    # Najdi citatelov, ktory citali tu istu knihu a ziskaj knihy co citali tito ini citatelia
-    # Prirad prioritu tymto kniham podla toho, ako sa podobaju na nasu knihu
-    ###
+        if debug:
+            diff = datetime.datetime.now() - dtStart
+            rec['log'].append(str(diff.microseconds / 1000) + 'ms [ START ] TA SAMA KNIHA')
 
-    hkey1 = 'book:user'
-    hkey2 = 'user:book'
-    i1 = 0
-    if bookT001:
+        ###
+        # Najdi citatelov, ktory citali tu istu knihu a ziskaj knihy co citali tito ini citatelia
+        # Prirad prioritu tymto kniham podla toho, ako sa podobaju na nasu knihu
+        ###
 
-        # citatelia, ktori citali tu istu knihu
-        resUsers = r.hget(hkey1, bookT001)
-        if resUsers:
-            resUsersX = resUsers.split('#')
-            for resUser in resUsersX:
-                i1 += 1
+        hkey1 = 'book:user'
+        hkey2 = 'user:book'
+        i1 = 0
+        if bookT001:
 
-                # ine knihy, ktore cital ten isty citatel
-                resT001s = r.hget(hkey2, resUser)
-                if resT001s:
-                    i2 = 0
-                    resT001X = resT001s.split('#')
-                    for resT001 in resT001X:
-                        i2 += 1
-                        print(resT001)
-                        if books.get(resT001, None) is None:
-                            for key in bookTag:
-                                for value in bookTag[key]:
-                                    foundByKeys = r.hget(key, value)
-                                    if foundByKeys:
-                                        foundByKeyX = foundByKeys.split('#')
-                                        if resT001 in foundByKeyX:
-                                            cachedBookByT001(key, bookT001, priority[key], debug, resT001, books)
-                            if books.get(resT001, None) is not None:
-                                books[resT001]['all'] = True
-                        elif books[resT001]['all']:
-                            cachedBookByT001('all', bookT001, books[resT001]['score'], debug, resT001, books)
+            # citatelia, ktori citali tu istu knihu
+            resUsers = r.hget(hkey1, bookT001)
+            if resUsers:
+                resUsersX = resUsers.split('#')
+                for resUser in resUsersX:
+                    i1 += 1
 
-                        if i2 >= 500: break  # nie viac ako 500 knih jedneho citatela
+                    # ine knihy, ktore cital ten isty citatel
+                    resT001s = r.hget(hkey2, resUser)
+                    if resT001s:
+                        i2 = 0
+                        resT001X = resT001s.split('#')
+                        for resT001 in resT001X:
+                            i2 += 1
+                            print(resT001)
+                            if books.get(resT001, None) is None:
+                                for key in bookTag:
+                                    for value in bookTag[key]:
+                                        foundByKeys = r.hget(key, value)
+                                        if foundByKeys:
+                                            foundByKeyX = foundByKeys.split('#')
+                                            if resT001 in foundByKeyX:
+                                                cachedBookByT001(key, bookT001, priority[key], debug, resT001, books)
+                                if books.get(resT001, None) is not None:
+                                    books[resT001]['all'] = True
+                            elif books[resT001]['all']:
+                                cachedBookByT001('all', bookT001, books[resT001]['score'], debug, resT001, books)
 
-                    print('user:' + str(i1) + ' cnt:' + str(i2))
+                            if i2 >= 500: break  # nie viac ako 500 knih jedneho citatela
+
+                        print('user:' + str(i1) + ' cnt:' + str(i2))
 
     if debug:
         diff = datetime.datetime.now() - dtStart
