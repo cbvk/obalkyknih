@@ -22,6 +22,7 @@ dbMarc = db["marc"]
 # redis
 r = redis.StrictRedis(host='localhost', port=6380, db=0, decode_responses=True)
 
+
 # podporne funkcie
 def toEan (str):
     str = str.upper()
@@ -69,6 +70,7 @@ def cleanOclc (code):
 ################################################################################
 
 async def handleApiBook(request):
+    print(request)
     query = request.rel_url.query
     rec = {} # vystup
     debug = 0
@@ -109,8 +111,6 @@ async def handleApiBook(request):
     # ODPORUC PODLA JEDNEJ KNIHY
     ############################################################################
 
-    print(user)
-    print(sigla)
     if nbn or ean13 or oclc:
         # hladanie zaznamu knihy
         # 1) NBN
@@ -129,7 +129,6 @@ async def handleApiBook(request):
             bookT001 = r.hget('id:oclc', oclc)
             if debug: rec['log'].append('redis id:oclc')
 
-        print(bookT001)
         # http:200 zaznam knihy sa nenasiel
         if not bookT001:
             if debug: print('DEBUG > http:200 zaznam knihy sa nenasiel')
@@ -138,6 +137,7 @@ async def handleApiBook(request):
         if debug:
             diff = datetime.datetime.now() - dtStart
             rec['log'].append(str(diff.microseconds/1000) + 'ms redis biblio record found ' + bookT001)
+            print(bookT001)
 
         bookT001x = bookT001.split('#')
         for bookT001 in bookT001x:
@@ -146,6 +146,7 @@ async def handleApiBook(request):
             booksSorted = recommendations['booksSorted']
             bookKeywords = recommendations['bookKeywords']
             bookMarcType = recommendations['bookMarcType']
+            break
 
 
     ############################################################################
@@ -168,14 +169,14 @@ async def handleApiBook(request):
             if debug: print('DEBUG > http:200 uzivatel nema vypozicanu ziadnu knihu')
             return web.Response(text='[]')
 
-        for bookT001 in listUserBooks:
-            print('book: '+bookT001)
-            recommendations = recommederWorker(dbMarc, r, rec, debug, bookT001)
-            books = recommendations['books']
-            booksSorted = recommendations['booksSorted']
-            bookKeywords = recommendations['bookKeywords']
-            bookMarcType = recommendations['bookMarcType']
-            print('booksSorted: '+str(len(booksSorted)))
+        listUserBooks = '#'.join(listUserBooks)
+
+        recommendations = recommederWorker(dbMarc, r, rec, debug, listUserBooks)
+        books = recommendations['books']
+        booksSorted = recommendations['booksSorted']
+        bookKeywords = recommendations['bookKeywords']
+        bookMarcType = recommendations['bookMarcType']
+        print('booksSorted: '+str(len(booksSorted)))
 
     ############################################################################
     # ODPORUC PODLA PREDMETOVEHO VYHLADAVANIA
@@ -277,6 +278,7 @@ async def handleApiBook(request):
                 del books[book]['log']
                 del books[book]['score']
                 del books[book]['t001']
+                del books[book]['all']
 
             booksOut.append(books[book])
             i += 1
@@ -354,7 +356,7 @@ async def handleApiBook(request):
                 books[book]['title'] += ' ' + t245cX[0]['c']
 
         # bereme iba dokumenty rovnakeho typu
-        if bookOutMarc['leader'][6:8] != bookMarcType: continue
+        if bookOutMarc[0]['leader'][6:8] != bookMarcType: continue
 
         # vylucit knihy, ktore nemaju aspon jedno rovnake klucove slovo
         keywordMatch = 0
@@ -420,6 +422,7 @@ async def handleApiBook(request):
             del books[book]['log']
             del books[book]['score']
             del books[book]['t001']
+            del books[book]['all']
 
         # vylucit knihy, ktore nemaju aspon jedno rovnake klucove slovo
         if i > 2 and not keywordMatch:

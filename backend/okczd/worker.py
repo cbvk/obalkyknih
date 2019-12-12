@@ -1,37 +1,151 @@
 import datetime, math
-from collections import OrderedDict
 
 import redis
 from aiohttp import web
 from settings import priority
+from mapping import jobList
 
 
 def recommederWorker(dbMarc, r, rec, debug, bookT001):
     dtStart = datetime.datetime.now()
     books = {}
-    bookKeywords = []
 
-    # najdi zaznam knihy v mongodb
     bookT001X = bookT001.split('#')
-    bookT001 = bookT001X[0]
-    bookMarc = dbMarc.find_one({ 'fields.001': bookT001 })
+    bookMarcType = []
+    for bookT001 in bookT001X:
+        print(bookT001)
+        # najdi zaznam knihy v mongodb
+        bookMarc = dbMarc.find_one({'fields.001': bookT001})
+
+        if debug:
+            diff = datetime.datetime.now() - dtStart
+            rec['log'].append(
+                str(diff.microseconds / 1000) + 'ms dbMarc.find_one({ \'fields.001\': \'' + bookT001 + '\' })')
+
+        # http:200 zaznam knihy sa nenasiel aj ked je v redisDB nacachovany; toto by sa nemalo stat
+        if not bookMarc:
+            if debug: print('DEBUG > no res { \'fields.001\': \'' + bookT001 + '\' }')
+            return web.Response(text='[]')
+
+        # typ bibiliografickeho zaznamu
+        # Navesti 06- Typ zaznamu
+        # Navesti 07- Bibliograficka uroven
+        bookMarcType.append(bookMarc['leader'][6:8])
+
+        ############################################################################
+        # CACHE MARC ZAZNAMU
+        # Ulohou je vybrat data co nas zaujimaju z marc zaznamu a vlozit do objektu
+        ############################################################################
+
+        if debug:
+            diff = datetime.datetime.now() - dtStart
+            rec['log'].append(str(diff.microseconds / 1000) + 'ms [ START ] CACHE MARC ZAZNAMU')
+
+        bookTag = {}
+
+        for job in jobList:
+            if job['name'] == 'IDENTIFIKATORY ZAZNAMU':
+                continue
+            tag = job['tag']
+            fieldX = [x for x in bookMarc['fields'] if tag in x]
+            if fieldX:
+                for subtag in job['subtags']:
+                    bookField = []
+                    i = 0
+                    for field in fieldX:
+                        sub = field[tag]['subfields']
+                        subfieldX = [x for x in sub if subtag['subtag'] in x]
+                        if subfieldX:
+                            j = 0
+                            for subfield in subfieldX:
+                                foundSubfield = subfield[subtag['subtag']]
+                                if foundSubfield:
+                                    bookField.append(foundSubfield)
+                                if subtag['number'] != 'all' and j >= subtag['number']:
+                                    break
+                                j += 1
+                        i += 1
+                        if job['number'] != 'all' and i >= job['number']:
+                            break
+                    if bookField:
+                        bookTag[subtag['key']] = bookField
+
+                if job.get('priority', None) is not None and job['priority'] != 'all':
+                    priorityTag = job['priority']
+                    priorityKey = None
+                    for subtag in job['subtags']:
+                        if subtag['subtag'] == priorityTag:
+                            priorityKey = subtag['key']
+                            break
+                    if priorityKey:
+                        if bookTag.get(priorityKey, None) is not None:
+                            for subtag in job['subtags']:
+                                if subtag['key'] != priorityKey:
+                                    del bookTag[subtag['key']]
+
+        if debug:
+            diff = datetime.datetime.now() - dtStart
+            rec['log'].append(str(diff.microseconds / 1000) + 'ms [ END ] CACHE MARC ZAZNAMU')
+
+        ############################################################################
+        # TA ISTA KNIHA PODLA IDENTIFIKATORA
+        ############################################################################
+
+        if debug:
+            diff = datetime.datetime.now() - dtStart
+            rec['log'].append(str(diff.microseconds / 1000) + 'ms [ START ] TA SAMA KNIHA')
+
+        ###
+        # Najdi citatelov, ktory citali tu istu knihu a ziskaj knihy co citali tito ini citatelia
+        # Prirad prioritu tymto kniham podla toho, ako sa podobaju na nasu knihu
+        ###
+
+        hkey1 = 'book:user'
+        hkey2 = 'user:book'
+        i1 = 0
+        if bookT001:
+
+            # citatelia, ktori citali tu istu knihu
+            resUsers = r.hget(hkey1, bookT001)
+            if resUsers:
+                resUsersX = resUsers.split('#')
+                for resUser in resUsersX:
+                    i1 += 1
+
+                    # ine knihy, ktore cital ten isty citatel
+                    resT001s = r.hget(hkey2, resUser)
+                    if resT001s:
+                        i2 = 0
+                        resT001X = resT001s.split('#')
+                        for resT001 in resT001X:
+                            i2 += 1
+                            print(resT001)
+                            if books.get(resT001, None) is None:
+                                for key in bookTag:
+                                    for value in bookTag[key]:
+                                        foundByKeys = r.hget(key, value)
+                                        if foundByKeys:
+                                            foundByKeyX = foundByKeys.split('#')
+                                            if resT001 in foundByKeyX:
+                                                cachedBookByT001(key, bookT001, priority[key], debug, resT001, books)
+                                if books.get(resT001, None) is not None:
+                                    books[resT001]['all'] = True
+                            elif books[resT001]['all']:
+                                cachedBookByT001('all', bookT001, books[resT001]['score'], debug, resT001, books)
+
+                            if i2 >= 500: break  # nie viac ako 500 knih jedneho citatela
+
+                        print('user:' + str(i1) + ' cnt:' + str(i2))
 
     if debug:
         diff = datetime.datetime.now() - dtStart
-        rec['log'].append(str(diff.microseconds/1000) + 'ms dbMarc.find({ \'fields.001\': \'' + bookT001 + '\' })')
-
-    # http:200 zaznam knihy sa nenasiel aj ked je v redisDB nacachovany; toto by sa nemalo stat
-    if not bookMarc:
-        if debug: print('DEBUG > no res { \'fields.001\': \'' + bookT001 + '\' }')
-        return web.Response(text='[]')
-
-    # typ bibiliografickeho zaznamu
-    bookMarcType = bookMarc['leader'][6:8]
+        rec['log'].append(str(diff.microseconds / 1000) + 'ms [ END ] TA SAMA KNIHA')
 
     ############################################################################
     # AUTOR
     ############################################################################
 
+    """
     if debug:
         diff = datetime.datetime.now() - dtStart
         rec['log'].append(str(diff.microseconds/1000) + 'ms [ START ] Autority')
@@ -59,7 +173,9 @@ def recommederWorker(dbMarc, r, rec, debug, bookT001):
             resT001 = r.hget(hkey, t100a)
             if resT001: cachedBookByT001(hkey, bookT001, priority[hkey], debug, resT001, books)
             if debug: rec['log'].append(hkey)
+    """
 
+    """
     ###
     # TAGy 110$a a 110$7
     ###
@@ -115,7 +231,7 @@ def recommederWorker(dbMarc, r, rec, debug, bookT001):
     if debug:
         diff = datetime.datetime.now() - dtStart
         rec['log'].append(str(diff.microseconds/1000) + 'ms [ END ] Autority')
-
+    """
 
     ############################################################################
     # MDT
@@ -151,6 +267,7 @@ def recommederWorker(dbMarc, r, rec, debug, bookT001):
     # KLUCOVE SLOVA
     ############################################################################
 
+    """
     if debug:
         diff = datetime.datetime.now() - dtStart
         rec['log'].append(str(diff.microseconds/1000) + 'ms [ START ] Klicova slova')
@@ -286,12 +403,12 @@ def recommederWorker(dbMarc, r, rec, debug, bookT001):
     if debug:
         diff = datetime.datetime.now() - dtStart
         rec['log'].append(str(diff.microseconds/1000) + 'ms [ END ] Klicova slova')
-
-
+    """
 
     ############################################################################
     # ZORADIT PODLA PRIORITY
     ############################################################################
+    """
     contentSortedTmp = {}
     j = 0
     for book in books:
@@ -304,11 +421,12 @@ def recommederWorker(dbMarc, r, rec, debug, bookT001):
 
     contentSorted = sorted(contentSortedTmp.items(), key=lambda kv: kv[1], reverse=True)
     contentSortedTmp = {}
-
+    """
 
     ############################################################################
     # COLLABORATIVE FILTER - vytvorit zoznam knih
     ############################################################################
+    """
     if debug:
         diff = datetime.datetime.now() - dtStart
         rec['log'].append(str(diff.microseconds/1000) + 'ms [ START ] Collaborative')
@@ -369,8 +487,9 @@ def recommederWorker(dbMarc, r, rec, debug, bookT001):
         ### print('j=' + str(jTotal) + ', k=' + str(kTotal))
     ### print('jTotal: ' + str(jTotal))
     ### print('kTotal: ' + str(kTotal))
+    """
 
-
+    """
     ############################################################################
     # COLLABORATIVE FILTER - popularita knih podla collaborative filtra
     ############################################################################
@@ -394,12 +513,15 @@ def recommederWorker(dbMarc, r, rec, debug, bookT001):
         else:
             if debug: books[book]['log'].append('+'+str(collabScore)+' base:'+str(bookCollab['basescore'])+' cnt:'+str(bookCollab['cnt'])+' percent:'+str(bookCollab['percent']))
             books[book]['score'] += collabScore
-
+    """
 
     ############################################################################
     # Znizit skore kniham s rozdielnymi klucovymi slovami
     ############################################################################
 
+    bookKeywords = []
+
+    """
     if t600X:
         for t600 in t600X:
             sub = t600['600']['subfields']
@@ -440,26 +562,28 @@ def recommederWorker(dbMarc, r, rec, debug, bookT001):
             sub = t655['655']['subfields']
             t6557X = [x for x in sub if '7' in x]
             if t6557X: bookKeywords.append(t6557X[0]['7'])
-
+    """
 
     ############################################################################
     # Zoradit podla priority
     ############################################################################
     booksSortedTmp = {}
     for book in books:
-        if book==bookT001: continue
+        if book == bookT001: continue
         booksSortedTmp[book] = books[book]['score']
 
     booksSorted = sorted(booksSortedTmp.items(), key=lambda kv: kv[1], reverse=True)
     booksSortedTmp = {}
 
+    """
     if debug:
         diff = datetime.datetime.now() - dtStart
         rec['log'].append(str(diff.microseconds/1000) + 'ms [ END ] Collaborative')
         print(str(diff.microseconds/1000) + 'ms [ END ] Collaborative')
         #for tmpBook in booksCollab: print(booksCollab[tmpBook])
+    """
 
-    return { 'booksSorted': booksSorted, 'books': books, 'bookKeywords': bookKeywords, 'bookMarcType': bookMarcType }
+    return {'booksSorted': booksSorted, 'books': books, 'bookKeywords': bookKeywords, 'bookMarcType': bookMarcType}
 
 
 def recommederKonsWorker(r, debug, kons, excludeBooks):
@@ -508,9 +632,10 @@ def recommederKonsWorker(r, debug, kons, excludeBooks):
 
     for bookTmp in booksSorted:
         book = bookTmp[0]
-        books[book] = {'t001': book, 'score': bookTmp[1], 'log': [] }
+        books[book] = {'t001': book, 'score': bookTmp[1], 'log': []}
         if debug: books[book]['log'].append('+' + str(bookTmp[1]))
     return {'booksSorted': booksSorted, 'books': books}
+
 
 ############################################################################
 # POMOCNE FUNKCIE
@@ -530,9 +655,7 @@ def recommederKonsWorker(r, debug, kons, excludeBooks):
 # @param books     Vystupny zoznam
 #
 def cachedBookByT001(hkey, bookT001, priority, debug, resT001, books):
-    t001X = resT001.split('#')
-    for tmpT001 in t001X:
-        if tmpT001==bookT001: continue
-        if tmpT001 not in books: books[tmpT001] = { 't001': tmpT001, 'score': 0, 'log': [] }
-        books[tmpT001]['score'] += priority
-        if debug: books[tmpT001]['log'].append('+' + str(priority) + ' ' + hkey)
+    # if resT001 == bookT001: return
+    if resT001 not in books: books[resT001] = {'t001': resT001, 'score': 0, 'all': False, 'log': []}
+    books[resT001]['score'] += priority
+    if debug: books[resT001]['log'].append('+' + str(priority) + ' ' + hkey)
