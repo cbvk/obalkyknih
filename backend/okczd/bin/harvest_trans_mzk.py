@@ -3,15 +3,25 @@ import argparse
 
 
 def harvest_trans_mzk(export, db, collection):
+    """
+    Metoda pre ukladanie zaznamov zo suboru 'export' do MongoDB
+    :param export: subor v ktorom su zaznamy - moze byt objekt file alebo cesta k suboru
+    :param db: databaza do ktorej sa ulozia zaznamy
+    :param collection: kolekcia do ktorej sa ulozia zaznamy
+    :return: pocet ulozenych zaznamov
+    """
+    # pripojenie na Mongo
     client = MongoClient(port=27017)
     db = client[db]
     dbTrans = db[collection]
     sigla = "CBA001"
     if isinstance(export, str):
+        # otvorenie suboru
         file = open(export, 'r')
     else:
         file = export
     i = 0
+    # oxtrakcia zaznamov kde jeden riadok = jeden zaznam
     for line in file.readlines():
         line = line.strip('\n')
         result = parse_line(line)
@@ -23,12 +33,18 @@ def harvest_trans_mzk(export, db, collection):
 
 
 def parse_line(line):
+    """
+    Parsuje riadok do dokumentu, ktory je mozne nasledne ulozit do Monga
+    :param line: riadok zo suboru
+    :return: dokument ako dictionary
+    """
     identifiers = ["015a", "020a", "022a", "024a", "035a", "902a"]  # zoznam moznych indentifikatorov
     fields = line.split('@')
     if not fields[0].startswith('001'):
         return None
     result = {"fields": []}
     others = {}
+    # kazde pole sa prida do result['fields']
     for field in fields:
         parts = field.split(' ')
         if parts[0] == '001':
