@@ -1,0 +1,59 @@
+<div class="row">
+    <div class="col-xs-12">
+
+<?php
+
+echo "<h1>Seznam úloh</h1>";
+
+if ($tasks->count() > 0) {
+    ?>
+    <table class="table table-bordered table-hover">
+        <thead class="thead-light">
+        <tr>
+            <th>Kód úlohy</th>
+            <th>Popis</th>
+            <th>Akce</th>
+        </tr>
+        </thead>
+        <tfoot>
+        <tr>
+            <td colspan="3">Počet záznamů: <?php echo $tasks->count(); ?></td>
+        </tr>
+        </tfoot>
+        <tbody>
+        <?php foreach ($tasks as $task) { ?>
+            <tr>
+                <td><?php echo $task->task_code; ?></td>
+                <td><?php echo $task->description; ?></td>
+                <td><a class="edit" href="#"><span class="fas fa-edit"></span></a></td>
+            </tr>
+        <?php } ?>
+        </tbody>
+    </table>
+    <?php
+}
+
+?>
+
+<div id="modal" class="modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editace úlohy</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary">Uložit</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Zavřít</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
