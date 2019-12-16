@@ -1,9 +1,8 @@
 <?php
 
-use Phalcon\Mvc\Controller;
-
-class IndexController extends Controller
+class IndexController extends ControllerBase
 {
+
     /**
      * Zoznam uloh
      */
@@ -11,4 +10,6 @@ class IndexController extends Controller
     {
         $this->view->tasks = Tasks::find();
     }
+
 }
+
