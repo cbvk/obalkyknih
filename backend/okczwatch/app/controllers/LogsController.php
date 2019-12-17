@@ -1,7 +1,7 @@
 <?php
 
 
-class LogsControllerController extends ControllerBase
+class LogsController extends ControllerBase
 {
 
     public function indexAction()
