@@ -25,7 +25,8 @@ if ($tasks->count() > 0) {
             <tr>
                 <td><?php echo $task->task_code; ?></td>
                 <td><?php echo $task->description; ?></td>
-                <td><a class="edit" href="#"><span class="fas fa-edit"></span></a></td>
+                <td><a class="edit" href="#"><span class="fas fa-edit"></span></a>
+                <a class="view_logs" href="<?php echo $this->url->get('logs') , '?task_code=', $task->task_code;?>"><span class="fas fa-arrow-right"></span></td>
             </tr>
         <?php } ?>
         </tbody>
