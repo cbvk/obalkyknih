@@ -1,12 +1,14 @@
 <?php
 
 use Phalcon\Mvc\Model\Query;
+use Phalcon\Mvc\Model\Manager;
 
 class TaskController extends ControllerBase
 {
 
     public function findAction()
     {
+        // TODO presunut do view alebo layoutu
         $this->view->disable();
         $request =$this->request;
         if ($request->isGet()==true) {
@@ -162,6 +164,53 @@ class TaskController extends ControllerBase
                             echo '</div>';
                             echo '</form>';
                         }
+                }
+            }
+    }
+
+    public function updateAction(){
+        $this->view->disable();
+        $request =$this->request;
+        if ($request->isPost()==true) {
+                if ($request->isAjax() == true) {
+                    $data = $_POST["data"];
+                    $task_code = $_POST["task_code"];
+                    parse_str($data, $output);
+                    // TODO ma sa menit aj task_code?????
+                    $week_days = '';
+                    if (array_key_exists('checkbox_monday', $output)) {$week_days .= '1';}
+                    else {$week_days .= '0';}
+                    if (array_key_exists('checkbox_tuesday', $output)) {$week_days .= '1';}
+                    else {$week_days .= '0';}
+                    if (array_key_exists('checkbox_wednesday', $output)) {$week_days .= '1';}
+                    else {$week_days .= '0';}
+                    if (array_key_exists('checkbox_thursday', $output)) {$week_days .= '1';}
+                    else {$week_days .= '0';}
+                    if (array_key_exists('checkbox_friday', $output)) {$week_days .= '1';}
+                    else {$week_days .= '0';}
+                    if (array_key_exists('checkbox_saturday', $output)) {$week_days .= '1';}
+                    else {$week_days .= '0';}
+                    if (array_key_exists('checkbox_sunday', $output)) {$week_days .= '1';}
+                    else {$week_days .= '0';}
+                    $this->modelsManager->executeQuery(
+                        'UPDATE Tasks SET description = :description:, priority = :priority:, warn_email_to = :warn_email_to:, warn_sms_to = :warn_sms_to:,
+                        exec_script = :exec_script:, task_schedule_type = :task_schedule_type:, week_days = :week_days:, task_code_prev = :task_code_prev:,hours_start = :hours_start:,
+                        minutes_start = :minutes_start:, minutes_duration = :minutes_duration: WHERE task_code = :task_code:',
+                        [
+                            'description' => $output['description'],
+                            'priority' => $output['priority'],
+                            'warn_email_to' => $output['warn_email_to'],
+                            'warn_sms_to' => $output['warn_sms_to'],
+                            'exec_script' => $output['exec_script'],
+                            'task_schedule_type' => $output['task_schedule_type'],
+                            'week_days' => $week_days,
+                            'task_code_prev' => $output['task_code_prev'],
+                            'hours_start' => $output['hours_start'],
+                            'minutes_start' => $output['minutes_start'],
+                            'minutes_duration' => $output['minutes_duration'],
+                            'task_code' => $task_code,
+                        ]
+                    );
                 }
             }
     }
