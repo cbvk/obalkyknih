@@ -28,13 +28,13 @@ if ($logs->count() > 0) {
         </tr>
         </tfoot>
         <tbody>
-        <?php foreach ($logs as $task) { ?>
+        <?php foreach ($logs as $log) { ?>
             <tr>
-                <td><?php echo $task->dt_created; ?></td>
-                <td><?php echo $task->dt_finished; ?></td>
-                <td><?php echo $task->st_code; ?></td>
-                <td><?php echo $task->st_message; ?></td>
-                <td><a class="view_log_items" href="#"><span class="fas fa-arrow-right"></span></a></td>
+                <td><?php echo $log->dt_created; ?></td>
+                <td><?php echo $log->dt_finished; ?></td>
+                <td><?php echo $log->st_code; ?></td>
+                <td><?php echo $log->st_message; ?></td>
+                <td><a class="view_log_items" href="<?php echo $this->url->get('logitem') , '?task_log=', $log->id_task_log;?>"><span class="fas fa-arrow-right"></span></a></td>
             </tr>
         <?php } ?>
         </tbody>

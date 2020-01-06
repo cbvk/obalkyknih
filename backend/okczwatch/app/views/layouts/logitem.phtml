@@ -1,0 +1,33 @@
+<div class="row">
+    <div class="col-xs-12">
+
+<?php
+
+echo "<h1>Výpis detailu logu</h1>";
+// echo "<h2>$debug</h2>";
+echo "<h2>(Úloha $task_code, $dt_created)</h2>";
+?>
+<a class="btn btn-primary" href="<?php echo $this->url->get('logs') , '?task_code=', $task_code;?>" role="button"><-Návrat</a>
+<?php
+if ($logitems->count() > 0) {
+    ?>
+    <table class="table table-bordered table-hover">
+        <thead class="thead-light">
+        <tr>
+            <th>Čas</th>
+            <th>Log</th>
+        </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($logitems as $item) { ?>
+            <tr>
+                <td><?php echo $item->dt_created; ?></td>
+                <td><?php echo $item->log; ?></td>
+            </tr>
+        <?php } ?>
+        </tbody>
+    </table>
+    <?php
+}
+
+?>
