@@ -1,6 +1,6 @@
-Implementační manuál
+﻿Implementační manuál
 
-[[https://docs.google.com/document/d/1b2iw31p5Izs0cHyDmErETQSp4KppBVm05BBCkiw67kI/]]
+https://docs.google.com/document/d/1b2iw31p5Izs0cHyDmErETQSp4KppBVm05BBCkiw67kI/
 
 
 Obálky knih.cz 3.4
