@@ -216,6 +216,9 @@ namespace ScannerClient_obalkyknih
             converter.FirstPageToConvert = firstPage;
             converter.LastPageToConvert = lastPage;
             converter.FitPage = true;
+            //converter.ResolutionX = 150;
+            //converter.ResolutionY = 150;
+            converter.RenderingThreads = 0;
 
             System.IO.FileInfo input = new FileInfo(filename);
 
@@ -225,16 +228,20 @@ namespace ScannerClient_obalkyknih
 
             if (imgQuality == ImageQuality.LOW)
             {
-                converter.JPEGQuality = 10;
-                converter.OutputFormat = "jpeg";
+                converter.Width = 400;
+                converter.Height = 565;
+                //converter.JPEGQuality = 9;
+                //converter.OutputFormat = "jpeg";
+                converter.OutputFormat = "png16m";
                 outputDirLow = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ObalkyKnih-scanner", "PDFScanLow", DateTime.Now.Ticks.ToString());
                 outputDir = outputDirLow;
-                output = String.Format("{0}\\{1}{2}", outputDir, name, ".jpg");
+                output = String.Format("{0}\\{1}{2}", outputDir, name, ".png");
             }
             else
             {
+                converter.Width = 3500;
+                converter.Height = 5000;
                 converter.OutputFormat = "png16m";
-                converter.ResolutionX = 150;
                 outputDirHigh = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "ObalkyKnih-scanner", "PDFScanHigh", ticks.ToString());
                 outputDir = outputDirHigh;
                 output = String.Format("{0}\\{1}{2}", outputDir, DateTime.Now.Ticks + "_" + name, ".png");
@@ -282,7 +289,7 @@ namespace ScannerClient_obalkyknih
             {
                 LabelConvertingInfo.Content = "Načítaní bylo dokončeno. Zvolte stránky, které se vloží";
 
-                foreach (string image in Directory.GetFiles(outputDirLow, name + "*.jpg"))
+                foreach (string image in Directory.GetFiles(outputDirLow, name + "*.png"))
                 {
                     BitmapImage newImage = new BitmapImage();
                     newImage.BeginInit();

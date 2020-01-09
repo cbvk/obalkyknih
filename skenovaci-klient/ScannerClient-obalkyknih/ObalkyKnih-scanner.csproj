@@ -144,6 +144,7 @@
     <Compile Include="SetMultipleISBNsWindow.xaml.cs">
       <DependentUpon>SetMultipleISBNsWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Settings.cs" />
     <Compile Include="SettingsWindow.xaml.cs">
       <DependentUpon>SettingsWindow.xaml</DependentUpon>
     </Compile>

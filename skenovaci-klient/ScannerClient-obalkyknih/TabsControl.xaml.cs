@@ -2671,7 +2671,7 @@ namespace ScannerClient_obalkyknih
             String debug = "";
             foreach (IProperty property in item.Properties)
             {
-                debug = "\n" + property.PropertyID + "=" + property.get_Value();
+                debug += "\n" + property.PropertyID + "=" + property.get_Value();
                 switch (property.PropertyID)
                 {
                     case 6146: //4 is Black-white,gray is 2, color 1
@@ -2730,8 +2730,14 @@ namespace ScannerClient_obalkyknih
                         break;
                 }
             }
-
-            //MessageBoxDialogWindow.Show("Debug", debug, "OK", MessageBoxDialogWindow.Icons.Information);
+            
+            debug += "\nSettings.DefaultBrightness=" + Settings.DefaultBrightness.ToString();
+            debug += "\nSettings.DefaultContrast=" + Settings.DefaultContrast.ToString();
+            debug += "\nSettings.DefaultGamma=" + Settings.DefaultGamma.ToString();
+            debug += "\nthis.brightnessSlider.Value=" + this.brightnessSlider.Value.ToString();
+            debug += "\nthis.contrastSlider.Value=" + this.brightnessSlider.Value.ToString();
+            debug += "\nthis.gammaSlider.Value=" + (this.gammaSlider.Value * 100).ToString();
+            MessageBoxDialogWindow.Show("Debug", debug, "OK", MessageBoxDialogWindow.Icons.Information);
 
             ImageFile image = null;
             try
@@ -3095,6 +3101,9 @@ namespace ScannerClient_obalkyknih
         // Loads image from external file
         private void LoadExternalImage(DocumentType documentType, string fileName, Guid guid)
         {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+
             string filePrefix = "";
             if (documentType == DocumentType.Cover)
             {

@@ -63,6 +63,28 @@ namespace ScannerClient_obalkyknih
 
             this.versionStateLabel.Content = "Získávání informací";
             this.updateInfoBackgroundWorker.RunWorkerAsync();
+
+            // Temp dir cleanup
+            try
+            {
+                foreach (string fileName in Directory.GetFiles(Settings.TemporaryFolder))
+                {
+                    File.Delete(fileName);
+                }
+            }
+            // don't care if some file can't be deleted right now
+            catch (Exception) { }
+            // PDF postscript tmp dit
+            String outputDirLow = System.IO.Path.Combine(Settings.TemporaryFolder, "PDFScanLow");
+            if (Directory.Exists(outputDirLow))
+            {
+                Directory.Delete(outputDirLow, true);
+            }
+            String outputDirHigh = System.IO.Path.Combine(Settings.TemporaryFolder, "PDFScanHigh");
+            if (Directory.Exists(outputDirHigh))
+            {
+                Directory.Delete(outputDirHigh, true);
+            }
             
             #region commandBindings
 
@@ -213,7 +235,8 @@ namespace ScannerClient_obalkyknih
             {
                 MessageBoxDialogWindow.Show("Verze 0.39",
                       "Změny ve verzi 0.39:\n"
-                    + "* Vkládání stránek seznamu literatury z PDF z Vašeho PC.\n\n"
+                    + "* Vkládání stránek seznamu literatury z PDF z Vašeho PC.\n"
+                    + "* Zlepšení kvality vkládaných stránek z PDF z Vašeho PC.\n\n"
                     + "Změny ve verzi 0.38:\n"
                     + "* Skenování seznamu literatury.\n\n"
                     + "Změny ve verzi 0.37:\n"

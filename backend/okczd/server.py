@@ -8,7 +8,7 @@ from aiohttp import web
 
 from settings import priority
 from views import index
-from worker import recommederWorker, recommederKonsWorker
+from worker_test import recommederWorker, recommederKonsWorker
 
 ################################################################################
 #   INICIALIZACIA
@@ -163,7 +163,7 @@ async def handleApiBook(request):
             return web.Response(text='[]')
 
         listUserBooks = resUserBooks.split('#')
-        listUserBooks = listUserBooks[0:10]
+        listUserBooks = listUserBooks[0:50]
 
         if not len(listUserBooks):
             if debug: print('DEBUG > http:200 uzivatel nema vypozicanu ziadnu knihu')
@@ -275,10 +275,10 @@ async def handleApiBook(request):
 
             books[book]['id'] = str(bookOutMarc['_id'])
             if not debug:
-                del books[book]['log']
-                del books[book]['score']
-                del books[book]['t001']
-                del books[book]['all']
+                if books[book].get('log', None) is not None:del books[book]['log']
+                if books[book].get('score', None) is not None:del books[book]['score']
+                if books[book].get('t001', None) is not None:del books[book]['t001']
+                if books[book].get('all', None) is not None: del books[book]['all']
 
             booksOut.append(books[book])
             i += 1
@@ -298,7 +298,6 @@ async def handleApiBook(request):
         if j>500: break # ochrana pred dlhou odozvou
         book = bookTmp[0]
         if book[0] == 'z': continue # vyrad zrusene zaznamy
-        if book == bookT001: continue # vyrad semeho seba
         bookOutMarc = dbMarc.find_one({ 'fields.001': book })
         haveAnyId = 0
 
@@ -356,7 +355,7 @@ async def handleApiBook(request):
                 books[book]['title'] += ' ' + t245cX[0]['c']
 
         # bereme iba dokumenty rovnakeho typu
-        if bookOutMarc[0]['leader'][6:8] != bookMarcType: continue
+        if bookOutMarc['leader'][6:8] not in bookMarcType: continue
 
         # vylucit knihy, ktore nemaju aspon jedno rovnake klucove slovo
         keywordMatch = 0
@@ -466,13 +465,24 @@ async def handleInfo(request):
         if 'oclc' in multi: oclc = multi['oclc']
 
     if nbn or ean13 or oclc:
+        # hladanie zaznamu knihy
+        # 1) NBN
+        # 2) ISBN + ISSN + EAN
+        # 3) OCLC
         bookT001 = None
-        if nbn: bookT001 = r.hget('id:nbn', nbn)
+        if nbn:
+            bookT001 = r.hget('id:nbn', nbn)
         if ean13 and not bookT001:
-            m = re.search(r'(\d*\-*)*', ean13)
-            code = m[0].replace('-','')
-            bookT001 = r.hget('id:ean13', code)
-        if oclc and not bookT001: bookT001 = r.hget('id:oclc', oclc)
+            ean13 = toEan(ean13)
+            bookT001 = r.hget('id:ean13', ean13)
+        if oclc and not bookT001:
+            oclc = cleanOclc(oclc)
+            bookT001 = r.hget('id:oclc', oclc)
+
+        # http:200 zaznam knihy sa nenasiel
+        if not bookT001:
+            return web.Response(text='[]')
+
         if '#' in bookT001:
             bookT001List = bookT001.split('#')
             bookT001 = bookT001List[0]

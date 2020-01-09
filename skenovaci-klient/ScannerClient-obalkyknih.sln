@@ -2,29 +2,54 @@
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual C# Express 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObalkyKnih-scanner", "ScannerClient-obalkyknih\ObalkyKnih-scanner.csproj", "{7281C0D6-64F6-4027-B6FB-47B9CD014B48}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0AC963ED-4835-41D8-9BE2-57623402819D} = {0AC963ED-4835-41D8-9BE2-57623402819D}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CroppingAdorner", "CroppingAdorner\CroppingAdorner\CroppingAdorner.csproj", "{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SobekCM_Marc_Library", "SobekCM_Marc_Library\SobekCM_Marc_Library\SobekCM_Marc_Library.csproj", "{E92393B7-C13C-407B-B24F-A6CED0C2F2EA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdfToImage", "PdfToImage\PdfToImage.csproj", "{0AC963ED-4835-41D8-9BE2-57623402819D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
 		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{7281C0D6-64F6-4027-B6FB-47B9CD014B48}.Debug|x86.ActiveCfg = Debug|x86
-		{7281C0D6-64F6-4027-B6FB-47B9CD014B48}.Debug|x86.Build.0 = Debug|x86
+		{7281C0D6-64F6-4027-B6FB-47B9CD014B48}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{7281C0D6-64F6-4027-B6FB-47B9CD014B48}.Debug|x86.ActiveCfg = Release|x86
+		{7281C0D6-64F6-4027-B6FB-47B9CD014B48}.Debug|x86.Build.0 = Release|x86
+		{7281C0D6-64F6-4027-B6FB-47B9CD014B48}.Release|Any CPU.ActiveCfg = Release|x86
 		{7281C0D6-64F6-4027-B6FB-47B9CD014B48}.Release|x86.ActiveCfg = Release|x86
 		{7281C0D6-64F6-4027-B6FB-47B9CD014B48}.Release|x86.Build.0 = Release|x86
+		{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}.Debug|x86.ActiveCfg = Release|x86
 		{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}.Debug|x86.Build.0 = Release|x86
+		{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}.Release|x86.ActiveCfg = Release|x86
 		{65B2E45C-A9DB-4ED6-B019-EEA698F1974C}.Release|x86.Build.0 = Release|x86
+		{E92393B7-C13C-407B-B24F-A6CED0C2F2EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E92393B7-C13C-407B-B24F-A6CED0C2F2EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E92393B7-C13C-407B-B24F-A6CED0C2F2EA}.Debug|x86.ActiveCfg = Release|x86
 		{E92393B7-C13C-407B-B24F-A6CED0C2F2EA}.Debug|x86.Build.0 = Release|x86
+		{E92393B7-C13C-407B-B24F-A6CED0C2F2EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E92393B7-C13C-407B-B24F-A6CED0C2F2EA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E92393B7-C13C-407B-B24F-A6CED0C2F2EA}.Release|x86.ActiveCfg = Release|x86
 		{E92393B7-C13C-407B-B24F-A6CED0C2F2EA}.Release|x86.Build.0 = Release|x86
+		{0AC963ED-4835-41D8-9BE2-57623402819D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0AC963ED-4835-41D8-9BE2-57623402819D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0AC963ED-4835-41D8-9BE2-57623402819D}.Debug|x86.ActiveCfg = Release|x86
+		{0AC963ED-4835-41D8-9BE2-57623402819D}.Debug|x86.Build.0 = Release|x86
+		{0AC963ED-4835-41D8-9BE2-57623402819D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0AC963ED-4835-41D8-9BE2-57623402819D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0AC963ED-4835-41D8-9BE2-57623402819D}.Release|x86.ActiveCfg = Release|x86
+		{0AC963ED-4835-41D8-9BE2-57623402819D}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,9 @@
-Obálky knih.cz 3.4 (aktualizace 2018)
+Implementační manuál
+
+[[https://docs.google.com/document/d/1b2iw31p5Izs0cHyDmErETQSp4KppBVm05BBCkiw67kI/]]
+
+
+Obálky knih.cz 3.4
 ==================
 
 Implementátorům doporučuje shlédnout tyto nové funkce:
