@@ -50,14 +50,21 @@ $( document ).ready(function() {
         // udalost kliknutia na odkaz delete
         $(el).click(function() {
             var prem = $(el).parent().siblings(":first").text();
-            $.ajax({
-                url: 'task/delete',
-                type: 'POST',
-                data: {task_code: prem},
-                success: function(result) {
-                    $(el).parent().parent().remove();
-                }
-            });
+            $('.title', '#modal_delete').text(prem);
+            $('#modal_delete').modal();
+            $('#modal_delete').on('click', '.btn-ok', function(e) {
+
+                var prem = $('.title', '#modal_delete').text();
+                $.ajax({
+                    url: 'task/delete',
+                    type: 'POST',
+                    data: {task_code: prem},
+                    success: function(result) {
+                        $(el).parent().parent().remove();
+                    }
+                });
+                // $('#modal_delete').modal('toggle');
+              });
         });
     });
 

@@ -121,7 +121,7 @@ class IndexController extends ControllerBase
                                                             'task_code' => $task->task_code
                                                         ])->getFirst();
             if ($res == NULL) {
-                $last_run[$task->task_code] = 'Nespusteno';
+                $last_run[$task->task_code] = 'Not started';
             }
             else {
                 if ($res->st_code == 0){
