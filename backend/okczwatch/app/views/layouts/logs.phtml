@@ -1,0 +1,45 @@
+<div class="row">
+    <div class="col-xs-12">
+
+<?php
+
+echo "<h1>Výpis logu</h1>";
+// echo "<h2>$debug</h2>";
+if ($task_code != NULL){echo "<h2>(Úloha $task_code)</h2>";}
+else {
+    echo "<h2>(Logy pro všechny úlohy)</h2>";
+}
+
+if ($logs->count() > 0) {
+    ?>
+    <table class="table table-bordered table-hover">
+        <thead class="thead-light">
+        <tr>
+            <th>Spuštení</th>
+            <th>Ukončení</th>
+            <th>Stav</th>
+            <th>Oznam</th>
+            <th>Akce</th>
+        </tr>
+        </thead>
+        <tfoot>
+        <tr>
+            <td colspan="3">Počet záznamů: <?php echo $logs->count(); ?></td>
+        </tr>
+        </tfoot>
+        <tbody>
+        <?php foreach ($logs as $log) { ?>
+            <tr>
+                <td><?php echo $log->dt_created; ?></td>
+                <td><?php echo $log->dt_finished; ?></td>
+                <td><?php echo $log->st_code; ?></td>
+                <td><?php echo $log->st_message; ?></td>
+                <td><a class="view_log_items" href="<?php echo $this->url->get('logitem') , '?task_log=', $log->id_task_log;?>"><span class="fas fa-arrow-right"></span></a></td>
+            </tr>
+        <?php } ?>
+        </tbody>
+    </table>
+    <?php
+}
+
+?>
