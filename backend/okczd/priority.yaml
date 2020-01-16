@@ -20,4 +20,8 @@
 "auth:650:code": 0.3
 "auth:651:code": 0.3
 "auth:655:code": 0.3
+"cosine:075": 5.0
+"cosine:050": 2.5
+"cosine:025": 1.0
+"cosine:000": 0.0
 collaborativePriority: 0.1

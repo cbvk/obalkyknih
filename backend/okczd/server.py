@@ -8,7 +8,7 @@ from aiohttp import web
 
 from settings import priority
 from views import index
-from worker_test import recommederWorker, recommederKonsWorker
+from worker import recommederWorker, recommederKonsWorker
 
 ################################################################################
 #   INICIALIZACIA
@@ -18,6 +18,7 @@ from worker_test import recommederWorker, recommederKonsWorker
 client = MongoClient(port=27017)
 db = client["okczd"]
 dbMarc = db["marc"]
+dbAnnotation = db["annotation"]
 
 # redis
 r = redis.StrictRedis(host='localhost', port=6380, db=0, decode_responses=True)
@@ -141,7 +142,7 @@ async def handleApiBook(request):
 
         bookT001x = bookT001.split('#')
         for bookT001 in bookT001x:
-            recommendations = recommederWorker(dbMarc, r, rec, debug, bookT001)
+            recommendations = recommederWorker(dbMarc, dbAnnotation, r, rec, debug, bookT001)
             books = recommendations['books']
             booksSorted = recommendations['booksSorted']
             bookKeywords = recommendations['bookKeywords']
@@ -171,7 +172,7 @@ async def handleApiBook(request):
 
         listUserBooks = '#'.join(listUserBooks)
 
-        recommendations = recommederWorker(dbMarc, r, rec, debug, listUserBooks)
+        recommendations = recommederWorker(dbMarc, dbAnnotation, r, rec, debug, listUserBooks)
         books = recommendations['books']
         booksSorted = recommendations['booksSorted']
         bookKeywords = recommendations['bookKeywords']
