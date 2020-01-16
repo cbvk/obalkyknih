@@ -157,15 +157,16 @@ def recommederWorker(dbMarc, dbAnnotation, r, rec, debug, bookT001):
     cosine_sorted = annotation_score(dbAnnotation, bookT001X, books)  # zoradenie knih podla kosinusovej podobnosti
 
     # priradenie priority podla podobnosti
-    for cosine_book in cosine_sorted:
-        if cosine_sorted[cosine_book] > 0.75:
-            cachedBookByT001("cosine:075", bookT001X, priority["cosine:075"], debug, cosine_book, books)
-        elif 0.5 < cosine_sorted[cosine_book] < 0.75:
-            cachedBookByT001("cosine:050", bookT001X, priority["cosine:050"], debug, cosine_book, books)
-        elif 0.25 < cosine_sorted[cosine_book] < 0.5:
-            cachedBookByT001("cosine:025", bookT001X, priority["cosine:025"], debug, cosine_book, books)
-        elif cosine_sorted[cosine_book] < 0.25:
-            cachedBookByT001("cosine:000", bookT001X, priority["cosine:000"], debug, cosine_book, books)
+    if cosine_sorted:
+        for cosine_book in cosine_sorted:
+            if cosine_sorted[cosine_book] > 0.75:
+                cachedBookByT001("cosine:075", bookT001X, priority["cosine:075"], debug, cosine_book, books)
+            elif 0.5 < cosine_sorted[cosine_book] < 0.75:
+                cachedBookByT001("cosine:050", bookT001X, priority["cosine:050"], debug, cosine_book, books)
+            elif 0.25 < cosine_sorted[cosine_book] < 0.5:
+                cachedBookByT001("cosine:025", bookT001X, priority["cosine:025"], debug, cosine_book, books)
+            elif cosine_sorted[cosine_book] < 0.25:
+                cachedBookByT001("cosine:000", bookT001X, priority["cosine:000"], debug, cosine_book, books)
 
     if debug:
         diff = datetime.datetime.now() - dtStart
