@@ -2,7 +2,8 @@ import unittest
 
 import redis
 from pymongo import MongoClient
-from worker import recommederWorker, annotation_score
+from worker import recommederWorker, annotation_score, cachedBookByT001
+from settings import priority
 
 
 class TestWorker(unittest.TestCase):
@@ -14,7 +15,7 @@ class TestWorker(unittest.TestCase):
         dbAnnotation = db["annotation"]
 
         # redis
-        r = redis.StrictRedis(host='localhost', port=6380, db=0, decode_responses=True)
+        r = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 
         rec = {'log': []}
         debug = 1
@@ -31,7 +32,7 @@ class TestWorker(unittest.TestCase):
         dbAnnotation = db["annotation"]
 
         # redis
-        r = redis.StrictRedis(host='localhost', port=6380, db=0, decode_responses=True)
+        r = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 
         rec = {'log': []}
         debug = 1
@@ -49,7 +50,7 @@ class TestWorker(unittest.TestCase):
         dbAnnotation = db["annotation"]
 
         # redis
-        r = redis.StrictRedis(host='localhost', port=6380, db=0, decode_responses=True)
+        r = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 
         resUserBooks = r.hget('user:book', "LIA001|iwkt1fxsyXgwBdHbq8E821rdnEBbncOfOeoBoF+dEAn0tCCqA8MktjXt4pD8GLDpLPSj34y95uAOoQFeHa5DiA==")
         if not resUserBooks:
@@ -75,15 +76,50 @@ class TestWorker(unittest.TestCase):
         client = MongoClient(port=27017)
         db = client["okczd"]
         dbAnnotation = db["annotation"]
-        bookT001X = ["220319", "000189094"]
+        bookT001X = ["gk63120073", "gk68261274"]
         books = {}
-        res = ["0822794", "bknmik06578", "gk58240597"]
+        res = ["gk71100852", "0000599400"]
         for resT001 in res:
             books[resT001] = {'t001': resT001, 'score': 0, 'all': False, 'log': []}
 
         sorted_books = annotation_score(dbAnnotation, bookT001X, books)
         # print(books)
         print(sorted_books)
+
+    def test_annotation_big(self):
+        client = MongoClient(port=27017)
+        db = client["okczd"]
+        dbAnnotation = db["annotation"]
+        bookT001X = ["gk63120073", "gk68261274"]
+        books = {}
+        found = dbAnnotation.find()
+        debug = 1
+        number = 0
+        res = []
+        for f in found:
+            res.append(f['001'])
+            number += 1
+            if number == 100:
+                break
+        print(len(res))
+        for resT001 in res:
+            books[resT001] = {'t001': resT001, 'score': 0, 'all': False, 'log': []}
+
+        cosine_sorted = annotation_score(dbAnnotation, bookT001X, books)
+        # priradenie priority podla podobnosti
+        if cosine_sorted:
+            for cosine_book in cosine_sorted:
+                if cosine_book[1] >= 0.75:
+                    cachedBookByT001("cosine:075", bookT001X, priority["cosine:075"], debug, cosine_book[0], books)
+                elif 0.5 <= cosine_book[1] < 0.75:
+                    cachedBookByT001("cosine:050", bookT001X, priority["cosine:050"], debug, cosine_book[0], books)
+                elif 0.25 <= cosine_book[1] < 0.5:
+                    cachedBookByT001("cosine:025", bookT001X, priority["cosine:025"], debug, cosine_book[0], books)
+                elif cosine_book[1] < 0.25:
+                    cachedBookByT001("cosine:000", bookT001X, priority["cosine:000"], debug, cosine_book[0], books)
+        # print(books)
+        print(cosine_sorted)
+        print(books)
 
 
 if __name__ == '__main__':

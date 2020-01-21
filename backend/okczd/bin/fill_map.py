@@ -50,7 +50,7 @@ def save_rules_redis():
             pattern = parts[1][1:]
             rules['k' + str(k)].append(pattern)
 
-    r = redis.StrictRedis(host='localhost', port=6380, db=0, decode_responses=True)
+    r = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
     for key in rules:
         r.hset('kons:map', key, '#'.join(rules[key]))
 

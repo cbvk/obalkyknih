@@ -30,8 +30,10 @@ class Vectorizer():
         matrix = self.vectorizer.fit_transform(data)
         return matrix
 
-    def save(self, path):
-        vec_path = str(Path(path) / "vectorizer.pickle")
+    def save(self, path, name=None):
+        if name is None:
+            name = "vectorizer.pickle"
+        vec_path = str(Path(path) / name)
         try:
             os.makedirs(path)
         except OSError as e:
