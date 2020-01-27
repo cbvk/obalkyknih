@@ -326,7 +326,7 @@ def annotation_score(dbAnnotation, bookT001X, books):
     annotations1 = []  # anotacie pre knihy ku ktorym hladame podobne knihy, teda tie co su na vstupe
     bookT001X_found = []
     for bookT001 in bookT001X:
-        annotation = dbAnnotation.find_one({'001': bookT001})  # TODO skontrolovat po pridani annotation
+        annotation = dbAnnotation.find_one({'001': bookT001})
         if annotation:
             annotations1.append(annotation['annotation_pre'])
             bookT001X_found.append(bookT001)

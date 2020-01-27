@@ -87,7 +87,7 @@ def fill_anotation():
         print(cnx)
     mycursor = cnx.cursor()
 
-    mycursor.execute("SELECT * FROM `tmp_review`")
+    mycursor.execute("SELECT * FROM `tmp_review`")  # TODO upravit DB v selekte @lubo
 
     myresult = mycursor.fetchall()
     pre = Preprocessor()
