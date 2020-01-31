@@ -1,12 +1,16 @@
 import datetime, math
+import os
 
 import redis
 from aiohttp import web
 from settings import priority
 from mapping import jobList
+from vectorizer import Vectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
 
-def recommederWorker(dbMarc, r, rec, debug, bookT001):
+def recommederWorker(dbMarc, dbAnnotation, r, rec, debug, bookT001):
     dtStart = datetime.datetime.now()
     books = {}
 
@@ -149,6 +153,20 @@ def recommederWorker(dbMarc, r, rec, debug, bookT001):
                         if i1 >= 500: break
                         if len(books) > 100: break
                         print('user:' + str(i1) + ' cnt:' + str(i2))
+
+    cosine_sorted = annotation_score(dbAnnotation, bookT001X, books)  # zoradenie knih podla kosinusovej podobnosti
+
+    # priradenie priority podla podobnosti
+    if cosine_sorted:
+        for cosine_book in cosine_sorted:
+            if cosine_book[1] >= 0.75:
+                cachedBookByT001("cosine:075", bookT001X, priority["cosine:075"], debug, cosine_book[0], books)
+            elif 0.5 <= cosine_book[1] < 0.75:
+                cachedBookByT001("cosine:050", bookT001X, priority["cosine:050"], debug, cosine_book[0], books)
+            elif 0.25 <= cosine_book[1] < 0.5:
+                cachedBookByT001("cosine:025", bookT001X, priority["cosine:025"], debug, cosine_book[0], books)
+            elif cosine_book[1] < 0.25:
+                cachedBookByT001("cosine:000", bookT001X, priority["cosine:000"], debug, cosine_book[0], books)
 
     if debug:
         diff = datetime.datetime.now() - dtStart
@@ -295,7 +313,45 @@ def recommederKonsWorker(r, debug, kons, excludeBooks):
 # @param books     Vystupny zoznam
 #
 def cachedBookByT001(hkey, bookT001, priority, debug, resT001, books):
-    # if resT001 == bookT001: return
+    if isinstance(bookT001, list):
+        if resT001 in bookT001: return
+    else:
+        if resT001 == bookT001: return
     if resT001 not in books: books[resT001] = {'t001': resT001, 'score': 0, 'all': False, 'log': []}
     books[resT001]['score'] += priority
     if debug: books[resT001]['log'].append('+' + str(priority) + ' ' + hkey)
+
+
+def annotation_score(dbAnnotation, bookT001X, books):
+    annotations1 = []  # anotacie pre knihy ku ktorym hladame podobne knihy, teda tie co su na vstupe
+    bookT001X_found = []
+    for bookT001 in bookT001X:
+        annotation = dbAnnotation.find_one({'001': bookT001})
+        if annotation:
+            annotations1.append(annotation['annotation_pre'])
+            bookT001X_found.append(bookT001)
+    if not annotations1:
+        return
+    annotations2 = []  # anotacie pre knihy ktore cheme zoradit
+    bookT001Y = []
+    books_cosine_mean = {}
+    for T001 in books:
+        book_annotation = dbAnnotation.find_one({'001': T001})
+        if book_annotation:
+            annotations2.append(book_annotation['annotation_pre'])
+            bookT001Y.append(T001)
+        else:
+            books_cosine_mean[T001] = 0.0
+    if not annotations2:
+        return
+    path = os.path.dirname(os.path.realpath(__file__))
+    vectorizer = Vectorizer(load_vec=path + '/vectorizer.pickle')
+    tfidf1 = vectorizer.transform(annotations1)
+    tfidf2 = vectorizer.transform(annotations2)
+    cosine_matrix = cosine_similarity(tfidf2, tfidf1)
+    cosine_mean = cosine_matrix.mean(axis=1)
+
+    for i, T001 in enumerate(bookT001Y):
+        books_cosine_mean[T001] = cosine_mean[i]
+    books_cosine_sorted = sorted(books_cosine_mean.items(), key=lambda kv: kv[1], reverse=True)
+    return books_cosine_sorted

@@ -26,7 +26,7 @@ client = MongoClient(port=27017)
 db = client["okczd"]
 dbMarc = db["marc"]
 # redis
-r = redis.StrictRedis(host='localhost', port=6380, db=0, decode_responses=True)
+r = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 # premazat vsetko co je v pameti
 r.flushall()
 

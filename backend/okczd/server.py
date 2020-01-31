@@ -8,7 +8,7 @@ from aiohttp import web
 
 from settings import priority
 from views import index
-from worker_test import recommederWorker, recommederKonsWorker
+from worker import recommederWorker, recommederKonsWorker
 
 ################################################################################
 #   INICIALIZACIA
@@ -18,9 +18,10 @@ from worker_test import recommederWorker, recommederKonsWorker
 client = MongoClient(port=27017)
 db = client["okczd"]
 dbMarc = db["marc"]
+dbAnnotation = db["annotation"]
 
 # redis
-r = redis.StrictRedis(host='localhost', port=6380, db=0, decode_responses=True)
+r = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 
 
 # podporne funkcie
@@ -110,7 +111,7 @@ async def handleApiBook(request):
     ############################################################################
     # ODPORUC PODLA JEDNEJ KNIHY
     ############################################################################
-
+    bookT001x = None
     if nbn or ean13 or oclc:
         # hladanie zaznamu knihy
         # 1) NBN
@@ -141,7 +142,7 @@ async def handleApiBook(request):
 
         bookT001x = bookT001.split('#')
         for bookT001 in bookT001x:
-            recommendations = recommederWorker(dbMarc, r, rec, debug, bookT001)
+            recommendations = recommederWorker(dbMarc, dbAnnotation, r, rec, debug, bookT001)
             books = recommendations['books']
             booksSorted = recommendations['booksSorted']
             bookKeywords = recommendations['bookKeywords']
@@ -171,7 +172,7 @@ async def handleApiBook(request):
 
         listUserBooks = '#'.join(listUserBooks)
 
-        recommendations = recommederWorker(dbMarc, r, rec, debug, listUserBooks)
+        recommendations = recommederWorker(dbMarc, dbAnnotation, r, rec, debug, listUserBooks)
         books = recommendations['books']
         booksSorted = recommendations['booksSorted']
         bookKeywords = recommendations['bookKeywords']
@@ -208,6 +209,41 @@ async def handleApiBook(request):
     j = 0
     booksOut = []
     usedAllready = {}
+    # ak je na vstupe kniha, nemala by sa objavitvo vysledkoch
+    # pridanie do usedAllready zaisti ze sa pri vyberani neprida kniha na vstupe do vystupu
+    if bookT001x is not None:
+        for bookT001 in bookT001x:
+            bookinput = dbMarc.find_one({'fields.001': bookT001})
+            # ISBN
+            t020X = [x for x in bookinput['fields'] if '020' in x]
+            if t020X:
+                sub = t020X[0]['020']['subfields']
+                t020aX = [x for x in sub if 'a' in x]
+                if t020aX:
+                    val = t020aX[0]['a']
+                    if val not in usedAllready and ean13 != toEan(val):
+                        usedAllready[val] = 1
+
+            # NBN
+            t015X = [x for x in bookinput['fields'] if '015' in x]
+            if t015X:
+                sub = t015X[0]['015']['subfields']
+                t015aX = [x for x in sub if 'a' in x]
+                if t015aX:
+                    val = t015aX[0]['a']
+                    if val not in usedAllready and nbn != val:
+                        usedAllready[val] = 1
+
+            # OCLC
+            t035X = [x for x in bookinput['fields'] if '035' in x]
+            if t035X:
+                sub = t035X[0]['035']['subfields']
+                t035aX = [x for x in sub if 'a' in x]
+                if t035aX:
+                    val = t035aX[0]['a']
+                    if val not in usedAllready and oclc != cleanOclc(val):
+                        usedAllready[val] = 1
+
     booksLQ = [] # zoznam knih, ktore nebudu mat zhodu klucovych slov (sluzi pre pozdejsie doplnenie do prilis kratkeho vysledneho zoznamu)
 
     if kons:
