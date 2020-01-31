@@ -33,6 +33,8 @@ class Vectorizer():
     def save(self, path, name=None):
         if name is None:
             name = "vectorizer.pickle"
+        if not name.endswith('.pickle'):
+            name += ".pickle"
         vec_path = str(Path(path) / name)
         try:
             os.makedirs(path)

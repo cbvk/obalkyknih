@@ -3,7 +3,6 @@ import re
 import redis
 from pymongo import MongoClient
 from preprocessing import Preprocessor
-from vectorizer import Vectorizer
 import mysql.connector
 from mysql.connector import errorcode
 from langdetect import detect
@@ -155,27 +154,5 @@ def fill_anotation():
                 new_annotation['annotation_pre'] = ' '.join(annotation_pre)
                 dbAnnotation.insert_one(new_annotation)
 
-
-def generate_vectorizer(path, name):
-    """
-    Vytvori tf-idf vektorizator, ktory sa pouziva pre zoradenie zaznamov podla kosinusovej podobnosti
-    Pred spustenim treba spustit fill_annotation pre naplnenia anotacii a ich predspracovanie
-    :param path: Priecinok kam sa ulozi vektorizator
-    :param name: Meno suboru kam sa vektorizator ulozi
-    :return:
-    """
-    client = MongoClient(port=27017)
-    db = client["okczd"]
-    dbAnnotation = db["annotation"]
-
-    found = dbAnnotation.find({})
-    texts = []
-    for f in found:
-        annotation = f['annotation_pre']
-        texts.append(annotation)
-
-    vectorizer = Vectorizer()
-    vectorizer.fit(texts)
-    vectorizer.save(path, name)
 
 fill_anotation()
