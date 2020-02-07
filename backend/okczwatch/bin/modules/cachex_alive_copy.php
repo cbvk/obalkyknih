@@ -1,6 +1,6 @@
 <?php
 
-class cachex_alive
+class cachex_alive_copy
 {
 
     static function main ($db)
