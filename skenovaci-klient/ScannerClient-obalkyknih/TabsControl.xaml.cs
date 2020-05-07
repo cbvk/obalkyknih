@@ -2550,6 +2550,14 @@ namespace ScannerClient_obalkyknih
                     this.zobrazitVysledek.Visibility = System.Windows.Visibility.Visible;
 
                     //delete sent files
+                    if (coverFileNameToDelete != null)
+                    {
+                        if (File.Exists(coverFileNameToDelete))
+                        {
+                            File.Delete(coverFileNameToDelete);
+                        }
+                    }
+
                     foreach (var tocRecord in tocDescriptionsDictionaryToDelete)
                     {
                         GC.Collect();
@@ -2570,11 +2578,13 @@ namespace ScannerClient_obalkyknih
                         }
                     }
 
-                    if (coverFileNameToDelete != null)
+                    foreach (var authRecord in authDescriptionsDictionaryToDelete)
                     {
-                        if (File.Exists(coverFileNameToDelete))
+                        GC.Collect();
+
+                        if (File.Exists(authRecord.Key))
                         {
-                            File.Delete(coverFileNameToDelete);
+                            File.Delete(authRecord.Key);
                         }
                     }
 
@@ -2610,9 +2620,22 @@ namespace ScannerClient_obalkyknih
                         this.imagesOriginalSizes.Remove(guid);
                     }
 
+                    cnt = this.authImagesList.Items.Count;
+                    for (int i = cnt - 1; i >= 0; i--)
+                    {
+                        Guid guid = (from record in authThumbnailGridsDictionary.ToList()
+                                     where record.Value.Equals(this.authImagesList.Items.GetItemAt(i))
+                                     select record.Key).First();
+                        this.authImagesList.Items.RemoveAt(i);
+                        this.authThumbnailGridsDictionary.Remove(guid);
+                        this.imagesFilePaths.Remove(guid);
+                        this.imagesOriginalSizes.Remove(guid);
+                    }
+
                     imagesFilePaths = new Dictionary<Guid, string>();
                     tocThumbnailGridsDictionary = new Dictionary<Guid, Grid>();
                     bibThumbnailGridsDictionary = new Dictionary<Guid, Grid>();
+                    authThumbnailGridsDictionary = new Dictionary<Guid, Grid>();
                     this.selectedImageGuid = Guid.Empty;
                     this.selectedImage.Source = new BitmapImage(
                         new Uri("/ObalkyKnih-scanner;component/Images/default-icon.png", UriKind.Relative));
@@ -3290,7 +3313,7 @@ namespace ScannerClient_obalkyknih
             }
 
             // rozeznava jestli pracujeme s vyznacenym TOC, nebo BIB
-            Boolean flagToc = (Grid)tocImagesList.SelectedItem != null;
+            Boolean flagToc = this.tocThumbnailGridsDictionary.ContainsKey(this.selectedImageGuid) ? true : false;
 
             string filePath = this.imagesFilePaths[selectedGuid];
 
@@ -3406,7 +3429,7 @@ namespace ScannerClient_obalkyknih
             }
 
             // rozeznava jestli pracujeme s vyznacenym TOC, nebo BIB
-            Boolean flagToc = (Grid)tocImagesList.SelectedItem != null;
+            Boolean flagToc = this.tocThumbnailGridsDictionary.ContainsKey(this.selectedImageGuid) ? true : false;
 
             if (!saveSelectedMode)
             {

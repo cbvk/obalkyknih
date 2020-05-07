@@ -120,7 +120,20 @@ namespace ScannerClient_obalkyknih
             const string subkey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\ObalkyKnih-scanner_is1";
 
             // Try to open HKCU uninstall obalkyknih registry key
-            RegistryKey regKey = Registry.CurrentUser.OpenSubKey(subkey);
+            RegistryKey regKey = null;
+            bool is64bit = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PROCESSOR_ARCHITEW6432"));
+            if (is64bit)
+            {
+                using (var hkcu = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64))
+                {
+                    regKey = hkcu.OpenSubKey(subkey);
+                }
+            }
+            else
+            {
+                regKey = Registry.CurrentUser.OpenSubKey(subkey);
+            }
+
             if (regKey != null)
             {
                 return false;

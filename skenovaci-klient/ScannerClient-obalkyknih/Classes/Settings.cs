@@ -437,7 +437,7 @@ namespace ScannerClient_obalkyknih
                 }
                 SetRegistryValue(IsAdminZ39UnionEncoding, "Z39UnionEncoding", encoding, RegistryValueKind.String);
             }
-             */
+            */
         }
 
         /// <summary>Indicates that encoding for Z39.50 was filled by admin and can't be changed in application</summary>
@@ -1054,7 +1054,20 @@ namespace ScannerClient_obalkyknih
         {
             get
             {
-                return Registry.CurrentUser.CreateSubKey(@"Software\ObalkyKnih-scanner");
+                RegistryKey regkey = null;
+                bool is64bit = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PROCESSOR_ARCHITEW6432"));
+                if (is64bit)
+                {
+                    using (var hkcu = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64))
+                    {
+                        regkey = hkcu.CreateSubKey(@"Software\ObalkyKnih-scanner");
+                    }
+                }
+                else
+                {
+                    regkey = Registry.CurrentUser.CreateSubKey(@"Software\ObalkyKnih-scanner");
+                }
+                return regkey;
             }
         }
 
@@ -1062,7 +1075,20 @@ namespace ScannerClient_obalkyknih
         {
             get
             {
-                return Registry.LocalMachine.OpenSubKey(@"Software\ObalkyKnih-scanner");
+                RegistryKey regkey = null;
+                bool is64bit = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PROCESSOR_ARCHITEW6432"));
+                if (is64bit)
+                {
+                    using (var hklm = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64))
+                    {
+                        regkey = hklm.OpenSubKey(@"Software\ObalkyKnih-scanner");
+                    }
+                }
+                else
+                {
+                    regkey = Registry.LocalMachine.OpenSubKey(@"Software\ObalkyKnih-scanner");
+                }
+                return regkey;
             }
         }
         /// <summary>Version of application</summary>
