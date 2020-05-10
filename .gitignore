@@ -1,3 +1,10 @@
+vendor/
+composer.lock
+composer.phar
+webtools.php
+webtools.js
+webtools.css
+webtools.config.php
 /.settings/
 
 # Byte-compiled / optimized / DLL files
