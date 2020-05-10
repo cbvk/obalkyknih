@@ -1,0 +1,21 @@
+﻿
+<div class="navigation">
+
+<!--	<a class="[%menu_browse%]" href="/browse">procházet</a> -->
+<!--	<a href="">nastavení</a>-->
+
+	<a class="[%menu_index%]" href="/index">úvod</a>
+	<a class="[%menu_upload%]" href="/upload">vložit</a>
+<!--	<a class="[%menu_doc%]" href="/doc/index">dokumentace</a>-->
+	<a class="[%menu_doc%]" href="/doc/Dokumentace_API_OKCZ_3.1.pdf">dokumentace</a>
+	<a class="[%menu_about%]" href="/about">o projektu</a>
+<!--
+[% IF user %]
+	<a href="/logout">odhlášení</a>
+[% END %]
+-->
+
+	<div class="clearer"><span></span></div>
+
+</div>
+

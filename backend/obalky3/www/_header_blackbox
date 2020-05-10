@@ -1,0 +1,20 @@
+
+		<div id="blackbox">
+	
+			<div id="section" class="clearfix">
+	
+				<div id="section1" class="glider">
+					<h3>Nejnovější obálky</h3>
+					<div class="slidesWrap">
+						<ul class="slides">
+[% FOREACH product IN recent %]
+<li><a href="/view?book_id=[%product.book.id%]"><img src="/file/cover/[%product.cover.id%]/medium" width="120" height="170" alt="" /><span class="icon"></span></a></li>
+[% END %]
+						</ul>
+					</div>
+					<div class="gliderNav"></div>
+				</div>
+	
+			</div>
+		</div> <!-- #blackbox -->
+		
