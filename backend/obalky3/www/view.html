@@ -1,4 +1,4 @@
-﻿[%PROCESS _header %]
+[%PROCESS _header %]
 
 [% PROCESS _errors %]
 
@@ -26,12 +26,15 @@ Tuto knihu ještě nemáme v databázi!
 	[% IF book.part_no %]/ Číslo: [% book.part_no_orig %] [% END %]
 	)
 	</h3>
-[% ELSE %]
+[% END %]
+[% IF book.part_note %]
+	[% IF book.part_note %]
 	<h3>
 	(
 	[% IF book.part_note %][% book.part_note %][% END %]
 	)
 	</h3>
+	[% END %]
 [% END %]
 </td></tr>
 
