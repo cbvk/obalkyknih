@@ -14,7 +14,7 @@ multidict==4.6.1
 pymarc==3.1.13
 pymongo==3.9.0
 pyoai==2.5.0
-PyYAML==5.1.2
+PyYAML==5.4
 redis==3.3.11
 requests==2.22.0
 six==1.13.0
