@@ -39,13 +39,22 @@
 		</div>
 		<div class="cl"></div>
 
-		<p class="fr">&copy; Copyright 2008-2020 <a href="http://obalkyknih.cz">Obalkyknih.cz</a></p>
+		<p class="fr">&copy; Copyright 2008-2021 <a href="http://obalkyknih.cz">Obalkyknih.cz</a></p>
 	</div></div>
 	
 
 </div>
 
 <script type="text/javascript" src="/js/lightbox.js"></script>
+
+<a href="https://www.toplist.cz"><script language="JavaScript"
+type="text/javascript" charset="utf-8">
+<!--
+document.write('<img src="https://toplist.cz/dot.asp?id=1806379&http='+
+encodeURIComponent(document.referrer)+'&t='+encodeURIComponent(document.title)+'&l='+encodeURIComponent(document.URL)+
+'&wi='+encodeURIComponent(window.screen.width)+'&he='+encodeURIComponent(window.screen.height)+'&cd='+
+encodeURIComponent(window.screen.colorDepth)+'" width="1" height="1" border=0 alt="TOPlist" />');
+//--></script><noscript><img src="https://toplist.cz/dot.asp?id=1806379&njs=1" border="0" alt="TOPlist" width="1" height="1" /></noscript></a>
 
 <script type="text/javascript">
 var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");

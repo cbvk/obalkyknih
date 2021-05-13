@@ -146,7 +146,9 @@ Tuto knihu ještě nemáme v databázi!
 		[% IF book.citation %]
 		<br/><b>Citace</b> (dle ČSN ISO 690):<br/>
 		[% book.citation %]<br/>
+		[% IF book.citation_source.fullname %]
 		<span style="font-size:0.8rem;float:right;">Zdroj: [% book.citation_source.fullname %]</span><br/>
+		[% END %]
 		<div style="clear:both;"></div>
 		[% END %]
 	</p>
@@ -167,11 +169,10 @@ Tuto knihu ještě nemáme v databázi!
 	  <p>
 	  <table width="100%" cellspacing=4>
 	  [% FOREACH product = book.displayable_dig_obj -%]
-		<tr><td align=right width="70"><a 
-					href="[% product.product_url %]"><img class="nob"
-					border="0" height="32" src="[% product.eshop.logo_url %]"></a></td>
-			<td style="vertical-align:middle;"><a href="[% product.product_url %]"
-						>[% product.eshop.fullname %]</a></td>
+		<tr><td align=right width="70"[% IF product.ispublic == 3 %] class="product_hightlight"[% END %]>
+			<a href="[% product.product_url %]"><img class="nob" border="0" height="32" src="[% product.eshop.logo_url %]"></a></td>
+			<td style="vertical-align:middle;"[% IF	product.ispublic == 3 %] class="product_hightlight"[% END %]>
+			<a href="[% product.product_url %]">[% product.eshop.fullname %]</a></td>
  	  [% END -%]
  	  </tr>
 	  </table>
@@ -482,9 +483,9 @@ Tuto knihu ještě nemáme v databázi!
 	<input type=hidden name=review_book value="[% book.id %]">
 	<input type=hidden id=review_rating name=review_rating value=0>
 	[% IF book.reviews %]
-		<h3>Přidat čtenářskou recenzi</h3>
+		<h3>Přidat komentář a hodnocení</h3>
 	[% ELSE %]
-		<h3>Napište na knížku první čtenářskou recenzi!</h3>
+		<h3>Napište na knížku první komentář!</h3>
 	[% END %]
 	<table>
 	<tr><td>Od:</td> 
@@ -493,7 +494,6 @@ Tuto knihu ještě nemáme v databázi!
 		<td align=right valign=top width=200>
 
 <ul id="star-rating" class="star-rating">
-    <li class='current-rating' id='current-rating' style="width: 37px"></li>
     <li><a href="#" onclick="vote(this,[% book.id %],1); return false;"
            title='1 star out of 5' class='s1'>1</a></li>
     <li><a href="#" onclick="vote(this,[% book.id %],2); return false;"
@@ -515,7 +515,7 @@ Tuto knihu ještě nemáme v databázi!
 	    <td colspan=2><div id="review_recaptcha"><div class="g-recaptcha" data-sitekey="6LdFDxgTAAAAAHQKFJBlrT351_ALAeQbq62dQLj6"></div></div>
 	<tr><td>&nbsp;</td>
 		<td colspan=2>
-		<input type=submit name=review_add value="  Přidat recenzi / hodnocení " /></td>
+		<input type=submit name=review_add value="  Přidat komentář / hodnocení " /></td>
 	</table>
 	</form>
 	<script src='https://www.google.com/recaptcha/api.js?hl=cs'></script>
