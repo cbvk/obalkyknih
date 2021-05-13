@@ -13,8 +13,8 @@ use Obalky::Tools;
 __PACKAGE__->register(harvest => 1, # test => '9780071544337',
 	title => 'Amazon.com', test => '9780684801223');
 
-my $AMAZON_KEY    = 'AKIAJ33VSECN6UIK7DBA';
-my $AMAZON_SECRET = '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';
+my $AMAZON_KEY    = '';
+my $AMAZON_SECRET = '';
 
 my $ua = Net::Amazon->new(
         token      => $AMAZON_KEY,
