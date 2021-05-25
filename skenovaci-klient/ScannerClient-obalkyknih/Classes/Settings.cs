@@ -1095,11 +1095,11 @@ namespace ScannerClient_obalkyknih
         internal static Version Version { get { return Assembly.GetEntryAssembly().GetName().Version; } }
 
         /// <summary>URL of folder containing update-info.xml file</summary>
-        internal const string UpdateServer = "http://www.obalkyknih.cz/obalkyknih-scanner";
+        internal const string UpdateServer = "https://www.obalkyknih.cz/obalkyknih-scanner";
         //internal const string UpdateServer = "http://10.89.56.102/obalkyknih-scanner";
 
         /// <summary>URL of import function on obalkyknih.</summary>
-        internal const string ImportLink = "http://www.obalkyknih.cz/api/import";
+        internal const string ImportLink = "https://www.obalkyknih.cz/api/import";
         //internal const string ImportLink = "http://10.89.56.102/api/import";
         //internal const string ImportLink = "http://localhost:3999/api/import";
 

@@ -305,6 +305,15 @@ namespace ScannerClient_obalkyknih.Classes
                 IEnumerable<MARC_Record> recordsFromZ3950 = MARC_Record_Z3950_Retriever.Get_Record(
                     identifierFieldNumber, '"'+value+'"', endpoint, out errorMessage, z39Encoding);
 
+                // Dodatecne dohledani podle ISBN a EAN (pouze pokud se vyhledava ISMN)
+                if (identifierType == IdentifierType.ISMN)
+                {
+                    // Dodatecne dohledani podle ISBN
+                    recordsFromZ3950 = (recordsFromZ3950 == null ? MARC_Record_Z3950_Retriever.Get_Record(Settings.Z39IsbnField, '"' + value + '"', endpoint, out errorMessage, z39Encoding) : null);
+                    // Dodatecne dohledani podle EAN
+                    recordsFromZ3950 = (recordsFromZ3950 == null ? MARC_Record_Z3950_Retriever.Get_Record(Settings.Z39EanField, '"' + value + '"', endpoint, out errorMessage, z39Encoding) : null);
+                }
+
                 if (recordsFromZ3950 != null)
                 {
                     foreach (MARC_Record record in recordsFromZ3950)

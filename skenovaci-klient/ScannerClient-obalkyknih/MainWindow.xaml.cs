@@ -233,27 +233,13 @@ namespace ScannerClient_obalkyknih
         {
             if (!Settings.Version.ToString().Equals(Settings.VersionInfo))
             {
-                MessageBoxDialogWindow.Show("Verze 0.39",
-                      "Změny ve verzi 0.39:\n"
-                    + "* Vkládání stránek seznamu literatury z PDF z Vašeho PC.\n"
-                    + "* Zlepšení kvality vkládaných stránek z PDF z Vašeho PC.\n\n"
-                    + "Změny ve verzi 0.38:\n"
-                    + "* Skenování seznamu literatury.\n\n"
-                    + "Změny ve verzi 0.37:\n"
-                    + "* Upozornění na obálky s nízkou kvalitou, které je doporučené přeskenovat.\n"
-                    + "* Ukládání nastavení jasu a kontrastu na záložce skenování.\n"
-                    + "* Menší opravy na podnět uživatelů skenovacího klienta..\n"
-                    + "* Možnost uložení více různých ISBN k jednomu titulu.\n\n"
-                    + "Změny ve verzi 0.36:\n"
-                    + "* Vkládání obálek a stránek TOC z PDF z Vašeho PC.\n"
-                    + "* Skenování vícerých autorů díla.\n\n"
-                    + "Změny ve verzi 0.35:\n"
-                    + "* Podpora ISMN jako identifikátora záznamu.\n"
-                    + "* Automatická oprava textů načtených z bibliografických záznamů\n"
-                    + "  (ošetření nadbytečných znaků, teček, mezer apod.).\n"
-                    + "* Opravní vydání pro skenování foto autorů.\n"
-                    + "* Opravní vydání pro skenování záznamů s tagem 024 UPC, ISMN, EAN.\n"
-                    + "* Menší opravy na podnět uživatelů skenovacího klienta.\n", "OK", MessageBoxDialogWindow.Icons.Information);
+                MessageBoxDialogWindow.Show("Verze 0.41",
+                      "Změny ve verzi 0.41:\n"
+                    + "* Po vyhledání EAN kódu s prefixem 979 se kromě indexu ISMN vyhledává i pomocí indexů ISBN a EAN.\n\n"
+                    + "Změny ve verzi 0.39 a 0.40:\n"
+                    + "* Opravné vydání problémů hlášených uživateli od vydání předchozí verze 0.38.\n"
+                    + "* Oprava a vylepšení kvality vkládaných stránek z PDF z Vašeho PC.\n"
+                    + "* Oprava ukládání nastavení a oprava pádu aplikace při použití výsekového režimu.\n", "OK", MessageBoxDialogWindow.Icons.Information);
                 Settings.VersionInfo = Settings.Version.ToString();
             }
         }

@@ -12,7 +12,7 @@ using System.Windows;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Jihočeská Vědecká Knihovna")]
 [assembly: AssemblyProduct("ObalkyKnih_scanner")]
-[assembly: AssemblyCopyright("JVK 2020")]
+[assembly: AssemblyCopyright("JVK 2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -51,4 +51,4 @@ using System.Windows;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.38.*")]
+[assembly: AssemblyVersion("0.41.*")]

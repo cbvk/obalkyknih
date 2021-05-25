@@ -2760,7 +2760,7 @@ namespace ScannerClient_obalkyknih
             debug += "\nthis.brightnessSlider.Value=" + this.brightnessSlider.Value.ToString();
             debug += "\nthis.contrastSlider.Value=" + this.brightnessSlider.Value.ToString();
             debug += "\nthis.gammaSlider.Value=" + (this.gammaSlider.Value * 100).ToString();
-            MessageBoxDialogWindow.Show("Debug", debug, "OK", MessageBoxDialogWindow.Icons.Information);
+            //MessageBoxDialogWindow.Show("Debug", debug, "OK", MessageBoxDialogWindow.Icons.Information);
 
             ImageFile image = null;
             try
