@@ -233,8 +233,10 @@ namespace ScannerClient_obalkyknih
         {
             if (!Settings.Version.ToString().Equals(Settings.VersionInfo))
             {
-                MessageBoxDialogWindow.Show("Verze 0.41",
-                      "Změny ve verzi 0.41:\n"
+                MessageBoxDialogWindow.Show("Verze 0.42",
+                      "Změny ve verzi 0.42:\n"
+                    + "* Opravné vydání. Oprava vracení změny po úpravě foto seznamu literatury, nebo autora.\n\n"
+                    + "Změny ve verzi 0.41:\n"
                     + "* Po vyhledání EAN kódu s prefixem 979 se kromě indexu ISMN vyhledává i pomocí indexů ISBN a EAN.\n\n"
                     + "Změny ve verzi 0.39 a 0.40:\n"
                     + "* Opravné vydání problémů hlášených uživateli od vydání předchozí verze 0.38.\n"

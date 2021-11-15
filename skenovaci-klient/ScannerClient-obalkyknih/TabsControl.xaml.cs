@@ -5098,6 +5098,8 @@ namespace ScannerClient_obalkyknih
         internal void UndoLastStep()
         {
             bool isCover = this.backupImage.Key.Contains(Settings.TemporaryFolder + "obalkyknih-cover_");
+            bool isBib   = this.backupImage.Key.Contains(Settings.TemporaryFolder + "obalkyknih-bib_");
+            bool isAuth  = this.backupImage.Key.Contains(Settings.TemporaryFolder + "obalkyknih-auth_");
 
             // get guid of backuped image from imagePaths or return empty guid
             Guid guid = (from record in this.imagesFilePaths
@@ -5143,6 +5145,16 @@ namespace ScannerClient_obalkyknih
                 {
                     thumbnail = this.coverThumbnail;
                 }
+                else if (isBib)
+                {
+                    thumbnail = LogicalTreeHelper.FindLogicalNode(
+                        this.bibThumbnailGridsDictionary[guid], "bibThumbnail") as Image;
+                }
+                else if (isAuth)
+                {
+                    thumbnail = LogicalTreeHelper.FindLogicalNode(
+                        this.authThumbnailGridsDictionary[guid], "authThumbnail") as Image;
+                }
                 else
                 {
                     thumbnail = LogicalTreeHelper.FindLogicalNode(
@@ -5173,7 +5185,6 @@ namespace ScannerClient_obalkyknih
 
                 AddCoverImage(ImageTools.LoadGivenSizeFromBitmapSource(this.workingImage.Value, 800),
                         guid);
-
             }
 
             // reset backup
@@ -5189,6 +5200,8 @@ namespace ScannerClient_obalkyknih
         internal void RedoLastStep()
         {
             bool isCover = this.redoImage.Key.Contains(Settings.TemporaryFolder + "obalkyknih-cover_");
+            bool isBib   = this.redoImage.Key.Contains(Settings.TemporaryFolder + "obalkyknih-bib_");
+            bool isAuth  = this.redoImage.Key.Contains(Settings.TemporaryFolder + "obalkyknih-auth_");
 
             // get guid of backuped image from imagePaths or return empty guid
             Guid guid = (from record in this.imagesFilePaths
@@ -5234,11 +5247,20 @@ namespace ScannerClient_obalkyknih
                 {
                     thumbnail = this.coverThumbnail;
                 }
+                else if (isBib)
+                {
+                    thumbnail = LogicalTreeHelper.FindLogicalNode(
+                        this.bibThumbnailGridsDictionary[guid], "bibThumbnail") as Image;
+                }
+                else if (isAuth)
+                {
+                    thumbnail = LogicalTreeHelper.FindLogicalNode(
+                        this.authThumbnailGridsDictionary[guid], "authThumbnail") as Image;
+                }
                 else
                 {
                     thumbnail = LogicalTreeHelper.FindLogicalNode(
                         this.tocThumbnailGridsDictionary[guid], "tocThumbnail") as Image;
-
                 }
                 thumbnail.Source = ImageTools.LoadGivenSizeFromBitmapSource(
                         this.workingImage.Value, 800);
